@@ -1,0 +1,86 @@
+//
+//  SNotificationMessage.h
+//  AJKGroupChatDemo
+//
+//  Created by YangFan on 14/12/12.
+//  Copyright (c) 2014年 YangFan. All rights reserved.
+//                            _ooOoo_
+//                           o8888888o
+//                           88" . "88
+//                           (| -_- |)
+//                            O\ = /O
+//                        ____/`---'\____
+//                      .   ' \\| |// `.
+//                       / \\||| : |||// \
+//                     / _||||| -:- |||||- \
+//                       | | \\\ - /// | |
+//                     | \_| ''\---/'' | |
+//                      \ .-\__ `-` ___/-. /
+//                   ___`. .' /--.--\ `. . __
+//                ."" '< `.___\_<|>_/___.' >'"".
+//               | | : `- \`.;`\ _ /`;.`/ - ` : | |
+//                 \ \ `-. \_ __\ /__ _/ .-` / /
+//         ======`-.____`-.___\_____/___.-`____.-'======
+//                            `=---='
+//
+//         .............................................
+//                  佛祖镇楼                  BUG辟易
+//          佛曰:
+//                  写字楼里写字间，写字间里程序员；
+//                  程序人员写程序，又拿程序换酒钱。
+//                  酒醒只在网上坐，酒醉还来网下眠；
+//                  酒醉酒醒日复日，网上网下年复年。
+//                  但愿老死电脑间，不愿鞠躬老板前；
+//                  奔驰宝马贵者趣，公交自行程序员。
+//                  别人笑我忒疯癫，我笑自己命太贱；
+//                  不见满街漂亮妹，哪个归得程序员？
+//
+// 群通知 跟私人的通知 放在同个数据库中
+
+#import <Foundation/Foundation.h>
+#import "SDBManager.h"
+#import "NotificationMessage.h"
+#import "OneForOneMessage.h"
+
+
+typedef enum {
+    
+    NotificationMessageTypePrivate=0, //私人通知
+    NotificationMessageTypeGroup=-1,//群通知
+
+}NotificationMessageType;
+
+@interface SNotificationMessage : NSObject
+{
+     FMDatabase * _db;
+}
+/**
+ *  创建数据库
+ */
+- (void) createDataBase;
+/**
+ *  保存个人通知类型消息
+ *
+ *  @param notificationMsg 个人通知消息
+ *  @param hostId          登录用户id
+ */
+-(BOOL)saveNoticationMessage:(NotificationMessage *)notificationMsg HostId:(long long)hostId;
+
+-(BOOL)isTheNotificationMessageDuplicate:(NotificationMessage *)notificationMsg HostId:(long long )hostId;
+
+-(NotificationMessage *)selectLastNotificaionMessageWithHostId:(long long)hostId;
+/**
+ *  查询私人或群通知(ALl)
+ *
+ *  @param hostId  用户id
+ *  @param messageCode 为message类中的MessageCode 仅查询 以下  以后可扩展
+ *  MessageCodeAddFriend = 10,//添加好友
+ *  MessageCodeAcceptFriend = 11,//接受好友请求
+ *  MessageCodeRemoveFriend = 12,//移除好友
+ *  MessageCodeAddGroupMember = 13,//添加群组成员
+ *  MessageCodeDeleteGroupMember=14,//删除群成员
+ *  MessageCodeJoinGroup=15 //申请入群消息，
+ *  @param Count   需要的消息条数
+ */
+-(NSArray *)selectAllNoticationMessageWithHostId:(long long)hostId MessageCode:(MessageCode)messageCode ResultCount:(int)Count;
+@end

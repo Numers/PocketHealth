@@ -1,0 +1,46 @@
+//
+//  CustomSubtitleTableViewCell.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/19.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "CustomSubtitleTableViewCell.h"
+
+@implementation CustomSubtitleTableViewCell
+
+- (void)awakeFromNib {
+    // Initialization code
+}
+
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
+    [super setSelected:selected animated:animated];
+
+    // Configure the view for the selected state
+}
+-(void)layoutSubviews
+{
+    
+    [super layoutSubviews];
+    
+    CGRect  imageFrame = self.imageView.frame;
+    imageFrame.size.width = 45;
+    imageFrame.size.height = 45;
+    self.imageView.frame = imageFrame;
+    
+    
+    
+    
+//    CGRect  labelFrame = self.textLabel.frame;
+//    labelFrame.origin.y = self.imageView.frame.origin.y;
+//    self.textLabel.frame = labelFrame;
+//    
+//    
+//    CGRect detailFrame = self.detailTextLabel.frame;
+//    detailFrame.origin.y = self.imageView.frame.origin.y+self.imageView.frame.size.height-self.detailTextLabel.frame.size.height;
+//    self.detailTextLabel.frame = detailFrame;
+    
+    self.imageView.contentMode = UIViewContentModeScaleToFill;
+}
+@end

@@ -1,0 +1,125 @@
+//
+//  PHVideoChatViewController.m
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHVideoChatViewController.h"
+#import "PHVideoChatManager.h"
+#import "PHAppStartManager.h"
+#import "XGPSocketAVideoHelper.h"
+#import "PHFrontView.h"
+#import "PHBackView.h"
+
+@interface PHVideoChatViewController ()<PHFrontViewDelegate,PHBackViewDelegate>
+{
+    PHFrontView *frontView;
+    PHBackView *backView;
+    
+    BOOL commingCall;
+    NSDictionary *videoInfoDic;
+}
+@end
+
+@implementation PHVideoChatViewController
+-(id)initWithDictionary:(NSDictionary *)dic CallState:(BOOL)isCommingCall
+{
+    self = [super init];
+    if (self) {
+        commingCall = isCommingCall;
+        videoInfoDic = [NSDictionary dictionaryWithDictionary:dic];
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    backView = [[PHBackView alloc] initWithFrame:self.view.frame];
+    backView.delegate = self;
+    [self.view addSubview:backView];
+    
+    frontView = [[PHFrontView alloc] initWithFrame:self.view.frame];
+    [frontView setState:commingCall];
+    [frontView setDelegate:self];
+    [self.view addSubview:frontView];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)flipFrontViewToBackView
+{
+    [UIView transitionFromView:frontView toView:backView duration:1.0f options:UIViewAnimationOptionTransitionFlipFromLeft completion:^(BOOL finished) {
+        if (finished) {
+            if (videoInfoDic) {
+                NSString *roomIp = [videoInfoDic objectForKey:@"roomip"];
+                NSInteger port = [[videoInfoDic objectForKey:@"port"] integerValue];
+                NSInteger roomId = [[videoInfoDic objectForKey:@"roomid"] integerValue];
+                long long fromUserId = [[videoInfoDic objectForKey:@"fromId"] longLongValue];
+                long long toUid = [[videoInfoDic objectForKey:@"touid"] longLongValue];
+                [backView createAVModuleWithServerIP:roomIp WithPort:port WithRoomId:roomId WithUserId:fromUserId WithAnchorUserId:toUid WithFrameSize:CGSizeMake(320.f, 240.f)];
+            }
+        }
+    }];
+}
+
+-(void)didConnected
+{
+    [self flipFrontViewToBackView];
+}
+
+-(void)sendAcceptCallRequest
+{
+    Member *host = [[PHAppStartManager defaultManager] userHost];
+    long long sessionId = [[videoInfoDic objectForKey:@"SessionID"] longLongValue];
+    [[XGPSocketAVideoHelper defaultManager] acceptSessionWithSessionId:sessionId withMyid:host.memberId];
+}
+
+#pragma -mark PHFrontViewDelegate
+-(void)acceptCall
+{
+    [self sendAcceptCallRequest];
+}
+
+-(void)rejectCall
+{
+    [self dismissViewControllerAnimated:YES completion:^{
+        [frontView removeFromSuperview];
+        frontView = nil;
+        [backView removeFromSuperview];
+        backView = nil;
+        [[PHVideoChatManager defaultManager] didDisConnected];
+        [[XGPSocketAVideoHelper defaultManager] finishAVWithDic:videoInfoDic];
+    }];
+}
+
+-(void)cancelCall
+{
+    [self dismissViewControllerAnimated:YES completion:^{
+        [frontView removeFromSuperview];
+        frontView = nil;
+        [backView removeFromSuperview];
+        backView = nil;
+        [[PHVideoChatManager defaultManager] didDisConnected];
+        [[XGPSocketAVideoHelper defaultManager] finishAVWithDic:videoInfoDic];
+    }];
+}
+
+#pragma -mark PHBackViewDelegate
+-(void)shutUpVideoCall
+{
+    [self dismissViewControllerAnimated:YES completion:^{
+        [frontView removeFromSuperview];
+        frontView = nil;
+        [backView removeFromSuperview];
+        backView = nil;
+        [[PHVideoChatManager defaultManager] didDisConnected];
+        [[XGPSocketAVideoHelper defaultManager] finishAVWithDic:videoInfoDic];
+    }];
+}
+@end

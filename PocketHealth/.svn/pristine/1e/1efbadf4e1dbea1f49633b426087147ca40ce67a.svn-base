@@ -1,0 +1,13 @@
+//
+//  PHCommentAlertViewViewController.h
+//  PocketHealth
+//
+//  Created by macmini on 15-3-13.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface PHCommentAlertView : UIAlertView
+-(id)initWithCallTime:(NSTimeInterval)timeInterval;
+@end

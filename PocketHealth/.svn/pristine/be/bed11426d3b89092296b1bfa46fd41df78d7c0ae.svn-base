@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="6254" systemVersion="14A389" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6247"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="PHChatHomeAddDetailTableViewHeadViewViewController">
+            <connections>
+                <outlet property="chatAddSearchBar" destination="mUc-s6-9dd" id="QZV-ab-0B5"/>
+                <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="i5M-Pr-FkT">
+            <rect key="frame" x="0.0" y="0.0" width="400" height="100"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <searchBar contentMode="redraw" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mUc-s6-9dd">
+                    <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
+                    <constraints>
+                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="320" id="KfW-Rf-H8C"/>
+                    </constraints>
+                    <textInputTraits key="textInputTraits"/>
+                    <variation key="widthClass=compact" misplaced="YES">
+                        <rect key="frame" x="0.0" y="48" width="400" height="44"/>
+                    </variation>
+                </searchBar>
+            </subviews>
+            <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+            <constraints>
+                <constraint firstAttribute="trailing" secondItem="mUc-s6-9dd" secondAttribute="trailing" constant="25" id="66C-Ek-Ef7">
+                    <variation key="widthClass=compact" constant="0.0"/>
+                </constraint>
+                <constraint firstItem="mUc-s6-9dd" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="JEv-fw-gAc">
+                    <variation key="widthClass=compact" constant="28"/>
+                </constraint>
+                <constraint firstItem="mUc-s6-9dd" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" id="T8U-l3-ACs"/>
+                <constraint firstAttribute="trailing" secondItem="mUc-s6-9dd" secondAttribute="trailing" id="or6-7g-Woa"/>
+            </constraints>
+            <nil key="simulatedStatusBarMetrics"/>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <variation key="default">
+                <mask key="constraints">
+                    <exclude reference="66C-Ek-Ef7"/>
+                    <exclude reference="or6-7g-Woa"/>
+                </mask>
+            </variation>
+            <variation key="widthClass=compact">
+                <mask key="constraints">
+                    <include reference="66C-Ek-Ef7"/>
+                </mask>
+            </variation>
+            <point key="canvasLocation" x="147" y="291"/>
+        </view>
+    </objects>
+</document>

@@ -1,0 +1,427 @@
+//
+//  GroupMessageCell.m
+//  ylmm
+//
+//  Created by macmini on 14-7-1.
+//  Copyright (c) 2014年 YiLiao. All rights reserved.
+//
+
+#import "GroupMessageCell.h"
+#import "UIImageView+WebCache.h"
+#import "SJAvatarBrowser.h"
+#import "GroupMessage.h"
+#import "GroupMessageFrame.h"
+
+#import "CommonUtil.h"
+#import "YLImageView.h"
+#import "YLGIFImage.h"
+
+@implementation GroupMessageCell
+
+- (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
+{
+    self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
+    if (self) {
+        //#warning 必须先设置为clearColor，否则tableView的背景会被遮住
+        self.backgroundColor = [UIColor clearColor];
+        
+        // 1、创建时间按钮
+        _timeBtn = [[UIButton alloc] init];
+        [_timeBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+        _timeBtn.titleLabel.font = kTimeFont;
+        _timeBtn.enabled = NO;
+        [_timeBtn setBackgroundImage:[UIImage imageNamed:@"chat_timeline_bg.png"] forState:UIControlStateNormal];
+        [self.contentView addSubview:_timeBtn];
+        
+        // 2、创建头像
+        _iconView = [[UIImageView alloc] init];
+        [self.contentView addSubview:_iconView];
+        
+        _iconViewBtn = [[UIButton alloc] init];
+        [self.contentView addSubview:_iconViewBtn];
+        
+        // 3、创建内容
+        _contentBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_contentBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+        
+        _contentBtn.titleLabel.font = kContentFont;
+        _contentBtn.titleLabel.numberOfLines = 0;
+        [self.contentView addSubview:_contentBtn];
+        
+        //4、 创建菊花
+        _juhua = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+        [self.contentView addSubview:_juhua];
+        
+        //失败图片
+        _failedImg=[[UIImageView alloc]initWithImage:[UIImage imageNamed:@"MessageListSendFail"]];
+        [self.contentView addSubview:_failedImg];
+        _failedImg.hidden=YES;
+        
+        
+        //身份表示图片
+        _indentityIconView=[[UIImageView alloc]init];
+        [self.contentView addSubview:_indentityIconView];
+//        _indentityIconView.hidden=YES;
+        
+        //创建语音红点 红点用按钮来绘制
+        _voiceNotReadRedPointView=[[UIImageView alloc]initWithImage:[UIImage imageNamed:@"group_redPoint"]];
+        [self.contentView addSubview:_voiceNotReadRedPointView];
+        _voiceNotReadRedPointView.hidden=YES;
+        
+        //昵称label
+        _labelNickName=[[UILabel alloc]init];
+        [self.contentView addSubview:_labelNickName];
+        
+    }
+    return self;
+}
+
+-(void)setIndex:(NSInteger)value{
+    _index = value;
+    _contentBtn.tag = _index;
+    _iconViewBtn.tag = _index;
+
+}
+
+
+-(void)setDelegate:(id)value{
+    _delegate = value;
+    
+    if(_delegate && _didTouch)
+        [_contentBtn addTarget:_delegate action:_didTouch forControlEvents:UIControlEventTouchUpInside];
+}
+
+-(void)setDidTouch:(SEL)value{
+    _didTouch = value;
+    
+    if(_delegate && _didTouch)
+        [_contentBtn addTarget:_delegate action:_didTouch forControlEvents:UIControlEventTouchUpInside];
+}
+-(void)setDidTouchIcon:(SEL)didTouchIcon
+{
+    _didTouchIcon = didTouchIcon;
+    if (_delegate && _didTouchIcon) {
+        [_iconViewBtn addTarget:_delegate action:_didTouchIcon forControlEvents:UIControlEventTouchUpInside];
+    }
+}
+-(void)showImage
+{
+
+    NSString *fullImagePath = [_messageFrame.message fullServerImagePath];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:fullImagePath]];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                UIImageView *imageView = nil;
+                if (imageData != nil) {
+                    imageView = [[UIImageView alloc] initWithImage:[UIImage imageWithData:imageData]];
+                    
+                }else
+                {
+                    imageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"defult_head.png"]];
+                }
+                if (imageView.image) {
+                    [SJAvatarBrowser showImage:imageView];
+                }
+            });
+        }
+    });
+}
+-(void)prepareForReuse{
+    [super prepareForReuse];
+
+//    _iconView.image=nil;
+//    _timeBtn=nil;
+//    _iconViewBtn=nil;
+//    _contentBtn=nil;
+//    
+//    _delegate = nil;
+//    _didTouch = nil;
+//    _didTouchIcon = nil;
+}
+
+- (void)setMessageFrame:(GroupMessageFrame *)messageFrame{
+    
+    _delegate = nil;
+    _didTouch = nil;
+    _didTouchIcon = nil;
+    
+    _messageFrame = messageFrame;
+    GroupMessage *message = _messageFrame.message;
+    
+    // 1、设置时间
+    NSString *timeStr = [CommonUtil TimeStrWithInterval:message.time];
+    [_timeBtn setTitle:timeStr forState:UIControlStateNormal];
+    
+    _timeBtn.frame = _messageFrame.timeF;
+    
+    // 2、设置头像
+    _iconView.image=nil;
+//    NSString *headImgTmp=[NSString stringWithFormat:@"%@_50.jpg",[message.icon substringToIndex:message.icon.length-8]];
+    
+//    NSString *headImgTmp=message.icon;
+    [_iconView sd_setImageWithURL:[NSURL URLWithString:message.icon] placeholderImage:[UIImage imageNamed:@"defult_people_icons"]];
+    
+//    [_iconView setImageWithURL:[NSURL URLWithString:message.icon] placeholderImage:[UIImage imageNamed:@"defult_head.png"]];
+    
+//    [_iconView setImageWithURL:[NSURL URLWithString:message.icon] placeholderImage:[UIImage imageNamed:@"defult_head.png"] options:SDWebImageRefreshCached];
+    // options:SDWebImageRefreshCached]
+    
+    
+    _iconView.frame = _messageFrame.iconF;
+
+    [_iconView.layer setCornerRadius:4];
+    _iconView.layer.masksToBounds = YES;
+    _iconViewBtn.frame = _messageFrame.iconF;
+    
+    //身份标识不分你我 就在自己的头像旁边
+    //位置先不处理 先显示图片
+    _indentityIconView.frame=_messageFrame.iconF;
+//    NSLog(@"message.messageIdentity is %u",message.messageIdentity);
+    switch (message.messageIdentity) {
+        case MessageIdentityAdmin:
+        {
+            _indentityIconView.image=[UIImage imageNamed:@"groupAdmin_IconForIdentity.png"];
+        }
+            break;
+        case MessageIdentityOwner:{
+            _indentityIconView.image=[UIImage imageNamed:@"groupOwner_IconForIdentity.png"];
+        }
+            break;
+        case MessageIdentityUser:{
+            //测试用
+//            _indentityIconView.image=[UIImage imageNamed:@"Icon_headBar.png"];
+            _indentityIconView.image=nil;
+        }
+            break;
+        default:
+            break;
+    }
+    
+    
+    
+    // 3、设置内容
+    UIImage *normal , *focused;
+    if (message.type == MessageTypeMe) {
+        
+        normal = [UIImage imageNamed:@"chatto_bg_normal"];
+        normal = [normal stretchableImageWithLeftCapWidth:normal.size.width * 0.5 topCapHeight:normal.size.height * 0.7];
+//        focused = [UIImage imageNamed:@"chatto_bg_focused.png"];
+//        focused = [focused stretchableImageWithLeftCapWidth:focused.size.width * 0.5 topCapHeight:focused.size.height * 0.7];
+    }else{
+        
+        normal = [UIImage imageNamed:@"chatfrom_bg_normal"];
+        normal = [normal stretchableImageWithLeftCapWidth:normal.size.width * 0.5 topCapHeight:normal.size.height * 0.7];
+//        focused = [UIImage imageNamed:@"chatfrom_bg_focused.png"];
+//        focused = [focused stretchableImageWithLeftCapWidth:focused.size.width * 0.5 topCapHeight:focused.size.height * 0.7];
+        
+    }
+    [_contentBtn setBackgroundImage:normal forState:UIControlStateNormal];
+    [_contentBtn setBackgroundImage:focused forState:UIControlStateHighlighted];
+    _contentBtn.frame = _messageFrame.contentF;
+    
+    if (message.code == MessageCodeGroupText||message.code==MessageCodeJoinGroup) {
+        CGRect juhuaFrame;
+        CGRect messageFailedImageFrame;
+//        MessageContentType type = [message messageContentType];
+        MessageContentType type = message.contentType;
+        switch (type) {
+            case MessageContentText:
+            {
+                //[_contentBtn setTitle:message.content forState:UIControlStateNormal];
+                CGRect frame;
+                if (message.type == MessageTypeMe) {
+                    frame = CGRectMake(14,10,CGRectGetWidth(_messageFrame.messageLabel.frame),CGRectGetHeight(_messageFrame.messageLabel.frame));
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x-25,_messageFrame.contentF.origin.y+_messageFrame.contentF.size.height/2-9,18,18);
+                    messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x-20,_messageFrame.contentF.origin.y+_messageFrame.contentF.size.height/2-9,18,18);
+
+                }else{
+                    frame = CGRectMake(24,10,CGRectGetWidth(_messageFrame.messageLabel.frame),CGRectGetHeight(_messageFrame.messageLabel.frame));
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width+25,_messageFrame.contentF.origin.y+_messageFrame.contentF.size.height/2-9,18,18);
+                    messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width,_messageFrame.contentF.origin.y+_messageFrame.contentF.size.height/2-9,18,18);
+                }
+                _messageFrame.messageLabel.frame = frame;
+                [CustomMethod drawImage:_messageFrame.messageLabel];
+                [_contentBtn addSubview:_messageFrame.messageLabel];
+                
+                
+            }
+                break;
+            case MessageContentVoice:{
+                int timelength = 0;
+                NSArray *array = [message.content componentsSeparatedByString:@".amr|"];
+                if ((array != nil) || (array.count >= 2)) {
+                    timelength = [[array lastObject] intValue];
+                }
+                
+                UIImageView* iv = [[UIImageView alloc] init];
+//                YLImageView * iv = [[YLImageView alloc]init];
+                if (message.type == MessageTypeMe) {
+//                    iv.image =  [YLGIFImage imageNamed:@"VoiceNodePlaying_right"];
+                    iv.image =  [UIImage imageNamed:@"VoiceNodePlaying_right"];
+                }
+                else{
+                    iv.image =  [UIImage imageNamed:@"VoiceNodePlaying_left"];
+//                    iv.image = [YLGIFImage imageNamed:@"bobo_others@2x.gif"];
+                }
+    
+                
+                if (message.readState!=MessageRead) {
+                    _voiceNotReadRedPointView.hidden=NO;
+                }else{
+                    _voiceNotReadRedPointView.hidden=YES; //不显示
+                }
+                
+                UILabel* p = [[UILabel alloc] init];
+                p.text = [NSString stringWithFormat:@"%d''",timelength];
+                p.backgroundColor = [UIColor clearColor];
+                p.textColor = [UIColor grayColor];
+                p.font = [UIFont systemFontOfSize:11];
+                
+                if(message.type == MessageTypeMe){
+                    iv.frame = CGRectMake(_messageFrame.contentF.size.width-45, 10, 19, 19);
+                    p.frame = CGRectMake(_messageFrame.contentF.origin.x-50, _messageFrame.contentF.origin.y+10, 50, 15);
+                    [p setTextAlignment:NSTextAlignmentRight];
+                    
+                    
+                    _voiceNotReadRedPointView.frame=CGRectMake(_messageFrame.contentF.origin.x+10,_messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9 , 10, 10);
+                    
+                    
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+10, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                    
+                    messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x-35, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                }
+                else{
+                    iv.frame = CGRectMake(25, 10, 19, 19);
+                    p.frame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width+3, _messageFrame.contentF.origin.y+10, 50, 15);
+                    p.textAlignment = NSTextAlignmentLeft;
+                    
+                    
+                    _voiceNotReadRedPointView.frame=CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width+20, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9,10,10);
+                    
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width-10, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                    
+                    messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width+20, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                }
+                [self.contentView addSubview:p];
+                [_contentBtn addSubview:iv];
+                
+            }
+                break;
+            case MessageContentImage:{
+                NSString *thumbnailsPath = [message fulltThumbnailsPath];
+                if (thumbnailsPath != nil) {
+                    UIButton *imageBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+                    [imageBtn addTarget:self action:@selector(showImage) forControlEvents:UIControlEventTouchUpInside];
+                    if (message.type == MessageTypeMe) {
+//                        imageBtn.frame = CGRectMake(9, 2, _messageFrame.contentF.size.width-28, _messageFrame.contentF.size.height-14);
+                        imageBtn.frame = CGRectMake(2, 2, _messageFrame.contentF.size.width-10, _messageFrame.contentF.size.height-4);
+                        juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width/2-15, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                         messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x-20, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                    }else{
+//                        imageBtn.frame = CGRectMake(19, 2, _messageFrame.contentF.size.width-28, _messageFrame.contentF.size.height-14);
+                        imageBtn.frame = CGRectMake(8, 2, _messageFrame.contentF.size.width-10, _messageFrame.contentF.size.height-4);
+                        juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width/2+15, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                         messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                    }
+                    [imageBtn.layer setMasksToBounds:YES];
+                    [imageBtn.layer setCornerRadius:5.0]; //设置矩形四个圆角半径
+//                    [imageBtn.layer setBorderWidth:1.0]; //边框宽度
+                    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                        @autoreleasepool {
+                            //Data processing
+                            NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:thumbnailsPath]];
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                //Update Interface
+                                if (imageData != nil) {
+                                    [imageBtn setImage:[UIImage imageWithData:imageData scale:0.1f] forState:UIControlStateNormal];
+                                }else
+                                {
+                                    [imageBtn setImage:[UIImage imageNamed:@"defult_head.png"] forState:UIControlStateNormal];
+                                }
+                            });
+                        }
+                    });
+                    [_contentBtn addSubview:imageBtn];
+                }
+                
+            }
+                break;
+            case MessageContentRedPacket:{
+//                UIImageView *imageView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"redPacket_msgIcon.png"]];
+//                if (message.type == MessageTypeMe) {
+//                    imageView.frame = CGRectMake(9, 2, _messageFrame.contentF.size.width-28, _messageFrame.contentF.size.height-14);
+//                   
+//                }else{
+//                    imageView.frame = CGRectMake(19, 2, _messageFrame.contentF.size.width-28, _messageFrame.contentF.size.height-14);
+//                    
+//                }
+//                [_contentBtn addSubview:imageView];
+                [_contentBtn setImage:[UIImage imageNamed:@"redPacket_msgIcon.png"] forState:UIControlStateNormal];
+                
+            }
+            
+
+
+            
+         
+            case MessageContentAddAdmin:case MessageContentRemoveAdmin:case MessageContentRemoveGroupMember:case MessageContentAddGroupMember:case MessageContentMergeGroupName:
+            {
+
+                [_contentBtn setBackgroundColor:[UIColor grayColor]];
+                [_contentBtn setBackgroundImage:nil forState:UIControlStateNormal];
+                [_contentBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+                [_contentBtn setTitle:message.content forState:UIControlStateNormal];
+                _contentBtn.titleLabel.font = [UIFont systemFontOfSize:12.0f];
+                
+                [_iconView  removeFromSuperview];
+                [_iconViewBtn removeFromSuperview ];
+                CGRect frame = CGRectMake(24,10,CGRectGetWidth(_messageFrame.messageLabel.frame),CGRectGetHeight(_messageFrame.messageLabel.frame));
+
+                
+                _messageFrame.messageLabel.frame = frame;
+//                [CustomMethod drawImage:_messageFrame.messageLabel];
+//                [_contentBtn addSubview:_messageFrame.messageLabel];
+                _juhua = nil;
+                _failedImg = nil;
+            }
+                break;
+            default:
+                break;
+        }
+        
+        if (message.type == MessageTypeMe) {
+            _contentBtn.contentEdgeInsets = UIEdgeInsetsMake(kContentTop, kContentRight, kContentBottom, kContentLeft);
+        }else{
+            _contentBtn.contentEdgeInsets = UIEdgeInsetsMake(kContentTop, kContentLeft, kContentBottom, kContentRight);
+        }
+        
+        _juhua.frame = juhuaFrame;
+        _failedImg.frame=messageFailedImageFrame;
+
+        
+        if (message.state == MessageIsSend) {
+            [_failedImg setHidden:YES];
+            [_juhua startAnimating];
+        }else if(message.state == MessageFailed){
+            [_failedImg setHidden:NO];
+            if ([_juhua isAnimating]) {
+                [_juhua stopAnimating];
+            }
+        }else if(message.state == MessageSuccess || message.type != MessageTypeMe)
+        {
+            [_failedImg setHidden:YES];
+            if ([_juhua isAnimating]) {
+                [_juhua stopAnimating];
+            }
+        }
+    }
+}
+-(void)drawRect:(CGRect)rect{
+    [super drawRect:rect];
+//    NSLog(@"cell draw rect");
+}
+
+@end

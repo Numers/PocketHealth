@@ -1,0 +1,155 @@
+//
+//  Member.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "Member.h"
+#import "CommonUtil.h"
+#import "OneForOneMessage.h"
+#import "PrivateChatViewViewController.h"
+#import "GlobalVar.h"
+
+@implementation Member
+
++ (NSDictionary *)JSONKeyPathsByPropertyKey {
+    
+    // properties defined in header < : > key in JSON Dictionary
+    return @{
+             @"loginName":@"Loginname",
+             @"realName":@"Usertruename",
+             @"nickName":@"Nickname",
+             @"passWord":@"Password",
+             @"memberId" : @"Userid",
+             @"headImage" : @"Headimg" ,
+             
+             @"userHeight" : @"Userheight",
+             @"userWeight" : @"Userweight",
+             @"userSex" : @"Usersex",
+             @"userState" : @"Userstate" ,
+             
+             @"friendType" : @"FriendType" ,
+             @"userType" : @"Usertype" ,
+             @"userRegister" :@"Userregister",
+//             @"token" :@"Token"
+             };
+}
+
+-(void)setHeadImage:(NSString *)headImage
+{
+    _headImage = [NSString stringWithFormat:@"%@%@",ServerBaseURL,headImage];
+}
+
+-(void)setNilValueForKey:(NSString *)key{
+    [self setValue:@0 forKey:key];
+//    NSMutableDictionary *dic = [[super dictionaryValue] mutableCopy];
+//    [dic removeObjectForKey:key];
+//    [self setValuesForKeysWithDictionary:dic];
+//    [self dictionaryValue];
+}
+
+//- (NSDictionary *)dictionaryValue {
+//    NSMutableDictionary *modifiedDictionaryValue = [[super dictionaryValue] mutableCopy];
+//    
+//    for (NSString *originalKey in [super dictionaryValue]) {
+//        if ([self valueForKey:originalKey] == nil) {
+//            [modifiedDictionaryValue removeObjectForKey:originalKey];
+//        }
+//    }
+//    
+//    return [modifiedDictionaryValue copy];
+//}
+//- (NSDictionary *)dictionaryValue {
+//    NSMutableDictionary *modifiedDictionaryValue = [[super dictionaryValue] mutableCopy];
+//    for (NSString *originalKey in [super dictionaryValue]) {
+//        if ([self valueForKey:originalKey] == nil) {
+//            [modifiedDictionaryValue removeObjectForKey:originalKey];
+//        }
+//    }
+//    return [modifiedDictionaryValue copy];
+//}
+
+-(NSString *)getHttpKey
+{
+    return [CommonUtil createSendKeyWithUserName:_loginName Userid:[NSString stringWithFormat:@"%lld",_memberId]];
+}
+
+-(NSDictionary *)dictionaryInfo
+{
+    NSMutableDictionary *dic = [[NSMutableDictionary alloc] init];
+    [dic setObject:[NSNumber numberWithLongLong:_memberId] forKey:@"memberId"];
+    if (_loginName != nil) {
+        [dic setObject:_loginName forKey:@"loginName"];
+    }
+    
+    if (_passWord != nil) {
+        [dic setObject:_passWord forKey:@"password"];
+    }
+    
+    if (_nickName != nil) {
+        [dic setObject:_nickName forKey:@"nickName"];
+    }
+    
+    if (_realName != nil) {
+        [dic setObject:_realName forKey:@"realName"];
+    }
+    
+    if (_headImage != nil) {
+        [dic setObject:_headImage forKey:@"headImage"];
+    }
+    
+    [dic setObject:[NSNumber numberWithInteger:_userHeight] forKey:@"userHeight"];
+    [dic setObject:[NSNumber numberWithInteger:_userWeight] forKey:@"userWeight"];
+    [dic setObject:[NSNumber numberWithInteger:_userSex] forKey:@"userSex"];
+    [dic setObject:[NSNumber numberWithInteger:_userState] forKey:@"userState"];
+    [dic setObject:[NSNumber numberWithDouble:_userRegister] forKey:@"userRegister"];
+    return dic;
+}
+
+-(Member *)initlizedWithDictionary:(NSDictionary *)dic
+{
+    Member *member = nil;
+    if (self) {
+        if (dic != nil) {
+            @try {
+                member = [[Member alloc] init];
+                member.memberId = [[dic objectForKey:@"memberId"] longLongValue];
+                member.loginName = [dic objectForKey:@"loginName"];
+                member.realName = [dic objectForKey:@"realName"];
+                member.passWord = [dic objectForKey:@"password"];
+                member.nickName = [dic objectForKey:@"nickName"];
+                member.headImage = [dic objectForKey:@"headImage"];
+                member.userHeight = [[dic objectForKey:@"userHeight"] integerValue];
+                member.userWeight = [[dic objectForKey:@"userWeight"] integerValue];
+                member.userSex = (sexCode)[[dic objectForKey:@"userSex"] integerValue];
+                member.userState = [[dic objectForKey:@"userState"] integerValue];
+                member.userRegister = [[dic objectForKey:@"userRegister"] doubleValue];
+            }
+            @catch (NSException *exception) {
+                
+            }
+            @finally {
+                
+            }
+        }
+
+    }
+    return member;
+}
+-(instancetype)initWithDictionary:(NSDictionary *)dictionaryValue error:(NSError *__autoreleasing *)error{
+    self = [super initWithDictionary:dictionaryValue error:error];
+    if (self == nil) {
+        return nil;
+    }
+    return self;
+}
+-(id)init{
+    self = [super init];
+    if (self) {
+        _messageArr = [[NSMutableArray alloc] init];
+    }
+    return self;
+}
+@end

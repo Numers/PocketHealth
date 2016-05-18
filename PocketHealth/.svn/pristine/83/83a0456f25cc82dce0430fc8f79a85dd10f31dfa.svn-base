@@ -1,0 +1,28 @@
+//
+//  PHOrganizationTableViewCell.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-10.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOrganizationTableViewCell.h"
+#import "Organization.h"
+
+@implementation PHOrganizationTableViewCell
+
+- (void)awakeFromNib {
+    // Initialization code
+}
+
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
+    [super setSelected:selected animated:animated];
+
+    // Configure the view for the selected state
+}
+
+-(void)setupWithOrganization:(Organization *)organization
+{
+    [_lblOrganizationName setText:organization.organizationName];
+}
+@end

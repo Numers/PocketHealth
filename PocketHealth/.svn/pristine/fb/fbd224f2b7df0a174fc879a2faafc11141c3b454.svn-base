@@ -1,0 +1,260 @@
+//
+//  GroupChatGroupDetailTableViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/16.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "GroupChatGroupDetailTableViewController.h"
+#import "CommonUtil.h"
+#import "GroupChatGroupDetailMemberViewController.h"
+
+//数据
+#import "SGroupDB.h"
+#import "SGroupMemberDB.h"
+//界面
+#import "GroupChatGroupDetailMemberListTableViewCell.h"
+
+static NSString *identifierGroupChatDetailCommonCell = @"PHGroupChatDetailCommonCell";
+static NSString *identifierGroupChatDetailMemberListCell = @"PHGroupChatDetailMemberListCell";
+@interface GroupChatGroupDetailTableViewController ()
+{
+    GroupChatGroupDetailMemberViewController * memberListView;
+}
+@end
+
+@implementation GroupChatGroupDetailTableViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //从数据库获取该社区的groupMemberlist;
+    //group 已经获取到了
+    //从服务器更新group信息
+    
+    
+    
+    // Uncomment the following line to preserve selection between presentations.
+    // self.clearsSelectionOnViewWillAppear = NO;
+    
+    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
+    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    // Return the number of sections.
+    return 5;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    // Return the number of rows in the section.
+    if (section == 4) {
+        return 3;
+    }else{
+        return 1;
+    }
+}
+-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
+    if (section==0) {
+        return 0;
+    }else{
+      return 10;
+    }
+    
+}
+//-(CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section{
+//    return 1;
+//}
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    NSLog(@"indexPath.section %ld indexPath.row %ld",(long)indexPath.section,(long)indexPath.row);
+    if (indexPath.section == 0) {
+        return 65;
+    }
+    else if (indexPath.section == 3){
+        
+//        if (indexPath.row == 0) {
+            return 120;
+//        }else{
+//            return 9999;
+//        }
+    }
+    else if (indexPath.section == 2){
+//        UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+//        return cell.frame.size.height+20;
+        return 65;
+    }
+    else{
+        return 44;
+    }
+//    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+//    return cell.frame.size.height;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell * cell = nil;
+    NSString *identifierGroupChatDetailCell = [NSString stringWithFormat:@"PHGroupChatDetail%ldwith%ld",(long)indexPath.section,(long)indexPath.row];
+    cell = [tableView  dequeueReusableCellWithIdentifier:identifierGroupChatDetailCell];
+    
+    
+    switch (indexPath.section) {
+        case 0:
+        {
+//            static NSString *identifierGroupChatDetailTopHeadCell = @"PHGroupChatDetailTopHeadCell";
+            if (!cell) {
+                cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierGroupChatDetailCell];
+            }
+            cell.imageView.image = [UIImage imageNamed:@"usercenter-appointment"];
+            float sw=45/cell.imageView.image.size.width;
+            float sh=45/cell.imageView.image.size.height;
+            cell.imageView.transform=CGAffineTransformMakeScale(sw,sh);
+            cell.textLabel.text = self.group.groupName;
+            cell.detailTextLabel.text = [NSString stringWithFormat:@"%u",self.group.groupId];
+            
+        }
+            break;
+        case 1:{
+            if (!cell) {
+               cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:identifierGroupChatDetailCell];
+            }
+            
+            cell.textLabel.text=@"机构";
+            cell.detailTextLabel.text =@"杭l医院";
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        }
+            break;
+        case 2:{
+            if (!cell) {
+                cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifierGroupChatDetailCell];
+            }
+
+            cell.textLabel.text=@"群简介";
+            cell.detailTextLabel.text =self.group.groupBriefIntroduction;
+            cell.detailTextLabel.numberOfLines = 0;
+            CGSize boundSize = CGSizeMake(216, CGFLOAT_MAX);
+            NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc]init];
+            paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
+            NSDictionary *attributes = @{NSFontAttributeName:cell.detailTextLabel.font, NSParagraphStyleAttributeName:paragraphStyle.copy};
+            CGRect rect = [cell.detailTextLabel.text boundingRectWithSize:boundSize options:NSStringDrawingUsesLineFragmentOrigin attributes:attributes context:nil];
+            cell.frame = rect;
+        }
+            break;
+        case 3:{
+            if (!cell) {
+//                cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifierGroupChatDetailCell];
+                cell = [[GroupChatGroupDetailMemberListTableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierGroupChatDetailCell];
+            }
+            memberListView = nil;
+            memberListView= [[GroupChatGroupDetailMemberViewController alloc]initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 120)];
+
+            memberListView.groupMemberList = self.group.groupMember;
+            NSLog(@"%f %f",memberListView.view.frame.size.height,memberListView.view.frame.size.width);
+            
+            [cell addSubview:memberListView.view];
+//            [cell.contentView addSubview:memberListView.view];
+//            [cell.contentView addConstraint:[NSLayoutConstraint constraintWithItem:memberListView.view attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:cell.contentView attribute:NSLayoutAttributeWidth multiplier:1 constant:[UIScreen mainScreen].bounds.size.width]];
+            
+//            CGRect rect = memberListView.view.frame;
+//            cell.frame = rect;
+//            NSLog(@"%f %f",cell.frame.size.height,cell.frame.size.width);
+//            UIViewController * VC = [[UIViewController alloc]init];
+//            VC.view.backgroundColor = [UIColor blueColor];
+//            [cell.contentView addSubview:VC.view];
+//            UIViewController * viewCOntroller = [UIViewController alloc]init
+//            UILabel * fff = [[UILabel alloc]initWithFrame:CGRectMake(9, 9, 100, 40)];
+//            fff.text = @"lskdhfksdhjfks";
+//            UIView *kkk = [[UIView alloc]initWithFrame:CGRectMake(0, 0, 100, 100)];
+//            kkk.backgroundColor = [UIColor redColor];
+//            [cell.contentView addSubview:kkk];
+//            [cell.contentView addSubview:fff];
+            
+            
+//                        cell.detailTextLabel.text = @"100人";
+
+        }
+            break;
+        case 4:{
+            if (!cell) {
+                cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierGroupChatDetailCell];
+            }
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+            switch (indexPath.row) {
+                case 0:
+                {
+                    cell.textLabel.text=@"分享群";
+                }
+                    break;
+                case 1:{
+                    cell.textLabel.text = @"聊天记录";
+                }
+                    break;
+//                case 2:{
+//                    cell.textLabel.text = @"聊天记录3";
+//                }
+//                    break;
+                default:
+                    break;
+            }
+            
+        }
+            break;
+        default:
+            break;
+    }
+
+//    cell.textLabel.text=@"sdfsdf";
+    return cell;
+}
+
+
+/*
+// Override to support conditional editing of the table view.
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the specified item to be editable.
+    return YES;
+}
+*/
+
+/*
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        // Delete the row from the data source
+        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
+        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+    }   
+}
+*/
+
+/*
+// Override to support rearranging the table view.
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath {
+}
+*/
+
+/*
+// Override to support conditional rearranging of the table view.
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the item to be re-orderable.
+    return YES;
+}
+*/
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

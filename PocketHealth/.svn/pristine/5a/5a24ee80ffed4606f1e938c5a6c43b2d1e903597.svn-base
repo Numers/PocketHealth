@@ -1,0 +1,90 @@
+//
+//  OneForOneMessage.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Mantle.h"
+
+
+typedef enum {
+    MessageTypeMe = 0, // 自己发的
+    MessageTypeOther = 1, //别人发得
+    MessageTypeHospital = 2 //医生发的
+} MessageType;
+
+typedef enum {
+    MessageCodeText = 1,//私聊消息
+    MessageCodeGroupText = 2,//群消息
+    MessageCodeAddFriend = 10,//添加好友
+    MessageCodeAcceptFriend = 11,//接受好友请求
+    MessageCodeRemoveFriend = 12,//移除好友
+    //    MessageCodeAddGroupMember = 13,//添加群组成员
+    //    MessageCodeDeleteGroupMember=14,//删除群成员
+    MessageCodeJoinGroup=15 //申请入群消息，
+} MessageCode;
+
+typedef enum {
+    
+    MessageSuccess = 1, //发送或接收成功
+    MessageFailed = 0, //发送或接收失败
+    MessageIsSend = 2 //正在发送
+    
+} MessageState;
+
+typedef enum {
+    
+    MessageRead = 0, // 已读
+    MessageNotRead = 1 //未读
+    
+} MessageReadState;
+
+//typedef enum {
+//
+//    MessageContentText = 0, // 消息是文本内容
+//    MessageContentVoice = 1, //消息是语音
+//    MessageContentImage = 2, //消息是图片
+//    MessageContentRedPacket=4 //消息是红包类型
+//} MessageContentType;
+
+typedef enum {
+    
+    MessageContentText = 0, // 消息是文本内容
+    MessageContentVoice = 1, //消息是语音
+    MessageContentImage = 2, //消息是图片
+    MessageContentRemoveGroupMember = 3,//移除群组成员
+    MessageContentCreateGroup = 4,//创建群
+    MessageContentMergeGroupName = 5,//修改群名称
+    MessageContentAddGroupMember = 6,//添加群组成员
+    MessageContentRedPacket = 8//发红包
+} MessageContentType;
+
+@interface OneForOneMessage : MTLModel<MTLJSONSerializing>
+
+@property (nonatomic) long long memberId;//所属成员
+@property (nonatomic, copy) NSString *icon;
+@property (nonatomic) NSTimeInterval time;  //modify by yangfan 改成dobule
+@property (nonatomic, copy) NSString *content;//文本
+@property (nonatomic, copy) NSString *nickName;//昵称
+
+@property (nonatomic, assign) MessageType type;
+@property (nonatomic, assign) MessageCode code;
+@property (nonatomic, assign) MessageContentType contentType; //消息包含的属性
+@property (nonatomic) MessageState state;
+@property (nonatomic) MessageReadState readState;
+
+//
+
+
+@property (nonatomic, copy) NSDictionary *dict;
+
+
+@property (nonatomic) NSInteger MsgSN; //消息在列表中的序号
+
+-(MessageContentType)messageContentType;
+-(NSString *)fulltThumbnailsPath;
+-(NSString *)fullServerImagePath;
+@end

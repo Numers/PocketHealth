@@ -1,0 +1,49 @@
+//
+//  PNIFoodCategory.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/26.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PNIFoodCategory.h"
+#import "GlobalVar.h"
+
+@implementation PNIFoodCategory
+
++(NSDictionary *)JSONKeyPathsByPropertyKey{
+    return @{
+             @"categroyName" : @"Fctypename" ,
+             @"categroyId" : @"Fctypeid",
+             @"categroyDetail" : @"FoodCaloriesBase"
+             };
+}
++(NSValueTransformer *)categroyDetailJSONTransformer{
+
+    return [NSValueTransformer mtl_JSONArrayTransformerWithModelClass:[CategroyDetail class]];
+}
+
+@end
+
+@implementation CategroyDetail
++(NSDictionary *)JSONKeyPathsByPropertyKey{
+    return @{
+             @"detailName" : @"Fctypename",
+             @"calorie" : @"Fccalories",
+             @"weightUnit" :@"Fcunitweight",
+             @"detailId" :@"Fcid" ,
+             @"weight" : @"Fcweight",
+             @"imageUrl" : @"Fcimg"
+             };
+}
++(NSValueTransformer *)imageUrlJSONTransformer{
+    return [MTLValueTransformer reversibleTransformerWithForwardBlock:^(NSString *str) {
+        NSURL * url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",ServerBaseURL,str]];
+        return url;
+    }
+                                                         reverseBlock:^(NSURL *num) {
+                                                             return num;
+                                                         }];
+}
+
+@end

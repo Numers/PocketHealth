@@ -1,0 +1,516 @@
+//
+//  XGPSocketMsgDistributer.m
+//  AJKGroupChatDemo
+//
+//  Created by YangFan on 14/12/8.
+//  Copyright (c) 2014年 YangFan. All rights reserved.
+//
+
+#import "XGPSocketMsgDistributer.h"
+#import "MsgCode.h"
+#import "OneForOneMessage.h"
+#import "GroupMessage.h"
+#import "Group.h"
+#import "NotificationMessage.h"
+#import "SNotificationMessage.h"
+#import "SGroupMemberDB.h"
+#import "SGroupMessageDB.h"
+#import "SFirendDB.h"
+#import "SOneForOneMessageDB.h"
+#import "SGroupDB.h"
+
+#import "CommonUtil.h"
+#import "PHGroupHttpRequest.h"
+
+
+//#import "XJDChangeUserInfoHelp.h"
+
+//#import "GroupNotificationMessage.h"
+
+
+//static XGPSocketMsgDistributer *globalSocketMsgDistrbuter;
+static CMsgCode * pMsgCode;
+
+static long long myid;
+
+@implementation XGPSocketMsgDistributer
+
+- (instancetype)initWithMyID:(NSString *)userId {
+    self = [super init];
+    if (self) {
+
+        myid=[userId longLongValue];
+        [self pMsgCodeInit];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleChatOrGroupNotification:) name:@"YFCHATGROUPMESSAGENOTIFICATION" object:nil];
+    }
+    return self;
+}
+#pragma mark - pmsgcode init
+
+-(void)pMsgCodeInit{
+    pMsgCode= CMsgCode::GetObject();
+    pMsgCode->AddMsgMap(MessageCodeJoinGroup, handleJoinChatOrGroupInfo);
+    pMsgCode->AddMsgMap(MessageCodeGroupText, handleGroupMessageText);
+    
+    pMsgCode->AddMsgMap(MessageCodeAddFriend, handleAddFriendMessageText);
+    pMsgCode->AddMsgMap(MessageCodeAcceptFriend, handleAcceptFriendMessageText);
+    //群消息之后的分支
+    pMsgCode->AddMsgMap(MessageCodeText, handlePrivateChatContentMessage);
+
+    
+}
+
+
+#pragma mark - handleGroupNotification
+-(void)handleChatOrGroupNotification:(NSNotification *)nofi{
+    NSArray *cDataArray=[nofi object];
+//    NSLog(@"%@",cDataArray);
+    [self performSelectorOnMainThread:@selector(handleNotificationData:) withObject:cDataArray waitUntilDone:NO];
+    
+}
+-(void)handleNotificationData:(NSArray *)cDataArray{
+
+    
+//    NSLog(@"sync : %@",cDataArray);
+    
+    for (NSDictionary *dic  in cDataArray) {
+//        int msgCode=[[dic objectForKey:@"msgtype"]intValue];
+//        int gid=[[dic objectForKey:@"gid"] intValue];
+//        int uid=[[dic objectForKey:@"uid"] longLongValue];
+        //code 分别出是群消息还是 私聊消息
+        
+        MessageCode code = (MessageCode)[[dic objectForKey:@"msgtype"] intValue];
+        
+        NSString *encoded = [dic objectForKey:@"txt"];
+        NSString *decoded = (__bridge_transfer NSString *)CFURLCreateStringByReplacingPercentEscapesUsingEncoding(NULL, (CFStringRef)encoded, CFSTR(""), kCFStringEncodingUTF8);
+        NSLog(@"decodedString %@", decoded);
+
+        NSMutableDictionary *sendDic = [[NSMutableDictionary alloc]initWithDictionary:dic];
+        [sendDic setObject:decoded forKey:@"txt"];
+//        [dic setValue:decoded forKey:@"txt"];
+        //msgCt 分别消息的功能
+        NSLog(@"content is :%@",[dic objectForKey:@"txt"]);
+        (pMsgCode->InvokeMsgFun(code,(__bridge void *)sendDic)) ? NSLog(@"转发已转发"):NSLog(@"转发消息失败或未处理");
+    }
+
+
+}
+
+bool handleJoinChatOrGroupInfo(void* pData)
+{
+    NSLog(@"有一条申请加群消息 或 邀请入群消息");
+    BOOL resultBool ;
+    NSDictionary *bb=(__bridge NSDictionary *)pData;
+    
+    //将消息保存到数据库
+    NSLog(@"%@",bb);
+    //1.字典转换成模型
+    NotificationMessage *notifiMessage = [MTLJSONAdapter modelOfClass:[NotificationMessage class] fromJSONDictionary:bb error:nil];
+    //1.1 添加本地时间到 notifiMessage.sessionDate
+    notifiMessage.sessionDate = [[NSDate date]timeIntervalSince1970];
+//    NSLog(@"%@",notifiMessage);
+    
+    //2.将模型存入数据库
+    SNotificationMessage *notifiMsgDB = [[SNotificationMessage alloc]init];
+    resultBool =  [notifiMsgDB saveNoticationMessage:notifiMessage HostId:myid];
+    
+    if (resultBool) {
+        //3.发送通知 告知UI更新 (如果保存成功)
+        [[NSNotificationCenter defaultCenter]postNotificationName:@"DBTOUIJOINCHATORGROUPINFO" object:notifiMsgDB];
+    }
+    return resultBool;
+}
+#pragma mark 群消息文本 MessageCode（包括语音图片等）
+/**
+ *  处理群消息 包括Text Voice Image RedPacket
+ *
+ *  @param pData 数据字段
+ *
+ *  @return 是否保存成功
+ */
+bool handleGroupMessageText(void * pData){
+    
+    NSLog (@"有一条群 消息 进行处理");
+    BOOL result;
+    NSDictionary *dic = (__bridge NSDictionary *)pData;
+    NSLog (@"%@",dic);
+
+    //将消息进行处理
+    long long touid =[[dic objectForKey:@"touid"]longLongValue] ;
+    long long uid = [[dic objectForKey:@"uid"]longLongValue];
+    
+//    long long  sessionDate = [[dic objectForKey:@"time"]longLongValue];
+    
+    MessageContentType messageCT = (MessageContentType)[[dic objectForKey:@"ct"]intValue];
+    //如果是移除群消息
+    if (messageCT == MessageContentRemoveGroupMember) {
+        NSLog(@"某人被移出群消息");
+        long long deleteid=[[dic objectForKey:@"delid"]longLongValue];
+        int gid = [[dic objectForKey:@"gid"]intValue];
+        //将该用户移除数据库
+        //如果是我的群
+        SGroupDB *sgroupDb=[[SGroupDB alloc]init];
+        
+        if (deleteid==myid) {
+            Group *group = [[Group alloc]init];
+            group.groupId = gid;
+            group.belongMemberId = myid;
+            [sgroupDb deleteGroup:group];
+        }
+        else{
+            //数据库中找到该群 删除其中某个用户
+            Group *tmpGroup = [sgroupDb selectGroupWithGid:gid WithBelongUid:myid];
+            
+            for (int i = 0 ; tmpGroup.groupMember.count - 1; i++) {
+                GroupMember *tmpMember = tmpGroup.groupMember[i];
+                if (tmpMember.memberId == deleteid) {
+                    [tmpGroup.groupMember removeObject:tmpMember];
+                    
+                    //修改数据库
+                    SGroupMemberDB *sgroupMemberDb=[[SGroupMemberDB alloc]init];
+                    [sgroupMemberDb deleteGroupMember:tmpMember];
+                    
+                    NSLog(@"group delete 一个用户记录");
+                    break;
+                }
+            }
+            
+        }
+        
+        //发送通知 告知界面
+        return YES;
+    }
+    
+    
+    if (touid == uid && (messageCT == MessageContentText  || messageCT == MessageContentVoice || messageCT ==MessageContentImage)  ) {
+        //过滤自己的消息
+        NSLog(@"过滤 自己发的普通消息 （文字图片语音）");
+        
+        
+        return NO;
+    }
+    result = YES;
+    NSLog(@"接收到到的非本人消息 处理 或者本人删群成员消息");
+    
+    
+    
+
+
+    
+    
+    //使用群消息模型处理
+    GroupMessage *groupMessage=[[GroupMessage alloc]init];
+    
+    groupMessage =[MTLJSONAdapter modelOfClass:[GroupMessage class] fromJSONDictionary:dic error:nil];
+    groupMessage.type = MessageTypeOther;
+    NSLog(@"get groupMessage is/n %@",groupMessage);
+
+    unsigned gid = groupMessage.belongGroupId;
+    long long messageFromId = groupMessage.memberId;
+    //将groupMessage 存数据库 且插入到对应的group中
+    
+    //已获得群消息 发送通知 更新UI
+    Group *tmpGroup = [Group findGroupFromDataBaseByGid:gid UserId:myid];
+    if (!tmpGroup) { //如果数据库中不存在group 那么重新从服务器同步该群消息 群中包括自己就加入到本地服务器 否则忽略该消息
+        //
+    }else{
+        
+//        tmpGroup.sessionDate = sessionDate;
+        
+        //1. 判断该用户是否在GroupMember 数据库中
+        SGroupMemberDB * sGroupMemberDB = [[SGroupMemberDB alloc]init];
+        GroupMember *groupMember = [sGroupMemberDB selectGroupMemberWithUid:messageFromId WithGid:gid];
+        
+        if (!groupMember) {
+            //1.1如果数据库中没有该用户 那么从Http服务器异步获取
+            [PHGroupHttpRequest requestMemberInfo:messageFromId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+                //更新数据库
+                if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+                    //获取member对象
+                    NSDictionary * memberDic = (NSDictionary *)responseObject;
+                    NSDictionary * resultDic = [memberDic objectForKey:@"Result"];
+                    NSError * error ;
+                    GroupMember * groupMember = [MTLJSONAdapter modelOfClass:[GroupMember class] fromJSONDictionary:resultDic error:&error];
+                    groupMember.groupId = gid;
+                    [sGroupMemberDB saveGroupMember:groupMember];
+                }
+                
+            } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+                //
+            }];
+            //1.2 如果获取到member 对象，那么就保存到数据库 否则直接返回
+            
+            //1.3 添加用户到groupMember
+            [tmpGroup.groupMember addObject:groupMember];
+        }
+        //2.查询身份赋值给groupMessage
+        switch (groupMember.groupMemberType) {
+            case groupOwner:
+            {
+                groupMessage.messageIdentity = MessageIdentityOwner;
+            }
+                break;
+            case groupAdmin:
+            {
+                groupMessage.messageIdentity = MessageIdentityAdmin;
+            }
+                break;
+            default:
+                groupMessage.messageIdentity = MessageIdentityUser;
+                break;
+        }
+        //复制头像
+        groupMessage.icon = groupMember.headImage;
+    }
+    groupMessage.readState=MessageNotRead;
+    groupMessage.contentType = [groupMessage messageContentType];
+    //3.存入数据库
+    SGroupMessageDB *sgmessageDB = [[SGroupMessageDB alloc]init];
+//    if ([groupMessage isValidate]) {
+        [sgmessageDB saveGroupMessage:groupMessage WithContactUid:myid];
+        //寻找到该消息所在的群 ？
+
+//    }
+    
+    
+    //发送通知 更新UI
+    [[NSNotificationCenter defaultCenter]postNotificationName:@"DBTOUIGROUPMESSAGETEXT" object:groupMessage];
+
+    
+//    //将群消息添加到指定群
+//    Group *group=[self findGroupFromGrouoArray:groupMessage.belongGroupId];
+//    group.sessionDate=[[dic objectForKey:@"time"]doubleValue];
+//    if (group!=nil) {
+//        //处理group数据
+//        NSLog(@"group!=nil");
+//        //                            [self insertGroupMessageWithGroup:group GroupMessage:groupMessage Gid:gid Uid:host.memberId];
+//        [self insertGroupMessageWithGroup:group GroupMessage:groupMessage Gid:gid Uid:uid];
+//        
+//    }
+//    else{
+//        
+//        NSLog(@"group 不存在 那么添加group到列表中,再添加groupMessage");
+//        SGroupDB *sgroupdb=[[SGroupDB alloc]init];
+//        Group *tmpG=[sgroupdb selectGroupWithGid:groupMessage.belongGroupId WithBelongUid:host.memberId];
+//        if (tmpG) {
+//            tmpG.isSession=1;
+//            [self insertGroupMessageWithGroup:tmpG GroupMessage:groupMessage Gid:gid Uid:uid];
+//            if (self.chatFriendList) {
+//                [self.chatFriendList insertObject:tmpG atIndex:0];
+//            }
+//            
+//        }
+//        else{
+//            NSLog(@"group在数据库中也没有 说明收到数据但是群未创建");
+//        }
+//    }
+    
+    return result;
+}
+//bool sealPrivateMessage(void *memberData,void *messageData) {
+//
+////    NSDictionary *dicMessageFirst =(__bridge NSDictionary *)sData;
+//    NSDictionary *dicMessage = (__bridge NSDictionary *)messageData;
+//    NSDictionary *dicMemberFirst = (__bridge NSDictionary *)memberData;
+//    
+//    NSDictionary *dicMember = [[dicMemberFirst objectForKey:@"Data"]objectForKey:@"Result"];
+//    //数据封装
+//    OneForOneMessage *message  = [[OneForOneMessage alloc]init];
+//    message.content = [dicMessage objectForKey:@"txt"];
+//    message.time = [[dicMessage valueForKey:@"time"] doubleValue];
+//    message.icon = [dicMember objectForKey:@"Headphoto"];
+//    message.type = MessageTypeOther;
+//    message.code = (MessageCode)[[dicMessage objectForKey:@"msgtype"] intValue];
+//    message.state = MessageSuccess;
+//    message.readState = MessageNotRead;
+//    message.nickName = [dicMember objectForKey:@"Name"];
+//    
+//    
+//    long long theUid  = [[dicMember objectForKey:@"Weiboid"]longLongValue];
+//    message.memberId = theUid;
+//    
+//    SOneForOneMessageDB *msgdb = [[SOneForOneMessageDB alloc] init];
+//    BOOL result = [msgdb saveMessage:message WithUid:theUid  WithContactUid:myid];
+//    
+//    NSLog(@"有一条私聊消息:%@ 发送通知到ui",message.content);
+//    [[NSNotificationCenter defaultCenter]postNotificationName:@"DBTOUIPRIVATEMESSAGETEXT" object:message];
+//    return result;
+//}
+bool handleAddFriendMessageText(void *pData){
+    NSLog(@"处理addfriend 消息");
+    //将这条消息添加到notificationMessage 数据库
+    NSDictionary *dic = (__bridge NSDictionary *)pData;
+//    NSLog (@"%@",dic);
+    
+    //发起人
+    long long uid = [[dic objectForKey:@"uid"]longLongValue];
+    //接收者 --正常情况为自己
+    long long touid = [[dic objectForKey:@"touid"]longLongValue];
+    
+    NotificationMessage *notifiMessage = [[NotificationMessage alloc]init];
+    notifiMessage.memberId = uid;
+    notifiMessage.createTime = [[dic objectForKey:@"time"]doubleValue];
+    notifiMessage.sessionDate = [[NSDate date]timeIntervalSince1970];
+    notifiMessage.messageCode = MessageCodeAddFriend;
+    notifiMessage.content = [dic objectForKey:@"Message"];
+    //先判断是否在部分时间内重复
+    
+    SNotificationMessage * sNotiMsgDb = [[SNotificationMessage alloc]init];
+    if ([sNotiMsgDb isTheNotificationMessageDuplicate:notifiMessage HostId:touid]) {
+        NSDictionary *memberDataDic = [dic objectForKey:@"Data"];
+        //判断member是否在数据库 不在就保存下来
+        SFirendDB *sfrienddb = [[SFirendDB alloc]init];
+        
+        Member * member  = [[Member alloc]init];
+        
+        if (![sfrienddb isExistMemberWithUid:notifiMessage.memberId WithBelongUid:touid]) {
+            
+            member.loginName = [memberDataDic objectForKey:@"UserId"];
+            member.nickName  = [memberDataDic objectForKey:@"NickName"];
+            member.headImage = [memberDataDic objectForKey:@"HeadImg"];
+            member.memberId  = [[memberDataDic objectForKey:@"UserId"]longLongValue];
+//            member.friendType = MemberFriendTypeUser;//暂时写写
+            member.userType  = MemberUserTypeUser;
+            
+//            notifiMessage.member = member;
+            [sfrienddb saveUser:member WithBelongUid:touid];
+            NSLog(@"保存新用户");
+        }else{
+            member = [sfrienddb selectUserWithUid:notifiMessage.memberId WithBelongUid:touid];
+//            notifiMessage.member = member;
+        }
+        notifiMessage.member = member;
+        [sNotiMsgDb saveNoticationMessage:notifiMessage HostId:touid];
+        //构造member对象
+        
+        
+        //发送通知到主界面 更新界面
+        
+        [[NSNotificationCenter defaultCenter]postNotificationName:@"DBTOUIADDFRIENDNOTIFICAIONMESSAGETEXT" object:notifiMessage];
+    }else{
+        NSLog(@"消息在一段时间内重复");
+    }
+    
+
+    return YES;
+    
+    
+    
+    //在数据库中寻找是否有该用户 如果没有那么就获取用户信息 保存到数据ಥ_ಥ Sfirenddb
+}
+bool handleAcceptFriendMessageText(void *pData){
+    NSLog(@"有一条通过好友申请的消息 现在进行处理");
+    NSDictionary *dic = (__bridge NSDictionary *)pData;
+    long long touid = [[dic objectForKey:@"touid"]longLongValue];
+    
+    //自己生成一条消息 存入数据库
+    //数据封装
+    OneForOneMessage *message  = [[OneForOneMessage alloc]init];
+    message.content = @"我已经同意了你的好友请求，我们可以开始聊天了";
+    message.time = [[NSDate date] timeIntervalSince1970];
+    message.memberId = touid;
+    message.type = MessageTypeOther;
+    message.code = MessageCodeText;
+    message.state = MessageSuccess;
+    message.readState = MessageNotRead;
+    
+    //获取用户详情
+    SFirendDB * sfriendDB = [[SFirendDB alloc]init];
+    Member * messageMember = [sfriendDB selectUserWithUid:message.memberId WithBelongUid:touid];
+    
+    message.nickName = messageMember.nickName;
+    message.icon = messageMember.headImage;
+    
+    
+    
+    
+    SOneForOneMessageDB *msgdb = [[SOneForOneMessageDB alloc] init];
+    BOOL result = [msgdb saveMessage:message WithUid:touid  WithContactUid:myid];
+    
+    NSLog(@"有一条私聊消息:%@ 发送通知到ui",message.content);
+    [[NSNotificationCenter defaultCenter]postNotificationName:@"DBTOUIPRIVATEMESSAGETEXT" object:message];
+    //将用户添加到数据库
+    return result;
+}
+//handleAcceptFriendMessageText
+bool handlePrivateChatContentMessage(void *pData){
+    NSLog (@"有一条私聊 消息 进行处理");
+    __block BOOL result;
+    NSDictionary *dic = (__bridge NSDictionary *)pData;
+    NSLog (@"%@",dic);
+    NSString * uidStr =[dic objectForKey:@"uid"];
+    long long uid=[uidStr longLongValue];
+    
+
+    
+     
+    //在数据库中寻找是否有该用户 如果没有那么就获取用户信息 保存到数据ಥ_ಥ Sfirenddb
+    SFirendDB *frienddb = [[SFirendDB alloc] init];
+    __block Member *fromMember = [frienddb selectUserWithUid:uid WithBelongUid:myid];
+    if (fromMember == nil) {
+        //1.发送通知 让视图获取用户信息 然后进行数据库保存
+//        [XJDChangeUserInfoHelp searchMemberFromServerWithMemberId:uidStr done:^(AFHTTPRequestOperation *operation, id responseObject) {
+//            
+//            NSLog(@"%@",responseObject);
+//            NSDictionary *dicUser = (NSDictionary *)responseObject;
+//            
+//            //1.因为member为 nil 所以创建member 对象
+//            fromMember = [[Member alloc]init];
+//            
+//            
+//            //2.填充member 用户信息 (取了部分 需要的在扩展)
+//            NSDictionary *userDic=[[dicUser objectForKey:@"Data"]objectForKey:@"Result"];
+//            fromMember.memberId=[[userDic objectForKey:@"Weiboid"]longLongValue];
+//            fromMember.loginName=[userDic objectForKey:@"Name"];
+//            fromMember.nickName=[userDic objectForKey:@"Nickname"];
+//            fromMember.headImage=[userDic objectForKey:@"Headphoto"];
+//            fromMember.userIntroduce=[userDic objectForKey:@"Title"];
+//
+//            
+//            //3.保存用户到数据库
+//            SFirendDB *sFriendDB=[[SFirendDB alloc]init];
+//            if (![sFriendDB isExistMemberWithUid:fromMember.memberId WithBelongUid:myid]) {
+//                
+//                [sFriendDB saveUser:fromMember WithBelongUid:myid];
+//                //        [[NSNotificationCenter defaultCenter]postNotificationName:KNOTIFIADDGROUPVIEW object:groupMember];
+//            }
+//
+//            //4.消息保存到数据库 且发送通知到UI
+//            result = sealPrivateMessage((__bridge void *)dicUser,(__bridge void *)dic);
+//            
+//            
+//            
+//            
+//            
+//        } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+//            //
+//            NSLog(@"fromMember request error");
+//
+//        }];
+    }else{
+//        result = sealPrivateMessage((__bridge void *)dicUser,(__bridge void *)dic);
+        OneForOneMessage *message  = [[OneForOneMessage alloc]init];
+        message.content = [dic objectForKey:@"txt"];
+        message.time = [[dic valueForKey:@"time"] doubleValue];
+        message.icon = fromMember.headImage;
+        message.type = MessageTypeOther;
+        message.code = (MessageCode)[[dic objectForKey:@"msgtype"] intValue];
+        message.state = MessageSuccess;
+        message.readState = MessageNotRead;
+        message.memberId = uid;
+        message.contentType = [message messageContentType];
+        
+        SOneForOneMessageDB *msgdb = [[SOneForOneMessageDB alloc] init];
+        result = [msgdb saveMessage:message WithUid:fromMember.memberId WithContactUid:myid];
+//        //发送通知到UI
+        
+        NSLog(@"有一条私聊消息:%@ 发送通知到ui",message.content);
+        [[NSNotificationCenter defaultCenter]postNotificationName:@"DBTOUIPRIVATEMESSAGETEXT" object:message];
+    }
+    
+    
+    
+    return result;
+}
+
+@end

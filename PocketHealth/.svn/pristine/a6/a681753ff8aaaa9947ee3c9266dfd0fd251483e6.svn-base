@@ -1,0 +1,88 @@
+/*
+ * proto.h
+ *
+ *  Created on: 2014年5月22日
+ *      Author: xugp
+ */
+
+#pragma once
+
+#define OP_TEST 0x0000
+#define OP_LOGIN 0x0001
+#define OP_LOGIN_RES 0x0002
+#define OP_LOGOUT 0x0003
+#define OP_TALK 0x0004
+// #define OP_AUDIODATA 0x0004  //传输audio数据
+// #define OP_CREATEAUDIO 0x0005 //创建audio源
+// #define OP_CLOSEAUDIO 0x0006  //关闭audio源
+//
+// #define OP_JIONAUDIO 0x0007  //加入audio源
+// #define OP_LEAVEAUDIO 0x0008  //离开audio源
+
+//微信协议,协议体格式为json
+#define OP_SYNC 0x0009
+#define OP_SYNC_RES 0x000A
+#define OP_MESSAGE 0x000B
+#define OP_MESSAGE_RES 0x000C
+#define OP_NOTIFY 0x000D
+
+#pragma pack(push,1)
+/*
+typedef struct __head_t{
+	DWORD opid;
+	DWORD datalen;
+}head_t;
+*/
+
+typedef unsigned long long UID;
+
+typedef struct __sync_t{
+	UID uid;
+	char token[16];
+	char synckey[14];
+}sync_t;
+
+
+typedef struct __sync_res_t{
+	char newsynckey[14];
+	short zipflag; //0表示未压缩，1表示gzip压缩
+	int length;
+	//后续变长数据
+}sync_res_t;
+
+
+
+typedef struct __sendmsg_t{
+	UID uid;
+	char token[16];
+	UID touid;
+	int msgsn;
+	int msgtype;
+	int msglength;
+	//后续msg内容
+}sendmsg_t;
+
+typedef struct __sendmsg_res_t{
+	int retcode;
+	int msgtype;
+	int msgsn;
+	int length;
+	//后续返回内容
+}sendmsg_res_t;
+
+
+//typedef struct __notify_t{
+//	UID uid;
+//	int length;
+//	//后续notify字符串
+//}notify_t;
+
+typedef struct __common_res_t{
+	int retcode;
+}common_res_t;
+
+typedef struct __join_leave_audio_t{
+	int srcid;
+}join_leave_audio_t;
+
+#pragma pack(pop)

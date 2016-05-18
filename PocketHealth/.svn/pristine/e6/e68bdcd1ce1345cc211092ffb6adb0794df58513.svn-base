@@ -1,0 +1,30 @@
+//
+//  PHCircleWithLabel.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/23.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@class CircleView;
+
+@interface PHCircleWithLabel : UIView
+{
+    CircleView * backCircleView;
+    CircleView * frontCircleView;
+    UIColor * strokeColor;
+    UILabel * labelCentre;
+    
+}
+-(void)inilizedView;
+
+-(void)setBackCircleView;
+
+
+-(void)setBackCircleViewStrokeColor:(UIColor *)color;
+
+-(void)setStrokeColor:(UIColor *)color;
+
+-(void)setProgress:(CGFloat)progress WithAnimate:(BOOL)animate;
+@end

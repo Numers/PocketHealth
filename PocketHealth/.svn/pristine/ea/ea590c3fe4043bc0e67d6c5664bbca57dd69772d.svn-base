@@ -1,0 +1,160 @@
+//
+//  PHSleepInsideViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/24.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHSleepInsideViewController.h"
+#define RGB(r,g,b) [UIColor colorWithRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:1.0]
+#import "SSleepingDB.h"
+#import "Sleeping.h"
+#import "PHAppStartManager.h"
+#import "CommonUtil.h"
+#import "GlobalVar.h"
+
+@interface PHSleepInsideViewController ()
+{
+    NSMutableArray * sleepCircelDataValueArray;
+    NSMutableArray * sleepCircelColorArray;
+    NSInteger sleepDuraion;
+}
+@end
+
+@implementation PHSleepInsideViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //获取数据库的睡眠详情
+    [self getSleepingDetailArray];
+    [self initSleepCircle];
+    
+    if (sleepDuraion>100) {
+        self.labelSleepDetail.text = @"睡眠棒棒哒~";
+    }else{
+        self.labelSleepDetail.text = @"赶快去睡觉！！！！！";
+    }
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+-(void)getSleepingDetailArray{
+    SSleepingDB * sleepDb = [[SSleepingDB alloc]init];
+    NSMutableArray * sleepDetailArray = [sleepDb selectSleepDetailArrayWithMemberId:[[PHAppStartManager defaultManager] userHost].memberId WithBelongSleepDate:[CommonUtil TimeStrYYYYMMDDWithInterval:[[NSDate date] timeIntervalSince1970]]];
+    
+    sleepCircelDataValueArray = [[NSMutableArray alloc]init];
+    sleepCircelColorArray = [[NSMutableArray alloc]init];
+    
+    for (Sleeping * sleeplist in sleepDetailArray) {
+        float startTime = [self transformTimeTofloat:sleeplist.lastSleepTime];
+        float endTime = [self transformTimeTofloat:sleeplist.wakeupSleepTime];
+        sleepDuraion += sleeplist.sleepDuration;
+        if (sleeplist.lastSleepTime < [CommonUtil TimeIntervalZeroWithInterval:[[NSDate date] timeIntervalSince1970]]) {
+            startTime -= kTimeStart;
+            if (startTime<0) {
+                startTime = 0;
+            }
+        }
+        else{
+           
+            startTime += (24 - kTimeStart);
+        }
+        if (sleeplist.wakeupSleepTime < [CommonUtil TimeIntervalZeroWithInterval:[[NSDate date] timeIntervalSince1970]]) {
+            endTime -= kTimeStart;
+
+        }else{
+            
+            endTime += (24 - kTimeStart);
+            if (endTime>(KTimeEnd+(24 - kTimeStart))) {
+                endTime = (KTimeEnd+(24 - kTimeStart));
+            }
+        }
+        NSLog(@" start %f  end %f",startTime , endTime);
+        
+        [sleepCircelDataValueArray addObject:[NSNumber numberWithFloat:startTime]];
+        [sleepCircelColorArray addObject:RGB(84, 98, 119)];
+        [sleepCircelDataValueArray addObject:[NSNumber numberWithFloat:endTime]];
+        [sleepCircelColorArray addObject:RGB(89, 196, 242)];
+    }
+
+    if (sleepCircelDataValueArray.count==0) {
+        [sleepCircelDataValueArray addObject:[NSNumber numberWithFloat:0.f]];
+        [sleepCircelColorArray addObject:[UIColor clearColor]];
+        [sleepCircelDataValueArray addObject:[NSNumber numberWithFloat:KTimeEnd+24-kTimeStart]];
+        [sleepCircelColorArray addObject:RGB(89, 196, 242)];
+    }else{
+        NSNumber *startTime = sleepCircelDataValueArray.firstObject;
+        if (startTime.floatValue >0.0f) {
+            [sleepCircelDataValueArray insertObject:[NSNumber numberWithFloat:0] atIndex:0];
+            [sleepCircelColorArray insertObject:[UIColor redColor] atIndex:0];
+        }else{
+            [sleepCircelColorArray removeObjectAtIndex:0];
+            [sleepCircelColorArray insertObject:[UIColor clearColor] atIndex:0];
+            
+        }
+        
+        NSNumber  *endTime = sleepCircelDataValueArray.lastObject;
+        if (endTime.integerValue<=(KTimeEnd+24-kTimeStart)) {
+            [sleepCircelDataValueArray addObject:[NSNumber numberWithFloat:KTimeEnd+24-kTimeStart]];
+            [sleepCircelColorArray addObject:RGB(84, 98, 119)];
+        }else{
+            [sleepCircelDataValueArray addObject:[NSNumber numberWithFloat:KTimeEnd+24-kTimeStart]];
+            [sleepCircelColorArray addObject:RGB(89, 196, 242)];
+        }
+    }
+    
+    
+    
+}
+-(float)transformTimeTofloat:(double)time{
+    float hhmm = 0;
+    NSDate *date = [[NSDate alloc] initWithTimeIntervalSince1970:time];
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"HH:mm"];
+    
+    NSString *timeStr=[formatter stringFromDate:date];
+    NSRange range = [timeStr rangeOfString:@":"];
+    if (range.location!=NSNotFound) {
+        NSString * rightMM  = [timeStr substringFromIndex:range.location+1];
+        float mm = rightMM.floatValue/60;
+        NSString * leftHH = [timeStr substringWithRange:NSMakeRange(0, range.location)];
+        float hh = leftHH.floatValue;
+        hhmm = mm + hh;
+    }
+    return hhmm;
+}
+-(void)initSleepCircle{
+//    _sleepCircle.rangeValues = @[ @1.342f,                  @9.2f,                @10.0f,               @16.0f              ];
+
+    if (sleepCircelColorArray==nil) {
+        sleepCircelColorArray = [[NSMutableArray alloc]init];
+    }
+    if (sleepCircelDataValueArray==nil) {
+        sleepCircelDataValueArray = [[NSMutableArray alloc]init];
+    }
+    _sleepCircle.rangeValues = sleepCircelDataValueArray;
+    _sleepCircle.rangeColors = sleepCircelColorArray;
+//    _sleepCircle.rangeValues = @[@0,@10,@11,@14];
+//    _sleepCircle.rangeColors = @[RGB(84, 98, 119),RGB(232, 231, 33),RGB(232, 111, 33),RGB(232, 231, 33)];
+//    _sleepCircle.rangeColors = @[ RGB(232, 111, 33),    RGB(232, 231, 33),  RGB(27, 202, 33),   RGB(231, 32, 43)    ];
+//    _sleepCircle.rangeLabels = @[ @"VERY LOW",          @"LOW",             @"OK",              @"OVER FILL"        ];
+    _sleepCircle.scaleDivisionsWidth = 0.008;
+    _sleepCircle.scaleSubdivisionsWidth = 0.006;
+    _sleepCircle.rangeLabelsWidth = 0.04;
+    _sleepCircle.showRangeLabels = YES;
+    
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

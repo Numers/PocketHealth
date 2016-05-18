@@ -1,0 +1,173 @@
+//
+//  SMonitorExerciseDB.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/13.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "SMonitorExerciseDB.h"
+
+#define kExerciseDB @"ExerciseDB" 
+
+@implementation SMonitorExerciseDB
+
+#pragma mark - 初始化
+- (id) init {
+    self = [super init];
+    if (self) {
+        //========== 首先查看有没有建立message的数据库，如果未建立，则建立数据库=========
+        _db = [SDBManager defaultDBManager].dataBase;
+    }
+    return self;
+}
+
+- (void) createDataBase{
+    FMResultSet * set = [_db executeQuery:[NSString stringWithFormat:@"select count(*) from sqlite_master where type ='table' and name = '%@'",kExerciseDB]];
+    
+    [set next];
+    
+    NSInteger count = [set intForColumnIndex:0];
+    
+    BOOL existTable = !!count;
+    
+    if (existTable) {
+        // TODO:是否更新数据库
+        NSLog(@"%@数据库已经存在",kExerciseDB);
+    } else {
+        // TODO: 插入新的数据库
+        NSString * sql = @"CREATE TABLE ExerciseDB (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, belongMemberId BIGINT,steps INTEGER,createTime TIMESTAMP,belongDateTime VARCHAR(50),isUpload INTEGER)";
+        BOOL res = [_db executeUpdate:sql];
+        if (!res) {
+            NSLog(@"%@数据库创建失败",kExerciseDB);
+        } else {
+            NSLog(@"%@数据库创建成功",kExerciseDB);
+        }
+    }
+}
+- (BOOL) saveMonitorExercise:(Exercise *) exercise{
+    NSMutableString * query = [NSMutableString stringWithFormat:@"INSERT INTO ExerciseDB"];
+    NSMutableString * keys = [NSMutableString stringWithFormat:@" ("];
+    NSMutableString * values = [NSMutableString stringWithFormat:@" ( "];
+    NSMutableArray * arguments = [NSMutableArray arrayWithCapacity:10];
+    
+
+        [keys appendString:@"belongMemberId,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lld",exercise.belongMemberId]];
+
+    
+
+        [keys appendString:@"steps,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%ld",(long)exercise.steps]];
+
+    
+
+        [keys appendString:@"createTime,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%f",exercise.createTime]];
+
+    //不一定有归属日期
+        [keys appendString:@"belongDateTime,"];
+        [values appendString:@"?,"];
+        [arguments addObject:exercise.belongDateTime];
+    
+    [keys appendFormat:@"isUpload,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%ld",(long)exercise.isUpload]];
+     
+    [keys appendString:@")"];
+    [values appendString:@")"];
+    [query appendFormat:@" %@ VALUES%@",
+     [keys stringByReplacingOccurrencesOfString:@",)" withString:@")"],
+     [values stringByReplacingOccurrencesOfString:@",)" withString:@")"]];
+    
+    NSLog(@"%@",query);
+    
+    bool isSaveOk = [_db executeUpdate:query withArgumentsInArray:arguments];
+    isSaveOk?NSLog(@"ExerciseDB 插入数据OK"):NSLog(@"ExerciseDB save error");
+    return isSaveOk;
+
+}
+-(BOOL)mergeMonitorExercise : (Exercise *)exercise{
+    NSString * query = @"UPDATE ExerciseDB SET";
+    NSMutableString * temp = [NSMutableString stringWithCapacity:100];
+    // xxx = xxx;
+
+    
+    if (exercise.createTime) {
+        [temp appendFormat:@" createTime = '%lf',",exercise.createTime];
+    }
+    
+    if (exercise.isUpload) {
+        [temp appendFormat:@" isUpload = '%ld',",(long)exercise.isUpload];
+    }
+    if (exercise.belongDateTime) {
+        [temp appendFormat:@" belongDateTime = '%@',",exercise.belongDateTime];
+    }
+    
+    [temp appendString:@")"];
+    query = [query stringByAppendingFormat:@"%@ WHERE belongmemberid = '%lld'",[temp stringByReplacingOccurrencesOfString:@",)" withString:@""],exercise.belongMemberId];
+    NSLog(@"%@",query);
+    BOOL flag = [_db executeUpdate:query];
+    flag ?NSLog(@"exercise 修改一条数据 成功"): NSLog(@"exercise 修改一条数据 失败");
+    return flag;
+
+}
+-(NSArray *) selectMointorExerciseWithBelongId:(long long)hostId{
+    Exercise * exercise = nil;
+    NSString * query = [NSString stringWithFormat:@"SELECT * FROM ExerciseDB WHERE belongMemberId = '%lld'",hostId];
+    FMResultSet * rs = [_db executeQuery:query];
+    NSMutableArray * array = [NSMutableArray arrayWithCapacity:[rs columnCount]];
+    while ([rs next]) {
+        exercise = [[Exercise alloc]init];
+        exercise.belongDateTime = [rs stringForColumn:@"belongDateTime"];
+        exercise.belongMemberId = [rs longLongIntForColumn:@"belongMemberId"];
+        exercise.steps = [rs intForColumn:@"steps"];
+        exercise.createTime = [rs doubleForColumn:@"createTime"];
+        exercise.isUpload = [rs intForColumn:@"isUpload"] ;
+
+        [array addObject:exercise];
+    }
+    [rs close];
+    return array;
+}
+-(NSArray *) selectUnUploadExerciseWithBelongId:(long long)hostId{
+    Exercise * exercise = nil;
+    NSString * query = [NSString stringWithFormat:@"SELECT * FROM ExerciseDB WHERE belongMemberId = '%lld' and isUpload = 0",hostId];
+    FMResultSet * rs = [_db executeQuery:query];
+    NSMutableArray * array = [NSMutableArray arrayWithCapacity:[rs columnCount]];
+    while ([rs next]) {
+        exercise = [[Exercise alloc]init];
+        exercise.belongDateTime = [rs stringForColumn:@"belongDateTime"];
+        exercise.belongMemberId = [rs longLongIntForColumn:@"belongMemberId"];
+        exercise.steps = [rs intForColumn:@"steps"];
+        exercise.createTime = [rs doubleForColumn:@"createTime"];
+        exercise.isUpload = [rs intForColumn:@"isUpload"] ;
+        
+        [array addObject:exercise];
+    }
+    [rs close];
+    return array;
+}
+-(BOOL)mergeUnUploadExerciseToUploaded:(long long)hostId{
+    NSString * query = [NSString stringWithFormat:@"UPDATE ExerciseDB SET isUpload = 1 WHERE belongMemberId = '%lld' and isUpload = 0",hostId];
+    NSInteger result = [_db executeUpdate:query];
+    NSLog(@"更新了 ExerciseDB  %ld条数据",(long)result);
+    return result;
+}
+-(BOOL)isExistTheSameBelongDate:(NSString *)belongDateTime WithMemberId:(long long)hostId{
+    NSString * query =[NSString stringWithFormat:@"SELECT * FROM ExerciseDB WHERE belongMemberId = '%lld' and belongDateTime = '%@'",hostId,belongDateTime];
+    FMResultSet * rs = [_db executeQuery:query];
+    BOOL isExist =  rs.next;
+    [rs close];
+    return isExist;
+}
+-(BOOL)mergeStepsWithBelongId:(long long )hostId WithSteps:(NSInteger )steps WithBelongDateTime:(NSString *)belongDateTime{
+    NSString * query = [NSString stringWithFormat:@"UPDATE ExerciseDB SET steps = '%ld' WHERE belongMemberId = '%lld' and belongDateTime = '%@'",(long)steps,hostId,belongDateTime];
+    NSInteger result = [_db executeUpdate:query];
+    NSLog(@"更新了 ExerciseDB  %ld条数据",(long)result);
+    return result;
+}
+@end

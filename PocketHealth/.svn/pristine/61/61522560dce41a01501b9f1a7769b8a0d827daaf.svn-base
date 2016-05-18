@@ -1,0 +1,77 @@
+//
+//  PHUserCenterHeadViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHUserCenterHeadViewController.h"
+
+@interface PHUserCenterHeadViewController ()
+{
+    Member *host;
+}
+@property (strong, nonatomic) IBOutlet UIButton *friendListBtn;
+@property (strong, nonatomic) IBOutlet UIButton *hopitalListBtn;
+@property (strong, nonatomic) IBOutlet UIButton *headLogoBtn;
+@property (strong, nonatomic) IBOutlet UILabel *lblFriendCount;
+@property (strong, nonatomic) IBOutlet UILabel *lblDoctorCount;
+@property (strong, nonatomic) IBOutlet UILabel *lblOrganizationCount;
+
+@end
+
+@implementation PHUserCenterHeadViewController
+
+//-(id)initWithHost:(Member *)inHost{
+//    self= [super init];
+//    if (self) {
+//        host = inHost;
+//    }
+//    return self;
+//}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    [self requestFriendCount];
+    [self requestDoctorCount];
+    [self requestOrganizationCount];
+}
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (IBAction)friendListBtnClick:(id)sender {
+    if ([self.delegate respondsToSelector:@selector(userCenterfriendBtnClick)]) {
+        [self.delegate userCenterfriendBtnClick];
+    }
+}
+- (IBAction)hospitalListBtnClick:(id)sender {
+    if ([self.delegate respondsToSelector:@selector(hospitalfriendBtnClick)]) {
+        [self.delegate hospitalfriendBtnClick];
+    }
+}
+
+
+- (IBAction)userHeadBtnClick:(id)sender {
+    if ([self.delegate respondsToSelector:@selector(userHeadBtnClick)]) {
+        [self.delegate userHeadBtnClick];
+    }
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

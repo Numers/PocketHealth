@@ -1,0 +1,27 @@
+PODS:
+  - BaiduPushSDK (1.1.0)
+  - FMDB (2.3):
+    - FMDB/standard (= 2.3)
+  - FMDB/common (2.3)
+  - FMDB/standard (2.3):
+    - FMDB/common
+  - Mantle (1.4.1):
+    - Mantle/extobjc (= 1.4.1)
+  - Mantle/extobjc (1.4.1)
+  - SDWebImage (3.6):
+    - SDWebImage/Core (= 3.6)
+  - SDWebImage/Core (3.6)
+
+DEPENDENCIES:
+  - BaiduPushSDK (~> 1.1.0)
+  - FMDB (~> 2.3)
+  - Mantle (~> 1.4.1)
+  - SDWebImage (~> 3.6)
+
+SPEC CHECKSUMS:
+  BaiduPushSDK: 9f36deef2c2bea14f2e83b3415f98dfb228b7aa3
+  FMDB: 8b6b69b1164e3007d7f4b3b3719e667602ec247e
+  Mantle: 0714cdb2b8559d9e6c2410d6a8529e3307bff189
+  SDWebImage: 7eb273e54ca8a2e506ad9bd5e80c35b2a4d7c95e
+
+COCOAPODS: 0.35.0

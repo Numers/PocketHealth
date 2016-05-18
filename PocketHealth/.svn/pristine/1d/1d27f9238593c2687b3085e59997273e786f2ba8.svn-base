@@ -1,0 +1,139 @@
+//
+//  PHGroupPersonalInfoViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/15.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupPersonalInfoViewController.h"
+//界面类
+#import "CalculateViewFrame.h"
+#import "PHGroupPersonalInfoCellHeaderViewController.h"
+
+
+static NSString *identifierPersonalInfoCell = @"PHPersonalInfoCellTableViewCell";
+
+@interface PHGroupPersonalInfoViewController ()<UITableViewDataSource,UITableViewDelegate>
+@property (strong, nonatomic) IBOutlet UITableView *personalMainTableView;
+
+@end
+
+@implementation PHGroupPersonalInfoViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //界面构造简介
+    [self.navigationController setNavigationBarHidden:NO];
+    [self.navigationController.navigationBar setTranslucent:NO];
+    
+    //0.初始化tableview
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    self.personalMainTableView = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+    self.personalMainTableView.delegate = self;
+    self.personalMainTableView.dataSource = self;
+    self.personalMainTableView.sectionHeaderHeight = 0;
+    [self.personalMainTableView registerNib:[UINib nibWithNibName:@"PHUserCenterTableViewCell" bundle:nil] forCellReuseIdentifier:identifierPersonalInfoCell];
+    // Do any additional setup after loading the view from its nib.
+    PHGroupPersonalInfoCellHeaderViewController * phGPHeadViewVC =[[PHGroupPersonalInfoCellHeaderViewController alloc]init];
+    self.personalMainTableView.tableHeaderView = phGPHeadViewVC.view;
+    [self.view addSubview:self.personalMainTableView];
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    if (section == 0) {
+        return 0;
+    }else{
+        return 2;
+    }
+}
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 2;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ((indexPath.section == 0) && (indexPath.row == 0) ) {
+        return 0.0f;
+    }else{
+        return 48.0f;
+    }
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifierPersonalInfoCell];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierPersonalInfoCell];
+    }
+    cell.textLabel.text= @"ff   ";
+    
+    return cell;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 1:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    
+                }
+                    break;
+                case 1:
+                {
+                }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 2:
+            switch (indexPath.row) {
+                case 0:
+                    
+                    break;
+                case 1:
+                    
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+//-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
+//    return 350;
+//}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

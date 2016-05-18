@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="6250" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" rowHeight="101" id="KGk-i7-Jjw" customClass="PHDetailsIntroductionTableViewCell">
+            <rect key="frame" x="0.0" y="0.0" width="320" height="101"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
+                <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="就看得见阿弗拉科技为爱哦记录卡从积分卡 积分可爱姐覅健康的减肥了卡机佛i积分卡里就覅房间爱可分开了就啊看见俺困了就阿娇罚款了积分卡拉胶al耳机啊 激发了积分安静l" lineBreakMode="characterWrap" numberOfLines="5" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qhe-3l-i9G">
+                        <rect key="frame" x="65" y="7" width="247" height="86"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="86" id="d0c-Q1-Wat"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="简介" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3vk-1M-RSV">
+                        <rect key="frame" x="15" y="39" width="42" height="21"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="21" id="NWD-3O-cDl"/>
+                            <constraint firstAttribute="width" constant="42" id="sFd-na-IRB"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="qhe-3l-i9G" firstAttribute="leading" secondItem="3vk-1M-RSV" secondAttribute="trailing" constant="8" id="5Lp-Yt-wg2"/>
+                    <constraint firstItem="3vk-1M-RSV" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" constant="7" id="Hqz-Yc-ZKQ"/>
+                    <constraint firstItem="qhe-3l-i9G" firstAttribute="trailing" secondItem="H2p-sc-9uM" secondAttribute="trailingMargin" id="Vma-ql-I4p"/>
+                    <constraint firstAttribute="centerY" secondItem="3vk-1M-RSV" secondAttribute="centerY" id="Z1T-Tn-fuK"/>
+                    <constraint firstAttribute="centerY" secondItem="qhe-3l-i9G" secondAttribute="centerY" id="kVV-96-8Hy"/>
+                </constraints>
+            </tableViewCellContentView>
+            <connections>
+                <outlet property="lblIntroduction" destination="qhe-3l-i9G" id="qCp-qF-C1U"/>
+                <outlet property="lblTextLabel" destination="3vk-1M-RSV" id="Ik1-yA-pX9"/>
+            </connections>
+            <point key="canvasLocation" x="437" y="336.5"/>
+        </tableViewCell>
+    </objects>
+</document>

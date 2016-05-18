@@ -1,0 +1,38 @@
+//
+//  PHPhysicalExamBookRecoderViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-16.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHPhysicalExamBookRecoderViewController.h"
+#import "CalculateViewFrame.h"
+#import "PHPhysicalExamBookManager.h"
+
+@interface PHPhysicalExamBookRecoderViewController ()
+@property(nonatomic, strong) UIWebView *webView;
+@end
+
+@implementation PHPhysicalExamBookRecoderViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _webView = [[UIWebView alloc] initWithFrame:frame];
+        [self.view addSubview:_webView];
+    [_webView loadRequest:[[PHPhysicalExamBookManager defaultManager] physicalExamBookRecoderURLRequest]];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationItem setTitle:@"预约记录"];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+@end

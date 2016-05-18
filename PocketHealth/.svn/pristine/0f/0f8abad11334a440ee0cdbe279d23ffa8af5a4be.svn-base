@@ -1,0 +1,164 @@
+//
+//  PHUserCenterHeadViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHUserCenterHeadViewController.h"
+#import "PHAppStartManager.h"
+#import "PHGetMemberInfoManager.h"
+#import "UIImageView+WebCache.h"
+#import "GlobalVar.h"
+
+@interface PHUserCenterHeadViewController ()
+{
+    Member *host;
+}
+@property (strong, nonatomic)  UIButton *friendListBtn;
+@property (strong, nonatomic)  UIButton *doctorListBtn;
+@property (strong, nonatomic)  UIButton *organizationBtn;
+@property (strong, nonatomic) IBOutlet UIButton *headLogoBtn;
+@property (strong, nonatomic)  UILabel *lblFriendCount;
+@property (strong, nonatomic)  UILabel *lblDoctorCount;
+@property (strong, nonatomic)  UILabel *lblOrganizationCount;
+@property (strong, nonatomic) IBOutlet UIImageView *imgHeadImage;
+
+@end
+
+@implementation PHUserCenterHeadViewController
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    [self updateView];
+    host = [[PHAppStartManager defaultManager] userHost];
+    _userNameLabel.text = host.nickName;
+    [self getUserInfo];
+}
+
+-(void)updateView
+{
+    _friendListBtn = [[UIButton alloc] initWithFrame:CGRectMake(0, 108, [UIScreen mainScreen].bounds.size.width / 3, 52)];
+    [_friendListBtn addTarget:self action:@selector(friendListBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:_friendListBtn];
+    
+    _lblFriendCount = [[UILabel alloc] initWithFrame:CGRectMake(0, 113, [UIScreen mainScreen].bounds.size.width / 3, 21)];
+    [_lblFriendCount setTextAlignment:NSTextAlignmentCenter];
+    [_lblFriendCount setTextColor:[UIColor whiteColor]];
+    [self.view addSubview:_lblFriendCount];
+    
+    UILabel *friendMark = [[UILabel alloc] initWithFrame:CGRectMake(0, 139, [UIScreen mainScreen].bounds.size.width / 3, 21)];
+    [friendMark setTextAlignment:NSTextAlignmentCenter];
+    [friendMark setTextColor:[UIColor whiteColor]];
+    [friendMark setText:@"好友"];
+    [self.view addSubview:friendMark];
+    
+    _doctorListBtn = [[UIButton alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width / 3, 108, [UIScreen mainScreen].bounds.size.width / 3, 52)];
+    [_doctorListBtn addTarget:self action:@selector(doctorListBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:_doctorListBtn];
+    
+    _lblDoctorCount = [[UILabel alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width / 3, 113, [UIScreen mainScreen].bounds.size.width / 3, 21)];
+    [_lblDoctorCount setTextAlignment:NSTextAlignmentCenter];
+    [_lblDoctorCount setTextColor:[UIColor whiteColor]];
+    [self.view addSubview:_lblDoctorCount];
+    
+    UILabel *doctorMark = [[UILabel alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width / 3, 139, [UIScreen mainScreen].bounds.size.width / 3, 21)];
+    [doctorMark setTextAlignment:NSTextAlignmentCenter];
+    [doctorMark setTextColor:[UIColor whiteColor]];
+    [doctorMark setText:@"医生"];
+    [self.view addSubview:doctorMark];
+    
+    _organizationBtn = [[UIButton alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width / 3 * 2, 108, [UIScreen mainScreen].bounds.size.width / 3, 52)];
+    [_organizationBtn addTarget:self action:@selector(clickOrganizationBtn:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:_organizationBtn];
+    
+    _lblOrganizationCount = [[UILabel alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width / 3 * 2, 113, [UIScreen mainScreen].bounds.size.width / 3, 21)];
+    [_lblOrganizationCount setTextAlignment:NSTextAlignmentCenter];
+    [_lblOrganizationCount setTextColor:[UIColor whiteColor]];
+    [self.view addSubview:_lblOrganizationCount];
+    
+    UILabel *organizationMark = [[UILabel alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width / 3 * 2, 139, [UIScreen mainScreen].bounds.size.width / 3, 21)];
+    [organizationMark setTextAlignment:NSTextAlignmentCenter];
+    [organizationMark setTextColor:[UIColor whiteColor]];
+    [organizationMark setText:@"医院"];
+    [self.view addSubview:organizationMark];
+}
+
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)updateUIViewContent
+{
+//    host = [[PHAppStartManager defaultManager] userHost];
+//    [_imgHeadImage setImageWithURL:[NSURL URLWithString:host.headImage] placeholderImage:[UIImage imageNamed:DefaultUserHeadImage]];
+    [self getUserInfo];
+}
+
+-(void)getUserInfo
+{
+    [[PHGetMemberInfoManager defaultManager] requestMemberInfo:host.memberId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+            NSError *error = nil;
+            Member *hostMember = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+            if (!error) {
+                [[PHAppStartManager defaultManager] setHostMember:hostMember];
+                _lblFriendCount.text = [NSString stringWithFormat:@"%ld",(long)hostMember.friendCount];
+                _lblDoctorCount.text = [NSString stringWithFormat:@"%ld",(long)hostMember.doctorCount];
+                _lblOrganizationCount.text = [NSString stringWithFormat:@"%ld",(long)hostMember.organizaitonCount];
+                _userNameLabel.text = hostMember.nickName;
+                [_imgHeadImage sd_setImageWithURL:[NSURL URLWithString:hostMember.headImage] placeholderImage:[UIImage imageNamed:DefaultUserHeadImage]];
+            }
+        }else{
+            
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+- (void)friendListBtnClick:(id)sender {
+    if ([self.delegate respondsToSelector:@selector(friendBtnClick)]) {
+        [self.delegate friendBtnClick];
+    }
+}
+
+- (void)doctorListBtnClick:(id)sender {
+    if ([self.delegate respondsToSelector:@selector(doctorBtnClick)]) {
+        [self.delegate doctorBtnClick];
+    }
+}
+
+- (void)clickOrganizationBtn:(id)sender {
+    if ([self.delegate respondsToSelector:@selector(organizaitonBtnClick)]) {
+        [self.delegate organizaitonBtnClick];
+    }
+}
+
+
+- (IBAction)userHeadBtnClick:(id)sender {
+    if ([self.delegate respondsToSelector:@selector(userHeadBtnClick)]) {
+        [self.delegate userHeadBtnClick];
+    }
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

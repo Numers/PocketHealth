@@ -1,0 +1,62 @@
+//
+//  Member.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Mantle.h"
+@class OneForOneMessage,PrivateChatViewViewController;
+@interface Member : MTLModel<MTLJSONSerializing>
+typedef enum {
+    
+    MemberFriendTypeUser = 1, //普通用户
+    MemberFriendTypeHospital = 2, //医院号
+    MemberFriendTypeAll = 0 //无类型标记
+} MemberFriendType;
+
+typedef enum{
+    MemberUserTypeUser = 1,
+    MemberUserTypeAdmin = 2,
+    MemberUserTypeDoctor = 3
+}MemberUserType;
+
+
+typedef enum {
+    sexWoman=2,
+    sexMan=1
+}sexCode;
+
+//聊天相关枚举
+
+@property(nonatomic) long long memberId;
+@property(copy, nonatomic) NSString *loginName;
+@property(copy, nonatomic) NSString *passWord;
+@property(copy, nonatomic) NSString *nickName;
+@property(retain, nonatomic) NSString *headImage;
+
+@property(nonatomic) NSInteger userHeight;
+@property(nonatomic) NSInteger userWeight;
+@property(nonatomic) sexCode userSex; //1 男 2女 0未知
+@property(nonatomic) NSInteger userState;
+@property(nonatomic) NSTimeInterval userRegister;
+
+//@property (nonatomic) float token;
+//聊天特殊参数
+@property(nonatomic) NSInteger isSession;
+@property(nonatomic) NSTimeInterval sessionDate;
+@property (nonatomic , copy) OneForOneMessage * lastestOneMessage;
+@property (nonatomic) NSInteger messageNotReadCount;
+@property(retain, nonatomic) NSMutableArray *messageArr;
+
+@property (nonatomic, strong) PrivateChatViewViewController *chatVC;
+
+@property (nonatomic) MemberUserType userType ; //1用户 2医院号
+@property (nonatomic) MemberFriendType friendType ; //1用户 2医院号
+
+-(Member *)initlizedWithDictionary:(NSDictionary *)dic;
+-(NSString *)getHttpKey;
+-(NSDictionary *)dictionaryInfo;
+@end

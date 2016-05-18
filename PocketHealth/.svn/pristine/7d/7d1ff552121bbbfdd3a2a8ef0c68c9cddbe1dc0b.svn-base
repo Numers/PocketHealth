@@ -1,0 +1,50 @@
+//
+//  SGroupMemberDB.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "SGroupMemberDB.h"
+#define kGroupMemberTableName @"SGroupMember"
+
+@implementation SGroupMemberDB
+- (id) init {
+    self = [super init];
+    if (self) {
+        //========== 首先查看有没有建立message的数据库，如果未建立，则建立数据库=========
+        _db = [SDBManager defaultDBManager].dataBase;
+        
+    }
+    return self;
+}
+
+/**
+ * @brief 创建数据库
+ */
+- (void) createDataBase
+{
+    FMResultSet * set = [_db executeQuery:[NSString stringWithFormat:@"select count(*) from sqlite_master where type ='table' and name = '%@'",kGroupMemberTableName]];
+    
+    [set next];
+    
+    NSInteger count = [set intForColumnIndex:0];
+    
+    BOOL existTable = !!count;
+    
+    if (existTable) {
+        // TODO:是否更新数据库
+        NSLog(@"%@数据库已经存在",kGroupMemberTableName);
+    } else {
+        // TODO: 插入新的数据库
+        NSString * sql =@"CREATE TABLE SGroupMember (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, memberid BIGINT,belongmemberid BIGINT,nickname VARCHAR(50),loginname VARCHAR(50), headimage VARCHAR(100), isSession INTEGER,sessiondate TIMESTAMP,userheight INTEGER,userweight INTEGER,usersex INTEGER,userstate INTEGER,userregister TIMESTAMP ,usertype INTEGER,groupid INTERGER,groupmembertype INTERGER)";
+        BOOL res = [_db executeUpdate:sql];
+        if (!res) {
+            NSLog(@"%@数据库创建失败",kGroupMemberTableName);
+        } else {
+            NSLog(@"%@数据库创建成功",kGroupMemberTableName);
+        }
+    }
+}
+@end

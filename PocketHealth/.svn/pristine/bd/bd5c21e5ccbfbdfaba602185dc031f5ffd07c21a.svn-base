@@ -1,0 +1,142 @@
+//
+//  PHVerificatePhoneViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-21.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHVerificatePhoneViewController.h"
+#import "PHUpdateUserInfoManager.h"
+#import "CommonUtil.h"
+#import "PHAppStartManager.h"
+#import "PHPasswordSettingViewController.h"
+
+@interface PHVerificatePhoneViewController ()<UITextFieldDelegate,PHPasswordSettingViewDelegate>
+{
+    NSTimer *timer;
+    NSInteger seconds;
+}
+@property (strong, nonatomic) IBOutlet UITextField *txtMobile;
+@property (strong, nonatomic) IBOutlet UITextField *txtValidateCode;
+@property (strong, nonatomic) IBOutlet UIButton *btnValidateCode;
+@end
+
+@implementation PHVerificatePhoneViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationItem setTitle:@"找回密码"];
+}
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    return [textField resignFirstResponder];
+}
+
+-(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    if ([_txtMobile isFirstResponder]) {
+        [_txtMobile resignFirstResponder];
+    }
+    
+    if ([_txtValidateCode isFirstResponder]) {
+        [_txtValidateCode resignFirstResponder];
+    }
+}
+
+- (IBAction)clickValidateCodeBtn:(id)sender {
+    if ([CommonUtil isValidateMobilePhone:_txtMobile.text]) {
+        [self sendPhoneCodeWithTel:_txtMobile.text];
+    }else{
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"错误" message:@"手机号不合法" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+    }
+}
+
+-(void)sendPhoneCodeWithTel:(NSString *)tel
+{
+    [[PHUpdateUserInfoManager defaultManager] sendPhoneCodeWithTel:tel CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            seconds = 60;
+            timer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(validateBtnSetting) userInfo:nil repeats:YES];
+            [timer fire];
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+-(void)verificatePhone:(NSString *)phone WithVerificateCode:(NSString *)code
+{
+    [[PHUpdateUserInfoManager defaultManager] verificateUserWithPhone:phone WithVerificateCode:code WithUserId:0  CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+            NSError *error = nil;
+            Member *host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+            if (!error) {
+                [[PHAppStartManager defaultManager] setHostMember:host];
+                PHPasswordSettingViewController *phPasswordSettingVC = [[PHPasswordSettingViewController alloc] init];
+                phPasswordSettingVC.delegate = self;
+                [self.navigationController pushViewController:phPasswordSettingVC animated:YES];
+            }
+        }else{
+            
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+-(void)validateBtnSetting
+{
+    --seconds;
+    if (seconds>0) {
+        [_btnValidateCode setTitle:[NSString stringWithFormat:@"还剩(%ld)秒",seconds] forState:UIControlStateNormal];
+        [_btnValidateCode setEnabled:NO];
+    }else{
+        [timer invalidate];
+        timer = nil;
+        [_btnValidateCode setTitle:@"获取验证码" forState:UIControlStateNormal];
+        [_btnValidateCode setEnabled:YES];
+    }
+}
+
+- (IBAction)clickSetPasswordBtn:(id)sender {
+    UIAlertView *alert = nil;
+    if ((_txtMobile.text == nil) || (_txtMobile.text.length == 0)) {
+        alert = [[UIAlertView alloc] initWithTitle:@"错误" message:@"手机号不能为空" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return;
+    }
+    
+    if ((_txtValidateCode.text == nil) || (_txtValidateCode.text.length == 0)) {
+        alert = [[UIAlertView alloc] initWithTitle:@"错误" message:@"验证码不能为空" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return;
+    }
+    
+    [self verificatePhone:_txtMobile.text WithVerificateCode:_txtValidateCode.text];
+}
+
+-(void)popView{
+    [self.navigationController popViewControllerAnimated:NO];
+}
+
+@end

@@ -1,0 +1,83 @@
+//
+//  PHPhysicalExamBookRecoderViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-16.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHPhysicalExamBookRecoderViewController.h"
+#import "CalculateViewFrame.h"
+#import "PHPhysicalExamBookManager.h"
+#import "PHMyPhysicalExamBookRecoderViewController.h"
+
+@interface PHPhysicalExamBookRecoderViewController ()<UIWebViewDelegate>
+{
+    UIActivityIndicatorView *activityView;
+}
+
+@property(nonatomic, strong) UIWebView *webView;
+@end
+
+@implementation PHPhysicalExamBookRecoderViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _webView = [[UIWebView alloc] initWithFrame:frame];
+    _webView.delegate = self;
+    [self.view addSubview:_webView];
+    
+    activityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+    [activityView setOpaque:NO];
+    [activityView setCenter:_webView.center];
+    [_webView addSubview:activityView];
+}
+
+-(void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    [_webView loadRequest:[[PHPhysicalExamBookManager defaultManager] physicalExamBookRecoderURLRequest]];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationItem setTitle:@"体检预约"];
+    
+    UIBarButtonItem *rightItem = [[UIBarButtonItem alloc] initWithTitle:@"我的预约" style:UIBarButtonItemStyleDone target:self action:@selector(checkMyBook)];
+    [self.navigationItem setRightBarButtonItem:rightItem];
+}
+
+-(void)checkMyBook
+{
+    PHMyPhysicalExamBookRecoderViewController *phMyPhysicalExamBookRecoderVC = [[PHMyPhysicalExamBookRecoderViewController alloc] init];
+    [self.navigationController pushViewController:phMyPhysicalExamBookRecoderVC animated:YES];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma -mark  WebViewDelegate
+- (void)webViewDidStartLoad:(UIWebView *)webView
+{
+    [activityView setOpaque:YES];
+    [activityView startAnimating];
+}
+
+- (void)webViewDidFinishLoad:(UIWebView *)webView
+{
+    [activityView setOpaque:NO];
+    [activityView stopAnimating];
+}
+
+- (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error
+{
+    [activityView setOpaque:NO];
+    [activityView stopAnimating];
+}
+
+@end

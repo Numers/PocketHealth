@@ -1,0 +1,24 @@
+//
+//  PHFrontView.h
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@protocol PHFrontViewDelegate <NSObject>
+-(void)acceptCall;
+-(void)rejectCall;
+-(void)cancelCall;
+@end
+@interface PHFrontView : UIView
+{
+    UIButton *btnAccept;
+    UIButton *btnReject;
+    UIButton *btnCancel;
+}
+@property(nonatomic, assign) id<PHFrontViewDelegate> delegate;
+
+-(void)setState:(BOOL)isCommingCall;
+@end

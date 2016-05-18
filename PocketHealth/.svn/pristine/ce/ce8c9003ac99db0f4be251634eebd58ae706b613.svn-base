@@ -1,0 +1,310 @@
+//
+//  GroupChatGroupMemberListTableViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/21.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "GroupChatGroupMemberListTableViewController.h"
+
+//数据累
+#import "Group.h"
+#import "SGroupDB.h"
+#import "PHGroupHttpRequest.h"
+#import "GroupMember.h"
+
+#import "CommonUtil.h"
+#import "SGroupMemberDB.h"
+#import "PHAppStartManager.h"
+#import "UIImageView+WebCache.h"
+//界面子类
+#import "PHGroupPersonalInfoViewController.h"
+#import "CustomDefultTableViewCell.h"
+@interface GroupChatGroupMemberListTableViewController ()<PHGroupPersonalInfoViewControllerDelegate>
+{
+    Group * group;
+//    NSMutableArray * groupMemberArray;
+    Member * host;
+    
+    NSMutableArray * groupAdminArray;
+    NSMutableArray * groupOwnerArray;
+    NSMutableArray * groupUserArray;
+}
+@end
+
+static NSString * indenrifierGroupMemberList = @"indenrifierGroupMemberList";
+@implementation GroupChatGroupMemberListTableViewController
+
+-(id)initWithGroup:(Group *)g{
+    self = [super init];
+    if (self) {
+        //
+        group = g;
+    }
+    return self;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    
+    //请求服务期 更新群信息
+    [self requestServerAboutGroupInfo];
+    host = [[PHAppStartManager defaultManager]userHost];
+    [self.tableView registerNib:[UINib nibWithNibName:@"CustomDefultTableViewCell" bundle:nil] forCellReuseIdentifier:indenrifierGroupMemberList];
+    // Uncomment the following line to preserve selection between presentations.
+    // self.clearsSelectionOnViewWillAppear = NO;
+    
+    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
+    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    //初始化好友数组
+    [self initGroupMemberListArray];
+    [self.tableView reloadData];
+}
+#pragma mark - initGroupMemberListArray
+-(void)initGroupMemberListArray{
+//    if (groupMemberArray == nil) {
+//        groupMemberArray = [[NSMutableArray alloc]init];
+//    }
+//    groupMemberArray = group.groupMember;
+    //用户类型分层
+    [self filterGroupMember];
+    
+    
+}
+#pragma mark - 分类群组数据
+-(void)filterGroupMember{
+    NSPredicate *predicateUser=[NSPredicate predicateWithFormat:@"SELF.groupMemberType == %u",groupUser];
+    if (!groupUserArray) {
+        groupUserArray=[[NSMutableArray alloc]initWithArray:[group.groupMember filteredArrayUsingPredicate:predicateUser]];
+    }
+    else{
+        groupUserArray=[NSMutableArray arrayWithArray:[group.groupMember filteredArrayUsingPredicate:predicateUser]];
+    }
+    
+    NSPredicate *predicateAdmin=[NSPredicate predicateWithFormat:@"SELF.groupMemberType == %u",groupAdmin];
+    if (!groupAdminArray) {
+        groupAdminArray=[[NSMutableArray alloc]initWithArray:[group.groupMember filteredArrayUsingPredicate:predicateAdmin]];
+    }else{
+        groupAdminArray=[NSMutableArray arrayWithArray:[group.groupMember filteredArrayUsingPredicate:predicateAdmin]];
+    }
+    
+    NSPredicate *predicateOwner=[NSPredicate predicateWithFormat:@"SELF.groupMemberType == %u",groupOwner];
+    if (!groupOwnerArray) {
+        groupOwnerArray=[[NSMutableArray alloc]initWithArray:[group.groupMember filteredArrayUsingPredicate:predicateOwner]];
+    }else{
+        groupOwnerArray=[NSMutableArray arrayWithArray:[group.groupMember filteredArrayUsingPredicate:predicateOwner]];
+    }
+}
+#pragma mark -  请求服务i起
+-(void)requestServerAboutGroupInfo{
+    
+//    SGroupMemberDB *groupMemberdb = [[SGroupMemberDB alloc] init];
+    [PHGroupHttpRequest requestAllGroupUsersWithGid:group.groupId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            NSDictionary * dic = (NSDictionary *)responseObject;
+            [PHGroupHttpRequest mergeGroupAndGroupMemberDBWithDic:dic WithBeforeGroup:group WithMemberID:host.memberId];
+            
+        }
+        
+        
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+}
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    // Return the number of sections.
+    
+    return 3;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    // Return the number of rows in the section.
+    switch (section) {
+        case 0:
+        {
+            return groupOwnerArray.count;
+        }
+            break;
+        case 1:{
+            return groupAdminArray.count;
+        }
+            break;
+        case 2:{
+            return groupUserArray.count;
+        }
+            break;
+        default:
+            return 0;
+            break;
+    }
+
+}
+
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+
+    CustomDefultTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:indenrifierGroupMemberList];
+    if (!cell) {
+        cell = [[CustomDefultTableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:indenrifierGroupMemberList];
+    }
+    // Configure the cell...
+    GroupMember *gmember ;
+    switch (indexPath.section) {
+        case 0:{
+            if (groupOwnerArray.count > 0) {
+                gmember = groupOwnerArray[indexPath.row];
+            }
+            
+        }
+            break;
+        case 1:{
+            if (groupAdminArray.count > 0) {
+                gmember = groupAdminArray[indexPath.row];
+            }
+            
+        }
+            break;
+        case 2:{
+            if (groupUserArray.count > 0) {
+                gmember = groupUserArray[indexPath.row];
+            }
+        }
+            break;
+        default:{
+           
+        }
+            break;
+    }
+    if (gmember) {
+        cell.cunstomLabel.text = gmember.nickName;
+        [cell.customImageView sd_setImageWithURL:[NSURL URLWithString:gmember.headImage]];
+    }
+    
+    
+    return cell;
+}
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return 60;
+}
+#pragma mark - section标题
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
+    switch (section) {
+        case 0:
+        {
+            return @"群主";
+        }
+            break;
+        case 1:{
+            return @"管理员";
+        }
+        default:{
+            return @"用户";
+        }
+            break;
+    }
+}
+#pragma mark - 点击
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    GroupMember * gmember;
+    switch (indexPath.section) {
+        case 0:
+        {
+            gmember = groupOwnerArray[indexPath.row];
+            
+        }
+            break;
+        case 1:{
+            gmember = groupAdminArray[indexPath.row];
+        }
+            break;
+        case 2:{
+            gmember = groupUserArray[indexPath.row];
+        }
+            break;
+        default:{
+            
+        }
+            break;
+    }
+    GroupMember * groupHost = nil;
+    for(GroupMember *gMember in group.groupMember)
+    {
+        if (gMember.memberId == host.memberId) {
+            groupHost = gMember;
+            break;
+        }
+    }
+    for(GroupMember *gsendMember in group.groupMember)
+    {
+        if (gsendMember.memberId == gmember.memberId) {
+            gmember = gsendMember;
+            break;
+        }
+    }
+    PHGroupPersonalInfoViewController * groupPersonalVC = [[PHGroupPersonalInfoViewController alloc]initWithGroupMember:gmember WithMyGroupHost:groupHost];
+    groupPersonalVC.delegate = self;
+    [self.navigationController pushViewController:groupPersonalVC animated:YES];
+}
+
+#pragma mark - 委托方法 删除选定用户
+-(void)deleteSelectedMember:(GroupMember *)selectMember{
+    [group.groupMember removeObject:selectMember];
+    
+}
+/*
+// Override to support conditional editing of the table view.
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the specified item to be editable.
+    return YES;
+}
+*/
+
+/*
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        // Delete the row from the data source
+        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
+        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+    }   
+}
+*/
+
+/*
+// Override to support rearranging the table view.
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath {
+}
+*/
+
+/*
+// Override to support conditional rearranging of the table view.
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the item to be re-orderable.
+    return YES;
+}
+*/
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

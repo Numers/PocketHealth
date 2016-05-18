@@ -1,0 +1,25 @@
+//
+//  PHCityDuplicateViewController.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/21.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@class Organization;
+@protocol InputPhysicalExamDelegate <NSObject>
+@required
+-(void)popViewWithOrganization:(Organization *)organizaiton;
+
+@end
+
+@interface PHCityDuplicateViewController : UIViewController
+
+
+
+@property(nonatomic, assign) id<InputPhysicalExamDelegate> delegate;
+-(id)initWithCityName:(NSString *)cityLocation;
+
+@end

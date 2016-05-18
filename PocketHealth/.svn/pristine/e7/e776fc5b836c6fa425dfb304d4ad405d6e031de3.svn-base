@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="6250" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
+        <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" rowHeight="69" id="KGk-i7-Jjw" customClass="PHUserCenterTableViewCell">
+            <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
+                <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="usercenter-questionnaire" translatesAutoresizingMaskIntoConstraints="NO" id="7nz-tx-Ap8">
+                        <rect key="frame" x="18" y="10" width="24" height="24"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="24" id="5Cc-0W-SOQ"/>
+                            <constraint firstAttribute="width" secondItem="7nz-tx-Ap8" secondAttribute="height" multiplier="1:1" id="823-Y9-mGu"/>
+                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="24" id="M8s-Jk-0dV"/>
+                            <constraint firstAttribute="height" constant="24" id="iON-h6-kNF"/>
+                        </constraints>
+                    </imageView>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="我的体检" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ymb-Ye-Yus">
+                        <rect key="frame" x="50" y="11" width="98" height="21"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="98" id="MjK-b3-jUt"/>
+                            <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="21" id="YeA-hE-RJh"/>
+                            <constraint firstAttribute="height" constant="21" id="lCZ-8E-VeU"/>
+                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="98" id="oFt-Cg-62I"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="boldSystem" pointSize="16"/>
+                        <color key="textColor" red="0.1333333333" green="0.1333333333" blue="0.1333333333" alpha="1" colorSpace="calibratedRGB"/>
+                        <color key="highlightedColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                        <color key="shadowColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                        <size key="shadowOffset" width="0.0" height="0.0"/>
+                    </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="记录每天健康数据情况" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UHW-Wu-zh3">
+                        <rect key="frame" x="134" y="13" width="145" height="17"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="145" id="dWi-Se-o8Z"/>
+                            <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="10" id="vqD-W0-MQ8"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                        <color key="textColor" red="0.5607843137254902" green="0.5607843137254902" blue="0.5607843137254902" alpha="1" colorSpace="calibratedRGB"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                </subviews>
+                <constraints>
+                    <constraint firstAttribute="centerY" secondItem="7nz-tx-Ap8" secondAttribute="centerY" id="Kfc-8b-G4U"/>
+                    <constraint firstAttribute="centerY" secondItem="ymb-Ye-Yus" secondAttribute="centerY" id="QWb-Wj-WNi"/>
+                    <constraint firstItem="7nz-tx-Ap8" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" constant="10" id="aQx-10-MDG"/>
+                    <constraint firstItem="ymb-Ye-Yus" firstAttribute="leading" secondItem="7nz-tx-Ap8" secondAttribute="trailing" constant="8" id="bco-F2-tJA"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="UHW-Wu-zh3" secondAttribute="trailing" id="duc-gV-bZx"/>
+                    <constraint firstAttribute="centerY" secondItem="UHW-Wu-zh3" secondAttribute="centerY" id="jNx-Mv-2HK"/>
+                </constraints>
+            </tableViewCellContentView>
+            <connections>
+                <outlet property="imgHeadView" destination="7nz-tx-Ap8" id="Wg7-Bo-OZw"/>
+                <outlet property="lblDetailTitle" destination="UHW-Wu-zh3" id="vwJ-AI-tL7"/>
+                <outlet property="lblTitle" destination="ymb-Ye-Yus" id="LVF-hp-1ZE"/>
+            </connections>
+            <point key="canvasLocation" x="195" y="101"/>
+        </tableViewCell>
+    </objects>
+    <resources>
+        <image name="usercenter-questionnaire" width="24" height="24"/>
+    </resources>
+</document>

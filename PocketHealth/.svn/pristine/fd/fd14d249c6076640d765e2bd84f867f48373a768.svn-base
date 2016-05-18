@@ -1,0 +1,34 @@
+//
+//  PHRegisterViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHRegisterViewController.h"
+
+@interface PHRegisterViewController ()
+
+@end
+
+@implementation PHRegisterViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationController setNavigationBarHidden:NO];
+    [self.navigationController.navigationBar setTranslucent:NO];
+}
+
+@end

@@ -1,0 +1,59 @@
+//
+//  PHInterestingGroupViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-19.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHInterestingGroupViewController.h"
+
+@interface PHInterestingGroupViewController ()<UITableViewDelegate,UITableViewDataSource>
+{
+    NSMutableArray *interestingGroupList;
+}
+@property(nonatomic, strong) UITableView *tableView;
+@end
+
+@implementation PHInterestingGroupViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - tableview delegate and datasoucre
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return 6;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 66.0f;
+}
+
+-(NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+    return @"机构群组";
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return nil;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+@end

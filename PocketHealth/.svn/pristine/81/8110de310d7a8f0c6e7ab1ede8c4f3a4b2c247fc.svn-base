@@ -1,0 +1,417 @@
+//
+//  MessageCell.m
+//  15-QQ聊天布局
+//
+//  Created by Liu Feng on 13-12-3.
+//  Copyright (c) 2013年 Liu Feng. All rights reserved.
+//
+
+#import "MessageCell.h"
+#import "OneForOneMessage.h"
+#import "MessageFrame.h"
+#import "UIImageView+WebCache.h"
+
+#import "SOneForOneMessageDB.h"
+#import "MJPhoto.h"
+#import "MJPhotoBrowser.h"
+#import "CommonUtil.h"
+#import "SJAvatarBrowser.h"
+@interface MessageCell ()
+{
+    UIButton     *_timeBtn;
+    UIImageView *_iconView;
+    UIButton    *_contentBtn;
+    
+    UIButton   *_iconViewBtn;
+}
+
+@end
+
+@implementation MessageCell
+
+- (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
+{
+    self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
+    if (self) {
+//#warning 必须先设置为clearColor，否则tableView的背景会被遮住
+        self.backgroundColor = [UIColor clearColor];
+        
+        // 1、创建时间按钮
+        _timeBtn = [[UIButton alloc] init];
+        [_timeBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+        _timeBtn.titleLabel.font = kTimeFont;
+        _timeBtn.enabled = NO;
+        [_timeBtn setBackgroundImage:[UIImage imageNamed:@"chat_timeline_bg.png"] forState:UIControlStateNormal];
+        [self.contentView addSubview:_timeBtn];
+        
+        // 2、创建头像
+        _iconView = [[UIImageView alloc] init];
+        [self.contentView addSubview:_iconView];
+        //2.1 头像按钮
+        _iconViewBtn = [[UIButton alloc] init];
+        [self.contentView addSubview:_iconViewBtn];
+        // 3、创建内容
+        _contentBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_contentBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+
+        //创建语音红点 红点用按钮来绘制
+        _voiceNotReadRedPointView=[[UIImageView alloc]initWithImage:[UIImage imageNamed:@"group_redPoint"]];
+        [self.contentView addSubview:_voiceNotReadRedPointView];
+        _voiceNotReadRedPointView.hidden=YES;
+        
+        _contentBtn.titleLabel.font = kContentFont;
+        _contentBtn.titleLabel.numberOfLines = 0;
+        [self.contentView addSubview:_contentBtn];
+        
+        //4、 创建菊花
+        _juhua = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+        [self.contentView addSubview:_juhua];
+        //失败图片
+        _failedImg=[[UIImageView alloc]initWithImage:[UIImage imageNamed:@"MessageListSendFail"]];
+        [self.contentView addSubview:_failedImg];
+        _failedImg.hidden=YES;
+    }
+    return self;
+}
+
+-(void)setIndex:(NSInteger)value{
+    _index = value;
+    _contentBtn.tag = _index;
+    _iconViewBtn.tag = _index;
+}
+
+
+-(void)setDelegate:(id)value{
+    _delegate = value;
+    
+    if(_delegate && _didTouch)
+        [_contentBtn addTarget:_delegate action:_didTouch forControlEvents:UIControlEventTouchUpInside];
+}
+
+-(void)setDidTouch:(SEL)value{
+    _didTouch = value;
+    
+    if(_delegate && _didTouch)
+        [_contentBtn addTarget:_delegate action:_didTouch forControlEvents:UIControlEventTouchUpInside];
+}
+-(void)setDidTouchIcon:(SEL)didTouchIcon
+{
+    _didTouchIcon = didTouchIcon;
+    if (_delegate && _didTouchIcon) {
+        [_iconViewBtn addTarget:_delegate action:_didTouchIcon forControlEvents:UIControlEventTouchUpInside];
+    }
+}
+-(void)showImage
+{
+    
+    NSString *fullImagePath = [_messageFrame.message fullServerImagePath];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:fullImagePath]];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                UIImageView *imageView = nil;
+                if (imageData != nil) {
+                    imageView = [[UIImageView alloc] initWithImage:[UIImage imageWithData:imageData]];
+                    
+                }else
+                {
+                    imageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"defult_head.png"]];
+                }
+                if (imageView.image) {
+                    [SJAvatarBrowser showImage:imageView];
+                }
+            });
+        }
+    });
+}
+//-(void)showImage
+//{
+//    NSString *fullImagePath = [_messageFrame.message fullServerImagePath];
+//    SOneForOneMessageDB *msgdb = [[SOneForOneMessageDB alloc] init];
+//    NSMutableArray *messageList = [msgdb selectMessageWithUid:_messageFrame.message.memberId WithContactUid:_messageFrame.hostMemberId];
+//    NSMutableArray *imageUrlList = [self imageUrlListWithAllMessage:messageList];
+//    if (imageUrlList.count > 0) {
+//        NSMutableArray *photos = [NSMutableArray arrayWithCapacity:imageUrlList.count];
+//        for (NSString *url in imageUrlList) {
+//            // 替换为中等尺寸图片
+//            MJPhoto *photo = [[MJPhoto alloc] init];
+//            photo.url = [NSURL URLWithString:url]; // 图片路径
+//            photo.srcImageView = nil; // 来源于哪个UIImageView
+//            [photos addObject:photo];
+//        }
+//        
+//        // 2.显示相册
+//        MJPhotoBrowser *browser = [[MJPhotoBrowser alloc] init];
+//        browser.currentPhotoIndex = [self indexOfMessageUrl:fullImagePath inImageUrlList:imageUrlList]; // 弹出相册时显示的第一张图片是？
+//        browser.photos = photos; // 设置所有的图片
+//        [browser show];
+//    }
+//}
+-(void)showRedPacket{
+    //push 红包页面 返回到哪里？
+    NSLog(@"redpacket click");
+}
+-(NSMutableArray *)imageUrlListWithAllMessage:(NSMutableArray *)messageList
+{
+    NSMutableArray *imageList = [[NSMutableArray alloc] init];
+    if (messageList != nil) {
+        for (OneForOneMessage *message in messageList) {
+            MessageContentType contentType = [message messageContentType];
+            if (contentType == MessageContentImage) {
+                NSString *fullPath = [message fullServerImagePath];
+                [imageList addObject:fullPath];
+            }
+        }
+    }
+    
+    return imageList;
+}
+
+-(NSUInteger)indexOfMessageUrl:(NSString *)messageUrl inImageUrlList:(NSMutableArray *)imageUrlList
+{
+    NSUInteger i = 0;
+    if ((imageUrlList != nil) && (messageUrl != nil)) {
+        for (i = 0; i<imageUrlList.count; i++) {
+            NSString *url = [imageUrlList objectAtIndex:i];
+            if ([messageUrl isEqualToString:url]) {
+                break;
+            }
+        }
+    }
+    if (i == imageUrlList.count) {
+        i=0;
+    }
+    return i;
+}
+
+- (void)setMessageFrame:(MessageFrame *)messageFrame{
+    
+    _messageFrame = messageFrame;
+    OneForOneMessage *message = _messageFrame.message;
+    
+    NSString *timeStr = [CommonUtil TimeStrWithInterval:message.time];
+    // 1、设置时间
+    [_timeBtn setTitle:timeStr forState:UIControlStateNormal];
+
+    _timeBtn.frame = _messageFrame.timeF;
+    
+    // 2、设置头像
+    _iconView.image=nil;
+    [_iconView sd_setImageWithURL:[NSURL URLWithString:message.icon] placeholderImage:[UIImage imageNamed:@"defult_head.png"]];
+    _iconView.frame = _messageFrame.iconF;
+    [_iconView.layer setCornerRadius:4];
+    _iconView.layer.masksToBounds = YES;
+    _iconViewBtn.frame = _messageFrame.iconF;
+    
+    // 3、设置内容
+    UIImage *normal , *focused;
+    if (message.type == MessageTypeMe) {
+        
+        normal = [UIImage imageNamed:@"chatto_bg_normal"];
+        normal = [normal stretchableImageWithLeftCapWidth:normal.size.width * 0.5 topCapHeight:normal.size.height * 0.7];
+//        focused = [UIImage imageNamed:@"chatto_bg_focused.png"];
+//        focused = [focused stretchableImageWithLeftCapWidth:focused.size.width * 0.5 topCapHeight:focused.size.height * 0.7];
+    }else{
+        
+        normal = [UIImage imageNamed:@"chatfrom_bg_normal"];
+        normal = [normal stretchableImageWithLeftCapWidth:normal.size.width * 0.5 topCapHeight:normal.size.height * 0.7];
+//        focused = [UIImage imageNamed:@"chatfrom_bg_focused.png"];
+//        focused = [focused stretchableImageWithLeftCapWidth:focused.size.width * 0.5 topCapHeight:focused.size.height * 0.7];
+        
+    }
+    [_contentBtn setBackgroundImage:normal forState:UIControlStateNormal];
+    [_contentBtn setBackgroundImage:focused forState:UIControlStateHighlighted];
+    _contentBtn.frame = _messageFrame.contentF;
+    
+    if (message.code == MessageCodeText) {
+        CGRect juhuaFrame;
+        CGRect messageFailedImageFrame;
+//        MessageContentType type = [message messageContentType];
+        MessageContentType type = message.contentType;
+        switch (type) {
+            case MessageContentText:
+            {
+                //[_contentBtn setTitle:message.content forState:UIControlStateNormal];
+                CGRect frame;
+                if (message.type == MessageTypeMe) {
+                    frame = CGRectMake(14,10,CGRectGetWidth(_messageFrame.messageLabel.frame),CGRectGetHeight(_messageFrame.messageLabel.frame));
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x-25,_messageFrame.contentF.origin.y+_messageFrame.contentF.size.height/2-9,18,18);
+                    messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x-20,_messageFrame.contentF.origin.y+_messageFrame.contentF.size.height/2-9,18,18);
+                }else{
+                    frame = CGRectMake(24,10,CGRectGetWidth(_messageFrame.messageLabel.frame),CGRectGetHeight(_messageFrame.messageLabel.frame));
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width+25,_messageFrame.contentF.origin.y+_messageFrame.contentF.size.height/2-9,18,18);
+                    messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width,_messageFrame.contentF.origin.y+_messageFrame.contentF.size.height/2-9,18,18);
+                }
+                _messageFrame.messageLabel.frame = frame;
+//                [CustomMethod drawImage:_messageFrame.messageLabel];
+                [_contentBtn addSubview:_messageFrame.messageLabel];
+                
+
+            }
+                break;
+            case MessageContentVoice:{
+                int timelength = 0;
+                NSArray *array = [message.content componentsSeparatedByString:@".amr|"];
+                if ((array != nil) || (array.count >= 2)) {
+                    timelength = [[array lastObject] intValue];
+                }
+                
+                UIImageView* iv = [[UIImageView alloc] init];
+                if (message.type == MessageTypeMe) {
+                    iv.image =  [UIImage imageNamed:@"VoiceNodePlaying_right@2x.png"];
+                }
+                else{
+                    iv.image =  [UIImage imageNamed:@"VoiceNodePlaying_left@2x.png"];
+                }
+//                iv.image =  [UIImage imageNamed:@"VoiceNodePlaying@2x.png"];
+                
+                if (message.readState!=MessageRead) {
+                    _voiceNotReadRedPointView.hidden=NO;
+                }else{
+                    _voiceNotReadRedPointView.hidden=YES; //不显示
+                }
+                
+                UILabel* p = [[UILabel alloc] init];
+                p.text = [NSString stringWithFormat:@"%d''",timelength];
+                p.backgroundColor = [UIColor clearColor];
+                p.textColor = [UIColor grayColor];
+                p.font = [UIFont systemFontOfSize:11];
+                
+                if(message.type == MessageTypeMe){
+                    //红点扩展
+                    _voiceNotReadRedPointView.frame=CGRectMake(_messageFrame.contentF.origin.x+10,_messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9 , 10, 10);
+                    
+                    iv.frame = CGRectMake(_messageFrame.contentF.size.width-45, 10, 19, 19);
+                    p.frame = CGRectMake(_messageFrame.contentF.origin.x-50, _messageFrame.contentF.origin.y+10, 50, 15);
+                    [p setTextAlignment:NSTextAlignmentRight];
+                    
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+10, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                    
+                    messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x-35, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                    
+                }
+                else{
+                    //红点扩展
+                    _voiceNotReadRedPointView.frame=CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width+20, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9,10,10);
+                    
+                    
+                    iv.frame = CGRectMake(25, 10, 19, 19);
+                    p.frame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width+3, _messageFrame.contentF.origin.y+10, 50, 15);
+                    p.textAlignment = NSTextAlignmentLeft;
+                    
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width-10, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                    
+                    messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width+20, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                }
+                [self.contentView addSubview:p];
+                [_contentBtn addSubview:iv];
+
+            }
+                break;
+            case MessageContentImage:{
+                NSString *thumbnailsPath = [message fulltThumbnailsPath];
+                if (thumbnailsPath != nil) {
+                    UIButton *imageBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+                    [imageBtn addTarget:self action:@selector(showImage) forControlEvents:UIControlEventTouchUpInside];
+                    if (message.type == MessageTypeMe) {
+//                        imageBtn.frame = CGRectMake(9, 2, _messageFrame.contentF.size.width-28, _messageFrame.contentF.size.height-14);
+                        imageBtn.frame = CGRectMake(2, 2, _messageFrame.contentF.size.width-10, _messageFrame.contentF.size.height-4);
+                        juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width/2-15, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                        messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x-20, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                    }else{
+//                        imageBtn.frame = CGRectMake(19, 2, _messageFrame.contentF.size.width-28, _messageFrame.contentF.size.height-14);
+                        imageBtn.frame = CGRectMake(8, 2, _messageFrame.contentF.size.width-10, _messageFrame.contentF.size.height-4);
+                        juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width/2+15, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                        messageFailedImageFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                    }
+                    [imageBtn.layer setMasksToBounds:YES];
+                    [imageBtn.layer setCornerRadius:5.0]; //设置矩形四个圆角半径
+//                    [imageBtn.layer setBorderWidth:1.0]; //边框宽度
+                    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                        @autoreleasepool {
+                            //Data processing
+                            NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:thumbnailsPath]];
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                //Update Interface
+                                if (imageData != nil) {
+                                    [imageBtn setImage:[UIImage imageWithData:imageData scale:0.1f] forState:UIControlStateNormal];
+                                }else
+                                {
+                                    [imageBtn setImage:[UIImage imageNamed:@"newFriend@2x.png"] forState:UIControlStateNormal];
+                                }
+                            });
+                        }
+                    });
+                    [_contentBtn addSubview:imageBtn];
+                }
+
+            }
+                break;
+            case MessageContentRedPacket:{
+                UIButton *redPacketBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+                [redPacketBtn addTarget:self action:@selector(showRedPacket) forControlEvents:UIControlEventTouchUpInside];
+                if (message.type == MessageTypeMe) {
+                    redPacketBtn.frame = CGRectMake(9, 2, _messageFrame.contentF.size.width-28, _messageFrame.contentF.size.height-14);
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width/2-15, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                }else{
+                    redPacketBtn.frame = CGRectMake(19, 2, _messageFrame.contentF.size.width-28, _messageFrame.contentF.size.height-14);
+                    juhuaFrame = CGRectMake(_messageFrame.contentF.origin.x+_messageFrame.contentF.size.width/2+15, _messageFrame.contentF.origin.y + _messageFrame.contentF.size.height/2-9, 18, 18);
+                }
+                [redPacketBtn.layer setMasksToBounds:YES];
+                [redPacketBtn.layer setCornerRadius:10.0]; //设置矩形四个圆角半径
+                [redPacketBtn.layer setBorderWidth:1.0]; //边框宽度
+//                sendRedPacket_icon
+                [redPacketBtn setImage:[UIImage imageNamed:@"sendRedPacket_icon.png"] forState:UIControlStateNormal];
+//                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+//                    @autoreleasepool {
+//                        //Data processing
+//                        NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:thumbnailsPath]];
+//                        dispatch_async(dispatch_get_main_queue(), ^{
+//                            //Update Interface
+//                            if (imageData != nil) {
+//                                [redPacketBtn setImage:[UIImage imageWithData:imageData scale:0.1f] forState:UIControlStateNormal];
+//                            }else
+//                            {
+//                                [redPacketBtn setImage:[UIImage imageNamed:@"newFriend@2x.png"] forState:UIControlStateNormal];
+//                            }
+//                        });
+//                    }
+//                });
+                [_contentBtn addSubview:redPacketBtn];
+            }
+                break;
+            default:
+                break;
+        }
+        //*******************
+        if (message.type == MessageTypeMe) {
+            _contentBtn.contentEdgeInsets = UIEdgeInsetsMake(kContentTop, kContentRight, kContentBottom, kContentLeft);
+        }else{
+            _contentBtn.contentEdgeInsets = UIEdgeInsetsMake(kContentTop, kContentLeft, kContentBottom, kContentRight);
+        }
+        
+        _juhua.frame = juhuaFrame;
+        _failedImg.frame=messageFailedImageFrame;
+        
+        if (message.state == MessageIsSend) {
+            [_failedImg setHidden:YES];
+            [_juhua startAnimating];
+        }else if(message.state == MessageFailed){
+            [_failedImg setHidden:NO];
+            if ([_juhua isAnimating]) {
+                [_juhua stopAnimating];
+            }
+        }else if(message.state == MessageSuccess|| message.type != MessageTypeMe)
+        {
+            [_failedImg setHidden:YES];
+
+            if ([_juhua isAnimating]) {
+                [_juhua stopAnimating];
+            }
+        }
+    }
+}
+
+@end

@@ -1,0 +1,221 @@
+//
+//  PHGroupChatHomeViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupChatHomeViewController.h"
+
+#import "PHAppStartManager.h"
+#import "AppDelegate.h"
+
+//界面
+#import "GroupIndexTableViewCell.h"
+#import "CalculateViewFrame.h"
+
+//功能型
+#import "Reachability.h"
+#import "ClientHelper.h"
+
+//数据型
+#import "Member.h"
+#import "SFirendDB.h"
+#import "SNotificationMessage.h"
+#import "NotificationMessage.h"
+
+static NSString *connectStr = @"正在连接...";
+static ConnectState connectState = isDisConnect;
+static NSString *identifierGroupMainCell = @"PHGroupTableViewCell";
+@interface PHGroupChatHomeViewController ()<UITableViewDataSource,UITableViewDelegate>
+{
+    Member *host;
+    
+    Reachability *internetReach;
+}
+@end
+
+@implementation PHGroupChatHomeViewController
+#pragma mark - view 生命周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    //获取当前用户
+    [self createHost];
+    //后台请求自己的群信息 同步群信息
+    [self performSelectorInBackground:@selector(selectMyGroupWithServer) withObject:nil];
+    //创建socket数据分发消息通知
+    [self createSocketChatNotification];
+    
+    //查询网络状态
+    internetReach= [Reachability reachabilityWithHostName:@"www.baidu.com"];
+    [internetReach startNotifier];
+    //查询网络状态的通知
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(netWorkReachabe:) name:kReachabilityChangedNotification object:nil];
+    
+    //创建tableview
+    _tableView = [[UITableView alloc] init];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView.frame = frame;
+    [self.view addSubview:_tableView];
+    
+    
+    [_tableView registerNib:[UINib nibWithNibName:@"GroupIndexTableViewCell" bundle:nil] forCellReuseIdentifier:identifierGroupMainCell];
+    
+    
+    //创建table数据源
+    [self createPHGroupChatTableViewDataSourceMainArray];
+    // Do any additional setup after loading the view.
+}
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    self.tabBarController.title = @"健康吧";
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark -
+#pragma mark - createMemberHost
+#pragma mark -
+-(void)createHost{
+   host =  [[PHAppStartManager defaultManager] userHost];
+}
+#pragma mark -  每次启动到这里 查询自己加入的群 更新群信息（不包括群成员）
+-(void)selectMyGroupWithServer{
+    
+}
+#pragma mark - 创建socket数据分发消息通知
+-(void)createSocketChatNotification{
+    //    DBTOUIJOINCHATORGROUPINFO
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(updateJoinInfoModel:) name:@"DBTOUIJOINCHATORGROUPINFO" object:nil];
+    //DBTOUIGROUPMESSAGETEXT
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(updateGroupMessageModel:) name:@"DBTOUIGROUPMESSAGETEXT" object:nil];
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(updatePrivateMessageModel:) name:@"DBTOUIPRIVATEMESSAGETEXT" object:nil];
+    //刷新自己的群通知
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(refreshSelfGroupList) name:@"REFRESHMYGROUPLSITFROMSERVER" object:nil];
+}
+#pragma mark - 断线重连
+-(void)netWorkReachabe:(NSNotification *)noti{
+    
+    Reachability *currReach=[noti object];
+    NetworkStatus netStatus = [currReach currentReachabilityStatus];
+    
+    BOOL isNetwork = YES;
+    
+    switch (netStatus) {
+        case  NotReachable:
+            //没有网络
+            [ClientHelper close];
+            connectState=isDisConnect;
+            
+            break;
+        case ReachableViaWWAN:
+            //使用3g网络
+            //            [ClientHelper connectToHost];
+            [self performSelectorInBackground:@selector(reConnectChatHost) withObject:nil];
+            connectState=isConnected;
+            isNetwork = NO;
+            break;
+        case ReachableViaWiFi:
+            //使用wifi网络
+            //            [ClientHelper connectToHost];
+            [self performSelectorInBackground:@selector(reConnectChatHost) withObject:nil];
+            connectState=isConnected;
+            isNetwork = NO;
+            
+            break;
+            
+        default:
+            connectState=isTimeOut;
+            break;
+    }
+    [self navigationBatTitleSetting];
+}
+-(void)reConnectChatHost{
+//    [ClientHelper connectToHost];
+}
+-(void)navigationBatTitleSetting
+{
+    if (connectState == isConnected) {
+//        if (host.messageNotReadCount > 0) {
+//            connectStr = [NSString stringWithFormat:@"健康吧(%ld)",(long)host.messageNotReadCount];
+//        }else{
+//            connectStr = @"健康吧";
+//        }
+        connectStr = @"健康吧";
+        
+    }else if(connectState == isTimeOut){
+        connectStr = @"未连接";
+    }else if (connectState == isDisConnect){
+        connectStr = @"连接中...";
+    }else if(connectState == isSync){
+        connectStr = @"收取中...";
+    }
+    self.tabBarController.navigationItem.title = connectStr;
+}
+#pragma mark ------------
+#pragma mark - 创建表格数据源
+-(void)createPHGroupChatTableViewDataSourceMainArray{
+    
+    
+    //初始化数组
+    if (!self.PHGroupChatTableViewDataSourceMainArray) {
+        self.PHGroupChatTableViewDataSourceMainArray = [[NSMutableArray alloc]init];
+    }
+    //清空数据
+    [self.PHGroupChatTableViewDataSourceMainArray removeAllObjects];
+    
+    //从数据库塞入数据
+    //1.医院公共号 (当做一个好友的聚合)
+    //1.1 从消息数据库中获取类型是 医院好友的 消息的最后一条的消息
+    
+    //2.群助手 (群的集合)
+    //2.1 从所有群组数据中 N个群含有未读消息 如果N>0 显示N个群有未读消息 否则显示最后一条群消息的数据
+    
+    //3.下方都是私聊的集合
+    //3.1 获取会话中（isSession = 1） 的私聊人员添加到列表
+    
+    //4.消息通知集合
+}
+#pragma mark - 创建tableview委托以及数据塞入
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return 42;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifierGroupMainCell];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierGroupMainCell];
+    }
+    return cell;
+}
+//- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+//    C1 *cell = (C1 *)self.prototypeCell;
+//    cell.t.text = [self.tableData objectAtIndex:indexPath.row];
+//    CGSize size = [cell.contentView systemLayoutSizeFittingSize:UILayoutFittingCompressedSize];
+//    NSLog(@"h=%f", size.height + 1);
+//    return 1  + size.height;
+//}
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return UITableViewAutomaticDimension;
+}
+- ( CGFloat )tableView:( UITableView  *)tableView heightForRowAtIndexPath:( NSIndexPath  *)indexPath
+{
+    return   100 ;
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

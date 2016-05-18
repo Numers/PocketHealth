@@ -1,0 +1,286 @@
+//
+//  PHUserCenterViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHUserCenterViewController.h"
+#import "UINavigationController+PHNavigationController.h"
+
+//数据
+#import "PHAppStartManager.h"
+
+#import "CalculateViewFrame.h"
+
+#import "EmojiConvert.h"
+
+//界面类
+#import "PHUserCenterHeadViewController.h"
+#import "PHUserCenterTableViewCell.h"
+#import "PHPhysicalExamTableListViewController.h"
+#import "PHPersonalProfileViewController.h"
+#import "PHPhysicalExamBookRecoderViewController.h"
+#import "PHFriendAttantionListViewController.h"
+#import "PHDoctorAttantionListViewController.h"
+#import "PHOrganizationAttantionListViewController.h"
+#import "PHPhysicalExamTestViewController.h"
+#import "PHPhysicalExamQuestionViewController.h"
+#import "PHAccountBalanceViewController.h"
+
+
+static NSString *identifierUserCenterCell = @"PHUserCenterTableViewCell";
+
+@interface PHUserCenterViewController ()<UITableViewDataSource,UITableViewDelegate,PHUserCenterHeadViewDelegate>
+{
+    PHUserCenterHeadViewController *tableViewHead;
+    Member *host ;
+}
+@property (strong, nonatomic) UITableView *tableViewMain;
+
+
+@end
+
+@implementation PHUserCenterViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //获取用户信息
+    host = [[PHAppStartManager defaultManager] userHost];
+    //界面构造简介
+    [self.navigationController setNavigationBarHidden:NO];
+    [self.navigationController.navigationBar setTranslucent:NO];
+    
+    //0.初始化tableview
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    self.tableViewMain = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+    self.tableViewMain.delegate = self;
+    self.tableViewMain.dataSource = self;
+    self.tableViewMain.sectionHeaderHeight = 0;
+    [self.tableViewMain registerNib:[UINib nibWithNibName:@"PHUserCenterTableViewCell" bundle:nil] forCellReuseIdentifier:identifierUserCenterCell];
+    //1.上方头像
+    //1.1 初始化上方头像view 作为tableview的headview
+    tableViewHead = [[PHUserCenterHeadViewController alloc]init];
+    tableViewHead.delegate = self;
+    
+     [self.tableViewMain setSeparatorInset:UIEdgeInsetsZero];
+
+//    NSLog(@"%f ",tableViewHead.view.frame.size.height);
+    self.tableViewMain.tableHeaderView = tableViewHead.view;
+//    tableViewHead.userNameLabel.text = [NSString stringWithFormat:@"%lld",host.memberId];
+    
+    NSString * b = @"23fds👿😠iu你 📀🇯🇵";
+    NSString * outPut = [EmojiConvert emojiConvertToSendString:b];
+    NSLog(@"%@",outPut);
+//    NSString * a = [NSString stringWithFormat:@"[e]U+%x[/e]",tableViewHead.userNameLabel.text ];
+    NSLog(@"%f",self.tableViewMain.tableHeaderView.frame.size.height);
+    [self.view addSubview:self.tableViewMain];
+    
+    
+    // Do any additional setup after loading the view from its nib.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self navigationControllerSetting];
+    if (tableViewHead != nil) {
+        [tableViewHead updateUIViewContent];
+    }
+}
+
+-(void)navigationControllerSetting
+{
+    [self.navigationController setOtherViewNavigation];
+    UIBarButtonItem *leftBarItem = [[UIBarButtonItem alloc] initWithTitle:@"设置" style:UIBarButtonItemStyleBordered target:self action:@selector(clickSettingBtn)];
+    [self.tabBarController.navigationItem setLeftBarButtonItem:leftBarItem];
+    
+    UIBarButtonItem *rightBarItem = [[UIBarButtonItem alloc] initWithTitle:@"账户余额" style:UIBarButtonItemStyleBordered target:self action:@selector(clickAccountBtn)];
+    [self.tabBarController.navigationItem setRightBarButtonItem:rightBarItem];
+    
+    [self.tabBarController.navigationItem setTitle:@"我"];
+}
+
+-(void)clickSettingBtn
+{
+    
+}
+
+-(void)clickAccountBtn
+{
+    PHAccountBalanceViewController *phAccountBalanceVC = [[PHAccountBalanceViewController alloc] init];
+    [self.navigationController pushViewController:phAccountBalanceVC animated:YES];
+}
+
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    if (section == 0) {
+        return 0;
+    }else{
+        return 2;
+    }
+}
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 3;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ((indexPath.section == 0) && (indexPath.row == 0) ) {
+        return 0.0f;
+    }else{
+        return 48.0f;
+    }
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    PHUserCenterTableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifierUserCenterCell];
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 1:
+            switch (indexPath.row) {
+                case 0:
+                    [cell.imgHeadView setImage:[UIImage imageNamed:@"usercenter-user-test"]];
+                    [cell.lblTitle setText:@"我的体检"];
+                    [cell.lblDetailTitle setText:nil];
+                    [cell.imgAccessaryType setHidden:NO];
+                    break;
+                case 1:
+                    [cell.imgHeadView setImage:[UIImage imageNamed:@"usercenter-appointment"]];
+                    [cell.lblTitle setText:@"体检预约"];
+                    [cell.lblDetailTitle setText:nil];
+                    [cell.imgAccessaryType setHidden:YES];
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 2:
+            switch (indexPath.row) {
+                case 0:
+                    [cell.imgHeadView setImage:[UIImage imageNamed:@"usercenter-questionnaire"]];
+                    [cell.lblTitle setText:@"体检问卷"];
+                    [cell.lblDetailTitle setText:nil];
+                    [cell.imgAccessaryType setHidden:NO];
+                    break;
+                case 1:
+                    [cell.imgHeadView setImage:[UIImage imageNamed:@"usercenter-self-testing"]];
+                    [cell.lblTitle setText:@"体检自测"];
+                    [cell.lblDetailTitle setText:nil];
+                    [cell.imgAccessaryType setHidden:NO];
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+    return cell;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 1:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    PHPhysicalExamTableListViewController *phPhysicalExamTableListVC = [[PHPhysicalExamTableListViewController alloc] init];
+                    [self.navigationController pushViewController:phPhysicalExamTableListVC animated:YES];
+                }
+                    break;
+                case 1:
+                {
+                    PHPhysicalExamBookRecoderViewController *phPhysicalExamBookRecoderVC = [[PHPhysicalExamBookRecoderViewController alloc] init];
+                    [self.navigationController pushViewController:phPhysicalExamBookRecoderVC animated:YES];
+                }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 2:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    PHPhysicalExamQuestionViewController *phPhysicalExamQuestionVC = [[PHPhysicalExamQuestionViewController alloc] init];
+                    [self.navigationController pushViewController:phPhysicalExamQuestionVC animated:YES];
+                }
+                    break;
+                case 1:
+                {
+                    PHPhysicalExamTestViewController *phPhysicalExamTestVC = [[PHPhysicalExamTestViewController alloc] init];
+                    [self.navigationController pushViewController:phPhysicalExamTestVC animated:YES];
+                }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+#pragma mark - headView点击代理事件
+-(void)friendBtnClick{
+    //推入好友列表界面
+    PHFriendAttantionListViewController *phFriendAttantionListVC = [[PHFriendAttantionListViewController alloc] init];
+    id phGroupChatHomeVC = [[PHAppStartManager defaultManager] returnPHGroupChatHomeView];
+    phFriendAttantionListVC.delegate = phGroupChatHomeVC;
+    [self.navigationController pushViewController:phFriendAttantionListVC animated:YES];
+}
+
+-(void)doctorBtnClick{
+    //推入医生列表界面
+    PHDoctorAttantionListViewController *phDoctorAttantionListVC = [[PHDoctorAttantionListViewController alloc] init];
+    id phGroupChatHomeVC = [[PHAppStartManager defaultManager] returnPHGroupChatHomeView];
+    phDoctorAttantionListVC.delegate = phGroupChatHomeVC;
+    [self.navigationController pushViewController:phDoctorAttantionListVC animated:YES];
+}
+
+-(void)userHeadBtnClick
+{
+    PHPersonalProfileViewController *phPersonalProfileVC = [[PHPersonalProfileViewController alloc] init];
+    [self.navigationController pushViewController:phPersonalProfileVC animated:YES];
+}
+
+
+-(void)organizaitonBtnClick
+{
+    //推入医院列表界面
+    PHOrganizationAttantionListViewController *phOrganizationAttationListVC = [[PHOrganizationAttantionListViewController alloc] init];
+    id phGroupChatHomeVC = [[PHAppStartManager defaultManager] returnPHGroupChatHomeView];
+    phOrganizationAttationListVC.delegate = phGroupChatHomeVC;
+    [self.navigationController pushViewController:phOrganizationAttationListVC animated:YES];
+}
+@end

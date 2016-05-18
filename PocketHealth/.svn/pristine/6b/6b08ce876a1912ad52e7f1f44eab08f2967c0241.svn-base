@@ -1,0 +1,23 @@
+//
+//  PHFrontView.h
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#define ButtonWidth 120.f
+#define ButtonHeight 50.0f
+#define MarginToBottom 100.0f
+@protocol PHFrontViewDelegate <NSObject>
+-(void)acceptCall;
+-(void)rejectCall;
+-(void)cancelCall;
+@end
+@interface PHFrontView : UIView
+{
+    UIImageView *headImageView;
+}
+@property(nonatomic, assign) id<PHFrontViewDelegate> delegate;
+@end

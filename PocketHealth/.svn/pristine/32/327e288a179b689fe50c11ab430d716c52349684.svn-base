@@ -1,0 +1,23 @@
+//
+//  PHAFHttpHelper.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#ifndef PocketHealth_PHAFHttpHelper_h
+#define PocketHealth_PHAFHttpHelper_h
+#import "AFNetworking.h"
+#import "GlobalVar.h"
+typedef enum{
+    Device_Browser = 1,
+    Device_PC,
+    Device_Android,
+    Device_IOS,
+    Device_WinPhone
+}DeviceType;
+static NSString *AFNetWorkKey;
+typedef void (^ApiDoneCallback)(AFHTTPRequestOperation*operation, id responseObject);
+typedef void (^ApiErrorCallback)(AFHTTPRequestOperation*operation, NSError *error);
+#endif

@@ -1,0 +1,128 @@
+//
+//  PHFriendAttantionListViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-17.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHFriendAttantionListViewController.h"
+#import "CalculateViewFrame.h"
+#import "PHAttentionFriendTableViewCell.h"
+#import "PHGetMemberInfoManager.h"
+#import "PHAppStartManager.h"
+
+static NSString *cellIdentify = @"AttentionFriendCell";
+@interface PHFriendAttantionListViewController ()<UIScrollViewDelegate,UISearchBarDelegate,UITableViewDelegate,UITableViewDataSource>
+{
+    Member *host;
+    NSMutableArray *friendList;
+    NSMutableArray *filterFriendList;
+}
+@property(nonatomic, strong) UITableView *tableView;
+@property(nonatomic, strong) UISearchBar *searchBar;
+@end
+
+@implementation PHFriendAttantionListViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    host = [[PHAppStartManager defaultManager] userHost];
+    _searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 44.0f)];
+    [_searchBar setPlaceholder:@"搜索"];
+    _searchBar.delegate = self;
+    [self.view addSubview:_searchBar];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView = [[UITableView alloc] initWithFrame:CGRectMake(frame.origin.x, frame.origin.y + _searchBar.frame.size.height, frame.size.width, frame.size.height - _searchBar.frame.size.height)];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    [self.view addSubview:_tableView];
+    [_tableView registerNib:[UINib nibWithNibName:@"PHAttentionFriendTableViewCell" bundle:nil] forCellReuseIdentifier:cellIdentify];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)initlizedFriendList
+{
+    [[PHGetMemberInfoManager defaultManager] requestMemberInfo:host done:<#^(AFHTTPRequestOperation *operation, id responseObject)doneCallback#> error:<#^(AFHTTPRequestOperation *operation, NSError *error)errorCallback#>]
+}
+
+-(void)filterFriendWithSearchText:(NSString *)searchText
+{
+    if (filterFriendList == nil) {
+        filterFriendList = [[NSMutableArray alloc] init];
+    }else{
+        [filterFriendList removeAllObjects];
+    }
+    
+    if ((searchText == nil) || (searchText.length == 0)) {
+        [filterFriendList addObjectsFromArray:friendList];
+    }else{
+        NSString *likeStr = [NSString stringWithFormat:@"*%@*",searchText];
+        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF.nickName LIKE[cd] %@",likeStr];
+        NSArray *array = [friendList filteredArrayUsingPredicate:predicate];
+        if ((array == nil) || (array.count == 0)) {
+            return;
+        }
+        [filterFriendList addObjectsFromArray:array];
+    }
+    [_tableView reloadData];
+}
+
+#pragma -mark searchBarDelegate
+- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText
+{
+    [self performSelector:@selector(filterFriendWithSearchText:) withObject:searchText];
+}
+
+- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar
+{
+    [searchBar resignFirstResponder];
+}
+
+#pragma -mark TableViewDelegate
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPat
+{
+    return 100.0f;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return filterFriendList.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    PHAttentionFriendTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentify];
+    
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                
+            });
+        }
+    });
+    return cell;
+}
+
+#pragma -mark scrollViewDelegate
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
+{
+    if ([_searchBar becomeFirstResponder]) {
+        [_searchBar resignFirstResponder];
+    }
+}
+
+@end

@@ -1,0 +1,55 @@
+//
+//  PHActivityInsideViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/22.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHActivityInsideViewController.h"
+#import "PHCircleWithLabel.h"
+
+@interface PHActivityInsideViewController ()
+{
+    
+    IBOutlet PHCircleWithLabel *phActivityCircleView;
+}
+@end
+
+@implementation PHActivityInsideViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [phActivityCircleView inilizedView];
+    [phActivityCircleView setBackgroundColor:[UIColor clearColor]];
+    [phActivityCircleView setStrokeColor:[UIColor blueColor]];
+    [phActivityCircleView setProgress:50.0f WithAnimate:YES];
+    NSString * topStr = @"还剩余";
+    NSString * kululi = [NSString stringWithFormat:@"%u kaluyi",234];
+    NSAttributedString *cr = [[NSMutableAttributedString alloc] initWithString:@"\n"];
+    NSAttributedString *kaluliStr = [[NSMutableAttributedString alloc] initWithString:kululi];
+    NSMutableAttributedString * showStr = [[NSMutableAttributedString alloc]initWithString:topStr];
+    [showStr appendAttributedString:cr];
+    [showStr appendAttributedString:kaluliStr];
+
+    [phActivityCircleView setLabelCentre:showStr];
+    
+    // Do any additional setup after loading the view from its nib.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

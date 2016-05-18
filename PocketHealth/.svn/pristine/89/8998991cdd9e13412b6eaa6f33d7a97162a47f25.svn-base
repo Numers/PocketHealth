@@ -1,0 +1,39 @@
+//
+//  PocketHealth-Prefix.pch
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+#define KMY_PUSH_USERID @"pushUserId"
+#define KMY_PUSH_CHANNELID @"pushChannelId"
+#define KMY_TOKEN @"TOKEN"
+#define KMY_AutoLogin @"IsAutoLogin"
+#define KMY_LastCheckTime @"LastCheckTime"
+#define KMY_LastCheckScore @"LastCheckScore"
+#define KMY_LastUploadTime @"LastUploadTime"
+#define KMY_LastMoodScore @"LastMoodScore"
+#define KMY_LastActivityScore @"LastActivityScore"
+#define KMY_LastSleepScore @"LastSleepScore"
+#define KMY_LastPHValue @"LastPHValue"
+#define KMY_LastLocationTime @"LastLocationTime"
+#ifndef PocketHealth_PocketHealth_Prefix_pch
+#define PocketHealth_PocketHealth_Prefix_pch
+// Include any system framework and library headers here that should be included in all compilation units.
+// You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.
+#ifdef __OBJC__
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+//#import <AGCommon/CoreDefinition.h>
+#endif
+
+//打印宏定义
+#ifdef DEBUG
+#define NSLog(...) NSLog(__VA_ARGS__)
+#define debugMethod() NSLog(@"%s", __func__)
+#else
+#define NSLog(...)
+#define debugMethod()
+#endif
+
+#endif

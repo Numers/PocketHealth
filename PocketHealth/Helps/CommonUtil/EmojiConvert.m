@@ -1,0 +1,121 @@
+//
+//  EmojiConvert.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/19.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "EmojiConvert.h"
+
+@implementation EmojiConvert
+
++(NSString *)emojiConvertToSendString:(NSString *)baseStr{
+    NSMutableString *sendString=[[NSMutableString alloc]init];
+    for (int i =0 ; i<baseStr.length;) {
+        //
+        NSString *tmpStr=[baseStr substringWithRange:NSMakeRange(i,1)];//每次取1个长度
+//        NSLog(@"%@ length is %lu",tmpStr,(unsigned long)tmpStr.length);
+        if ([tmpStr UTF8String] == NULL) {
+            //如果不对 就取2个 那么肯定就是emoji表情了
+            NSString *tmpStr=[baseStr substringWithRange:NSMakeRange(i,2)];
+            //调用函数转换查询字符串
+//            NSString *tmpSendStr=[self emojiSelectUnicodeWithUTF8:tmpStr];
+            NSString * tmpSendStr = [self emojiConvertUTF32:tmpStr];
+            [sendString appendString:tmpSendStr];
+            i+=2;
+        }else{
+            [sendString appendString:tmpStr];
+            i++;
+        }
+//        NSLog(@" %@ %u",sendString,i);
+    }
+    return sendString;
+}
++(NSString *)emojiConvertUTF32:(NSString *)tmpStr{
+    NSInteger len=0;
+    UTF32Char outputChar;
+    [tmpStr getBytes:&outputChar maxLength:4 usedLength:&len encoding:NSUTF32LittleEndianStringEncoding options:NSStringEncodingConversionAllowLossy range:NSMakeRange(0, 3) remainingRange:nil];
+    
+    NSLog(@"%x",outputChar);
+    NSString * outPutStr = [NSString stringWithFormat:@"[E]U+%x[/E]",outputChar];
+    return outPutStr;
+}
+
+//解码emoji
++(NSMutableString *)convertOrgUnicodeToPrintUnicode:(NSString *)orgUnicode{
+    NSMutableString *sendStr = [[NSMutableString alloc]init];
+    NSRange range = [orgUnicode rangeOfString:@" "];
+    if (range.location != NSNotFound) {
+        
+        NSLog(@"found at location = %d, length = %d",range.location,range.length);
+        NSString *tmpStrLeft=[orgUnicode substringToIndex:range.location];
+        NSString *tmpStrRight=[orgUnicode substringFromIndex:range.location+1];
+        NSLog(@"%@,%@",tmpStrLeft,tmpStrRight);
+        
+        //做转换
+        [sendStr appendString:[self convertSimpleUnicodeStr:tmpStrLeft]];
+        //获取剩下右边的
+        [sendStr appendString:[self convertOrgUnicodeToPrintUnicode:tmpStrRight]];
+        
+    }else{
+        [sendStr appendString:[self convertSimpleUnicodeStr:orgUnicode]];
+        
+    }
+    return sendStr;
+}
+//这段函数作用是将 U+1F591 转换为 \U0001F591
+//如果为 U+2500 那么就是补全为 \U00002500
++(NSString *)convertSimpleUnicodeStr:(NSString *)inputStr{
+    NSString *strUrl = [inputStr stringByReplacingOccurrencesOfString:@"U+" withString:@""];
+    int  unicodeIntValue= strtoul([strUrl UTF8String],0,16);
+    UTF32Char inputChar = unicodeIntValue ;// input UTF32 valu
+    inputChar = NSSwapHostIntToLittle(inputChar); // swap to little-endian if necessary
+    NSString *sendStr = [[NSString alloc] initWithBytes:&inputChar length:4 encoding:NSUTF32LittleEndianStringEncoding];
+//    NSLog(@"%@",sendStr);
+    return sendStr;
+}
++(NSString *)convertReceviceStringMaybeHasContainEmoji:(NSString *)receiveString{
+    
+    //    NSMutableString *tmpSendString=[[NSMutableString alloc]initWithString:@"U+1F1EB U+1F1F7"];
+    
+    NSMutableString *backStr = [[NSMutableString alloc]init];
+    NSRange rangeEstart = [receiveString rangeOfString:@"[E]"];
+    if (rangeEstart.location != NSNotFound) {
+        //找到[e]后
+        //1.先把之前的赋值到 backstr
+        NSLog(@"find [E] at location = %d, length = %d",rangeEstart.location,rangeEstart.length);
+        NSString *tmpStrLeft=[receiveString substringToIndex:rangeEstart.location];
+        [backStr appendString:tmpStrLeft];
+        //        NSLog(@"backStr is %@",backStr);
+        
+        //2.再去找[/e]
+        NSRange rangeEend = [receiveString rangeOfString:@"[/E]"];
+        if (rangeEend.location != NSNotFound) {
+            //找到[e]也找到[/e] 截取中间字符串
+            NSString *tmpMidStr=[receiveString substringWithRange:NSMakeRange(rangeEstart.location+rangeEstart.length, rangeEend.location-(rangeEstart.location+rangeEstart.length))];
+            NSLog(@"tmpMidStr :%@",tmpMidStr);
+            //处理中间字符串
+            [backStr appendString:[self convertOrgUnicodeToPrintUnicode:tmpMidStr]];
+            //            NSLog(@"backStr :%@",backStr);
+            
+            //获取[/e]之后的字符串 迭代
+            NSString *tmpRightStr=[receiveString substringFromIndex:rangeEend.location+rangeEend.length];
+            [backStr appendString:[self convertReceviceStringMaybeHasContainEmoji:tmpRightStr]];
+        }
+        else{
+            //如果有[e]却找不到[/e] 直接返回空字符串 一般不会
+            NSLog(@"emoji error:emojistring has no [/E]");
+            return nil;
+        }
+    }else{
+        [backStr appendString:receiveString];
+        
+    }
+    NSLog(@"backStr is %@",backStr);
+    return backStr;
+    
+
+    
+}
+@end

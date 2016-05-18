@@ -1,0 +1,147 @@
+//
+//  SNotificationMessage.m
+//  AJKGroupChatDemo
+//
+//  Created by YangFan on 14/12/12.
+//  Copyright (c) 2014年 YangFan. All rights reserved.
+//
+
+#import "SNotificationMessage.h"
+#define kNotificationMessageTableName @"SNotificationMessage"
+
+@implementation SNotificationMessage
+- (id) init {
+    self = [super init];
+    if (self) {
+        //========== 首先查看有没有建立message的数据库，如果未建立，则建立数据库=========
+        _db = [SDBManager defaultDBManager].dataBase;
+        
+    }
+    return self;
+}
+
+- (void)createDataBase
+{
+    FMResultSet * set = [_db executeQuery:[NSString stringWithFormat:@"select count(*) from sqlite_master where type ='table' and name = '%@'",kNotificationMessageTableName]];
+    
+    [set next];
+    
+    NSInteger count = [set intForColumnIndex:0];
+    
+    BOOL existTable = !!count;
+    
+    if (existTable) {
+        // TODO:是否更新数据库
+        NSLog(@"%@数据库已经存在",kNotificationMessageTableName);
+    } else {
+        // TODO: 插入新的数据库
+        NSString * sql = @"CREATE TABLE SNotificationMessage (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, belongGroupId INTEGER, memberid BIGINT,contactmemberid BIGINT, createtime TIMESTAMP,sessiondate TIMESTAMP,messagecode INTEGER,recordid INTEGER, jointype VARCHAR(50),content VARCHAR(500))";
+        BOOL res = [_db executeUpdate:sql];
+        if (!res) {
+            NSLog(@"%@数据库创建失败",kNotificationMessageTableName);
+        } else {
+            NSLog(@"%@数据库创建成功",kNotificationMessageTableName);
+        }
+    }
+}
+
+-(BOOL)saveNoticationMessage:(NotificationMessage *)notificationMsg HostId:(long long)hostId{
+    NSMutableString * query = [NSMutableString stringWithFormat:@"INSERT INTO %@",kNotificationMessageTableName];
+    NSMutableString * keys = [NSMutableString stringWithFormat:@" ("];
+    NSMutableString * values = [NSMutableString stringWithFormat:@" ( "];
+    NSMutableArray * arguments = [NSMutableArray arrayWithCapacity:9];
+
+    
+    
+    [keys appendString:@"contactmemberid,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%lld",hostId]];
+    
+    if (notificationMsg.memberId) {
+        [keys appendString:@"memberid,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lld",notificationMsg.memberId]];
+    }
+    if (notificationMsg.content) {
+        [keys appendString:@"content,"];
+        [values appendString:@"?,"];
+        [arguments addObject:notificationMsg.content];
+    }
+    if (notificationMsg.belongGroupId) {
+        [keys appendString:@"belongGroupId,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%u",notificationMsg.belongGroupId]];
+    }
+    if (notificationMsg.messageCode) {
+        [keys appendString:@"messagecode,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%u",notificationMsg.messageCode]];
+    }
+    if (notificationMsg.createTime) {
+        [keys appendString:@"createtime,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%f",notificationMsg.createTime]];
+    }
+    if (notificationMsg.sessionDate) {
+        [keys appendString:@"sessiondate,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%f",notificationMsg.sessionDate]];
+    }
+    if (notificationMsg.recordId) {
+        [keys appendString:@"recordid,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%u",notificationMsg.recordId]];
+    }
+    if (notificationMsg.joinType) {
+        [keys appendString:@"recordid,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%@",notificationMsg.joinType]];
+    }
+    
+    [keys appendString:@")"];
+    [values appendString:@")"];
+    [query appendFormat:@" %@ VALUES%@",
+     [keys stringByReplacingOccurrencesOfString:@",)" withString:@")"],
+     [values stringByReplacingOccurrencesOfString:@",)" withString:@")"]];
+    NSLog(@"notificationMsg query: %@",query);
+    
+    BOOL result = [_db executeUpdate:query withArgumentsInArray:arguments];
+    result?NSLog(@"notificationMsg 插入一条数据"):NSLog(@"notificationMsg 插入错误");
+    return result;
+}
+-(NSArray *)selectAllNoticationMessageWithHostId:(long long)hostId MessageCode:(MessageCode)messageCode ResultCount:(int)count
+{
+    NSString *query = [NSString string];
+    if (messageCode == 0) {
+        //查询所有消息
+        query =[NSString stringWithFormat: @"SELECT * FROM SNotificationMessage WHERE contactmemberid = '%lld' ORDER BY id DESC limit %u ",hostId,count];
+    }else{
+        query =[NSString stringWithFormat: @"SELECT * FROM SNotificationMessage WHERE contactmemberid = '%lld' and messagecode = '%u' ORDER BY id DESC limit %u ",hostId,messageCode,count];
+    }
+    
+    
+    
+    FMResultSet * rs = [_db executeQuery:query];
+    NSMutableArray * array = [NSMutableArray arrayWithCapacity:[rs columnCount]];
+    while ([rs next]) {
+        NotificationMessage *notificationMsg = [[NotificationMessage alloc]init];
+        notificationMsg.belongGroupId = [rs intForColumn:@"belongGroupId"];
+        
+        //如果是群通知那么增加一些属性
+        if (notificationMsg.belongGroupId) {
+            
+
+        }
+        notificationMsg.content     = [rs stringForColumn:@"content"];
+        notificationMsg.createTime  = [rs doubleForColumn:@"createtime"];
+        notificationMsg.memberId    = [rs longLongIntForColumn:@"memberid"];
+        notificationMsg.messageCode = [rs intForColumn:@"messagecode"];
+        notificationMsg.sessionDate = [rs doubleForColumn:@"sessiondate"];
+        notificationMsg.recordId    = [rs intForColumn:@"recordid"];
+        notificationMsg.joinType    = [rs stringForColumn:@"jointype"];
+        [array addObject:notificationMsg];
+    }
+    [rs close];
+    return array;
+}
+@end

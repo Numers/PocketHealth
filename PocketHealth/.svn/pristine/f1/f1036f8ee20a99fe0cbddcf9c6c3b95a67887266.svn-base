@@ -1,0 +1,105 @@
+//
+//  PHOtherIndexViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-22.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOtherIndexViewController.h"
+#import "PHCircleView.h"
+
+@interface PHOtherIndexViewController ()<PHCircleViewDelegate>
+{
+    IBOutlet PHCircleView *phMoodCircleView;
+    IBOutlet UILabel *lblMoodText;
+    IBOutlet PHCircleView *phActivityCircleView;
+    IBOutlet UILabel *lblActivityText;
+    IBOutlet PHCircleView *phSleepCircleView;
+    IBOutlet UILabel *lblSleepText;
+}
+@end
+
+@implementation PHOtherIndexViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    phMoodCircleView.tag = 1;
+    [phMoodCircleView inilizedView];
+    [phMoodCircleView setBackCircleViewStrokeColor:[UIColor lightGrayColor]];
+    [phMoodCircleView setStrokeColor:[UIColor greenColor]];
+    [phMoodCircleView setImage:[UIImage imageNamed:@"monitoring-smile"]];
+    
+    phActivityCircleView.tag = 2;
+    [phActivityCircleView inilizedView];
+    [phActivityCircleView setBackCircleViewStrokeColor:[UIColor lightGrayColor]];
+    [phActivityCircleView setStrokeColor:[UIColor yellowColor]];
+    [phActivityCircleView setImage:[UIImage imageNamed:@"monitoring-sports"]];
+    
+    phSleepCircleView.tag = 3;
+    [phSleepCircleView inilizedView];
+    [phSleepCircleView setBackCircleViewStrokeColor:[UIColor lightGrayColor]];
+    [phSleepCircleView setStrokeColor:[UIColor blueColor]];
+    [phSleepCircleView setImage:[UIImage imageNamed:@"monitoring-sleep"]];
+}
+
+-(void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)setProgressWithMoodValue:(CGFloat)mood WithActivityValue:(CGFloat)activity WithSleepValue:(CGFloat)sleep
+{
+    [phMoodCircleView setProgress:mood WithAnimate:YES];
+    [phActivityCircleView setProgress:activity WithAnimate:YES];
+    [phSleepCircleView setProgress:sleep WithAnimate:YES];
+}
+
+#pragma -mark PHCircleViewDelegate
+-(void)clickCircleView:(id)sender
+{
+    PHCircleView *circleView = (PHCircleView *)sender;
+    switch (circleView.tag) {
+        case 1:
+        {
+            if ([self.delegate respondsToSelector:@selector(selectMoodSection)]) {
+                [self.delegate selectMoodSection];
+            }
+        }
+            break;
+        case 2:
+        {
+            if ([self.delegate respondsToSelector:@selector(selectActivitySection)]) {
+                [self.delegate selectActivitySection];
+            }
+        }
+            break;
+        case 3:
+        {
+            if ([self.delegate respondsToSelector:@selector(selectSleepSection)]) {
+                [self.delegate selectSleepSection];
+            }
+        }
+            break;
+            
+        default:
+            break;
+    }
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

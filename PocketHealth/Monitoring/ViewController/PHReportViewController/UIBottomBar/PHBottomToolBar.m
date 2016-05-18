@@ -1,0 +1,90 @@
+//
+//  PHBottomToolBar.m
+//  PocketHealth
+//
+//  Created by macmini on 15-2-28.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHBottomToolBar.h"
+#define LeftAndRightMargin 16
+#define ButtonHeight 44
+#define AnimateDuration 0.3f
+
+@implementation PHBottomToolBar
+-(id)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self setTranslucent:YES];
+        self.backgroundColor = [UIColor colorWithRed:255.0f/255 green:255.0f/255 blue:255.0f/255 alpha:0.98];
+        [self setBackgroundImage:[UIImage new] forToolbarPosition:UIBarPositionAny barMetrics:UIBarMetricsDefault];
+//        [self setShadowImage:[UIImage new] forToolbarPosition:UIBarPositionAny];
+        UIBarButtonItem *leftSpace=[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
+        leftSpace.width = 16;
+        btnLeft = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, frame.size.width / 2 - 2 * LeftAndRightMargin, ButtonHeight)];
+        [btnLeft addTarget:self action:@selector(clickLeftBtn) forControlEvents:UIControlEventTouchUpInside];
+        [btnLeft setBackgroundColor:[UIColor colorWithRed:13.0f/255 green:197.0f/255 blue:203.0f/255 alpha:1.0f]];
+        [btnLeft.layer setCornerRadius:3.0f];
+        [btnLeft.layer setMasksToBounds:YES];
+        [btnLeft setTitle:@"一键寻医" forState:UIControlStateNormal];
+        [btnLeft setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        UIBarButtonItem *leftItem = [[UIBarButtonItem alloc] initWithCustomView:btnLeft];
+        
+        UIBarButtonItem *centerSpace=[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
+        
+        btnRight = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, frame.size.width / 2 - 2 * LeftAndRightMargin, ButtonHeight)];
+        [btnRight addTarget:self action:@selector(clickRightBtn) forControlEvents:UIControlEventTouchUpInside];
+        [btnRight setBackgroundColor:[UIColor colorWithRed:13.0f/255 green:197.0f/255 blue:203.0f/255 alpha:1.0f]];
+        [btnRight.layer setCornerRadius:3.0f];
+        [btnRight.layer setMasksToBounds:YES];
+        [btnRight setTitle:@"健康吧" forState:UIControlStateNormal];
+        [btnRight setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        UIBarButtonItem *rightItem = [[UIBarButtonItem alloc] initWithCustomView:btnRight];
+        
+        UIBarButtonItem *rightSpace=[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
+        rightSpace.width = 16;
+        [self setItems:@[leftSpace,leftItem,centerSpace,rightItem,rightSpace]];
+        
+        currentIsShow = NO;
+    }
+    return self;
+}
+
+-(void)clickLeftBtn
+{
+    if ([_myDelegate respondsToSelector:@selector(pushToSearchDoctorView)]) {
+        [_myDelegate pushToSearchDoctorView];
+    }
+}
+
+-(void)clickRightBtn
+{
+    if ([_myDelegate respondsToSelector:@selector(pushToChatView)]) {
+        [_myDelegate pushToChatView];
+    }
+}
+
+-(BOOL)isShow
+{
+    return currentIsShow;
+}
+
+-(void)show
+{
+    [UIView animateWithDuration:AnimateDuration animations:^{
+        [self setFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - self.frame.size.height, self.frame.size.width, self.frame.size.height)];
+    } completion:^(BOOL finished) {
+        currentIsShow = YES;
+    }];
+}
+
+-(void)hidden
+{
+    [UIView animateWithDuration:AnimateDuration animations:^{
+        [self setFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height, self.frame.size.width, self.frame.size.height)];
+    } completion:^(BOOL finished) {
+        currentIsShow = NO;
+    }];
+}
+@end

@@ -1,0 +1,152 @@
+//
+//  PHUserCenterSettingViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-2-2.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHUserCenterSettingViewController.h"
+#import "CalculateViewFrame.h"
+#import "GlobalVar.h"
+
+#import "PHUserCenterAboutViewController.h"
+#import "PHUserCenterFeedBackViewController.h"
+
+#define TitleLabelColor [UIColor colorWithRed:26/255.f green:26/255.f blue:26/255.f alpha:1.f]
+
+static NSString *cellIdentify = @"cellIdentify";
+@interface PHUserCenterSettingViewController ()<UITableViewDelegate,UITableViewDataSource>
+@property(nonatomic, strong) UITableView *tableView;
+@end
+
+@implementation PHUserCenterSettingViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+    [_tableView setBackgroundColor:ViewBackGroundColor];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    [self.view addSubview:_tableView];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationItem setTitle:@"设置"];
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(NSMutableAttributedString *)generateAttriuteStringWithStr:(NSString *)str WithColor:(UIColor *)color
+{
+    if (str == nil) {
+        return nil;
+    }
+    NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:str];
+    NSRange range;
+    range.location = 0;
+    range.length = attrString.length;
+    [attrString beginEditing];
+    [attrString addAttributes:[NSDictionary dictionaryWithObjectsAndKeys:color,NSForegroundColorAttributeName,[UIFont boldSystemFontOfSize:16.f],NSFontAttributeName, nil] range:range];
+    [attrString endEditing];
+    return attrString;
+}
+
+#pragma mark - tableview delegate and datasoucre
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    return 20.f;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+{
+    return 0.1f;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    switch (section) {
+        case 0:
+        {
+            return 2;
+        }
+            break;
+            
+        default:
+            break;
+    }
+    return 0;
+}
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 1;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 44.0f;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentify];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+        [cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
+    }
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    [cell.textLabel setAttributedText:[self generateAttriuteStringWithStr:@"用户反馈" WithColor:TitleLabelColor]];
+                }
+                    break;
+                case 1:
+                {
+                    [cell.textLabel setAttributedText:[self generateAttriuteStringWithStr:@"关于" WithColor:TitleLabelColor]];
+                }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+    return cell;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    PHUserCenterFeedBackViewController *phUserCenterFeedBackVC = [[PHUserCenterFeedBackViewController alloc] init];
+                    [self.navigationController pushViewController:phUserCenterFeedBackVC animated:YES];
+                }
+                    break;
+                case 1:
+                {
+                    PHUserCenterAboutViewController *phUserCenterAboutVC = [[PHUserCenterAboutViewController alloc] init];
+                    [self.navigationController pushViewController:phUserCenterAboutVC animated:YES];
+                }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+@end

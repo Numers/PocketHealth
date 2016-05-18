@@ -1,0 +1,244 @@
+//
+//  PHMetabolismViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-25.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHMetabolismViewController.h"
+#import "CalculateViewFrame.h"
+#import "PHLabelHeaderTableViewCell.h"
+#import "PHLabelDetailsTableViewCell.h"
+#import "PHCalculateTableViewCell.h"
+#import "PHSexSelectView.h"
+#import "UINavigationController+PHNavigationController.h"
+#import "PHAppStartManager.h"
+
+static NSString *IdentifyLabelHeaderCell = @"PHLabelHeaderTableViewCell";
+static NSString *IdentifyLabelDetailsCell = @"PHLabelDetailsTableViewCell";
+static NSString *IdentifyCalculateCell = @"PHCalculateTableViewCell";
+@interface PHMetabolismViewController ()<UITableViewDelegate,UITableViewDataSource>
+{
+    Member *host;
+}
+@property(nonatomic, strong) UITableView *tableView;
+@end
+
+@implementation PHMetabolismViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    host = [[PHAppStartManager defaultManager] userHost];
+    [self.view setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    self.tableView = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    [self.view addSubview:self.tableView];
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHLabelHeaderTableViewCell" bundle:nil] forHeaderFooterViewReuseIdentifier:IdentifyLabelHeaderCell];
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHLabelDetailsTableViewCell" bundle:nil] forHeaderFooterViewReuseIdentifier:IdentifyLabelDetailsCell];
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHCalculateTableViewCell" bundle:nil] forHeaderFooterViewReuseIdentifier:IdentifyCalculateCell];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationController setOtherViewNavigation];
+    [self.navigationItem setTitle:@"基础代谢值"];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma -mark TableViewDelegate
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 3;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 44.0f;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    switch (section) {
+        case 0:
+            return 44.0f;
+            break;
+        case 1:
+            return 83.0f;
+            break;
+        case 2:
+            return 156.0f;
+            break;
+            
+        default:
+            break;
+    }
+    return 0.f;
+}
+
+-(CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+{
+    return 0.1f;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
+{
+    switch (section) {
+        case 0:
+        {
+            PHLabelHeaderTableViewCell *cell = [self.tableView dequeueReusableHeaderFooterViewWithIdentifier:IdentifyLabelHeaderCell];
+            return cell;
+        }
+            break;
+        case 1:
+        {
+            PHCalculateTableViewCell *cell = [self.tableView dequeueReusableHeaderFooterViewWithIdentifier:IdentifyCalculateCell];
+            return cell;
+        }
+            break;
+        case 2:
+        {
+            PHLabelDetailsTableViewCell *cell = [self.tableView dequeueReusableHeaderFooterViewWithIdentifier:IdentifyLabelDetailsCell];
+            return cell;
+        }
+            break;
+            
+        default:
+            break;
+    }
+    return nil;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    switch (section) {
+        case 0:
+            return 4;
+            break;
+        case 1:
+            return 1;
+            break;
+        case 2:
+            return 0;
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    NSString *identifyStr = [NSString stringWithFormat:@"IdentifyNormailTableViewCell_%ld",indexPath.row];
+    switch (indexPath.section) {
+        case 0:
+        {
+            switch (indexPath.row) {
+                case 0:
+                {
+                    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyStr];
+                    if (cell == nil) {
+                        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifyStr];
+                        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                        [cell.textLabel setText:@"性别"];
+                    }
+                    
+                    PHSexSelectView *sexSelectView = [[PHSexSelectView alloc] initWithFrame:CGRectMake(0, 0, 120, 40)];
+                    [cell setAccessoryView:sexSelectView];
+                    return cell;
+                }
+                    break;
+                case 1:
+                {
+                    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyStr];
+                    if (cell == nil) {
+                        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifyStr];
+                        [cell.textLabel setText:@"年龄"];
+                    }
+                    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 80, 21)];
+                    [label setTextAlignment:NSTextAlignmentRight];
+                    [label setText:@"25岁"];
+                    [cell setAccessoryView:label];
+                    return cell;
+                }
+                    break;
+                case 2:
+                {
+                    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyStr];
+                    if (cell == nil) {
+                        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifyStr];
+                        [cell.textLabel setText:@"身高"];
+                    }
+                    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 80, 21)];
+                    [label setTextAlignment:NSTextAlignmentRight];
+                    [label setText:@"161cm"];
+                    [cell setAccessoryView:label];
+                    return cell;
+                }
+                    break;
+                case 3:
+                {
+                    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyStr];
+                    if (cell == nil) {
+                        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifyStr];
+                        [cell.textLabel setText:@"体重"];
+                    }
+                    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 80, 21)];
+                    [label setTextAlignment:NSTextAlignmentRight];
+                    [label setText:@"50kg"];
+                    [cell setAccessoryView:label];
+                    return cell;
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+            break;
+        case 1:
+        {
+            switch (indexPath.row) {
+                case 0:
+                {
+                    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyStr];
+                    if (cell == nil) {
+                        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifyStr];
+                        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                    }
+                    [cell.textLabel setText:@"您的基础代谢值是1123大卡"];
+                    return cell;
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+            break;
+        case 2:
+        {
+            return nil;
+        }
+            break;
+        default:
+            break;
+    }
+    return nil;
+}
+
+@end

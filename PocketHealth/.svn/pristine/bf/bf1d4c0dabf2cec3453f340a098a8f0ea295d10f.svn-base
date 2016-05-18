@@ -1,0 +1,209 @@
+//
+//  PHPhysicalExamTableListViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-21.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHPhysicalExamTableListViewController.h"
+#import "PHPhysicalExamTableManager.h"
+#import "CalculateViewFrame.h"
+#import "PHPhysicalExamTableViewCell.h"
+#import "PHUserCenterInputPhysicalExamViewController.h"
+#import "PHPhysicalExamTableReportViewController.h"
+#import "PhysicalExamTable.h"
+#import "CommonUtil.h"
+
+static NSString *identifyCell = @"PHPhysicalExamTableViewCell";
+@interface PHPhysicalExamTableListViewController ()<UITableViewDelegate, UITableViewDataSource>
+{
+    NSMutableArray *physicalExamTableList;
+    UIActivityIndicatorView *activityView;
+}
+@property(nonatomic, strong) UITableView *tableView;
+@end
+
+@implementation PHPhysicalExamTableListViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView = [[UITableView alloc] initWithFrame:frame];
+    [_tableView setBackgroundColor:ViewBackGroundColor];
+    [_tableView setSeparatorStyle:UITableViewCellSeparatorStyleNone];
+    if ([_tableView respondsToSelector:@selector(setSeparatorInset:)]) {
+        
+        [_tableView setSeparatorInset:UIEdgeInsetsZero];
+        
+    }
+    
+    if ([_tableView respondsToSelector:@selector(setLayoutMargins:)]) {
+        
+        [_tableView setLayoutMargins:UIEdgeInsetsZero];
+        
+    }
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    [self.view addSubview:_tableView];
+    activityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+    [activityView setOpaque:NO];
+    [activityView setCenter:CGPointMake(_tableView.frame.size.width / 2, _tableView.frame.size.height / 2)];
+    [_tableView addSubview:activityView];
+    [_tableView registerNib:[UINib nibWithNibName:@"PHPhysicalExamTableViewCell" bundle:nil] forCellReuseIdentifier:identifyCell];
+    [self navigationControllerSetting];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationItem setTitle:@"体检单列表"];
+    [self requestTableList];
+}
+
+-(void)navigationControllerSetting
+{
+    UIBarButtonItem *rightItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(clickAddNewPhysicalExamTable)];
+    [self.navigationItem setRightBarButtonItem:rightItem];
+}
+
+-(void)requestTableList
+{
+    if (physicalExamTableList == nil) {
+        physicalExamTableList = [[NSMutableArray alloc] init];
+    }else{
+        [physicalExamTableList removeAllObjects];
+    }
+    
+    [activityView setOpaque:YES];
+    [activityView startAnimating];
+    [[PHPhysicalExamTableManager defaultManager] requestPhysicalExamTableListCallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSArray *resultArr = [dic objectForKey:@"Result"];
+            for (NSDictionary *m in resultArr) {
+                NSError *error = nil;
+                PhysicalExamTable *physicalExamTable = [MTLJSONAdapter modelOfClass:[PhysicalExamTable class] fromJSONDictionary:m error:&error];
+                if (!error) {
+                    [physicalExamTableList addObject:physicalExamTable];
+                }
+            }
+            [self sortPhysicalExamTableList];
+            if (physicalExamTableList.count == 0) {
+                [CommonUtil HUDShowText:@"您还未添加体检单！" InView:self.view];
+            }
+            [self tableViewReloadData];
+        }else{
+            [CommonUtil HUDShowText:[dic objectForKey:@"Message"] InView:self.view];
+            [self tableViewReloadData];
+        }
+        [activityView setOpaque:NO];
+        [activityView stopAnimating];
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        [activityView setOpaque:NO];
+        [activityView stopAnimating];
+        [CommonUtil HUDShowText:@"网络错误！" InView:self.view];
+        [self tableViewReloadData];
+    }];
+}
+
+-(void)tableViewReloadData
+{
+    if ((physicalExamTableList != nil) && (physicalExamTableList.count > 0)) {
+        UIView *headView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, _tableView.frame.size.width, 0.5)];
+        [headView setBackgroundColor:[UIColor colorWithRed:199/255.f green:200/255.f blue:204/255.f alpha:1.f]];
+        _tableView.tableHeaderView = headView;
+        _tableView.tableFooterView = [[UIView alloc] initWithFrame:CGRectZero];
+        [_tableView setSeparatorStyle:UITableViewCellSeparatorStyleSingleLine];
+    }else{
+        _tableView.tableHeaderView = nil;
+        _tableView.tableFooterView = nil;
+        [_tableView setSeparatorStyle:UITableViewCellSeparatorStyleNone];
+    }
+    [_tableView reloadData];
+}
+
+-(void)sortPhysicalExamTableList
+{
+    NSSortDescriptor *sortDescriptor = [NSSortDescriptor sortDescriptorWithKey:@"examinTime" ascending:NO];
+    [physicalExamTableList sortUsingDescriptors:[NSArray arrayWithObject:sortDescriptor]];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)clickAddNewPhysicalExamTable
+{
+    PHUserCenterInputPhysicalExamViewController *phUserCenterInputPhysicalExamVC = [[PHUserCenterInputPhysicalExamViewController alloc] init];
+    [self.navigationController pushViewController:phUserCenterInputPhysicalExamVC animated:YES];
+}
+
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return physicalExamTableList.count;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 72.0f;
+}
+
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
+
+{
+    if (indexPath.row == physicalExamTableList.count - 1) {
+        if ([cell respondsToSelector:@selector(setSeparatorInset:)]) {
+            
+            [cell setSeparatorInset:UIEdgeInsetsZero];
+            
+        }
+        
+        if ([cell respondsToSelector:@selector(setLayoutMargins:)]) {
+            
+            [cell setLayoutMargins:UIEdgeInsetsZero];
+            
+        }
+    }else{
+        if ([cell respondsToSelector:@selector(setSeparatorInset:)]) {
+            
+            [cell setSeparatorInset:UIEdgeInsetsMake(0, 10, 0, 0)];
+            
+        }
+        
+        if ([cell respondsToSelector:@selector(setLayoutMargins:)]) {
+            
+            [cell setLayoutMargins:UIEdgeInsetsMake(0, 10, 0, 0)];
+            
+        }
+    }
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    PHPhysicalExamTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyCell];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            PhysicalExamTable *table = (PhysicalExamTable *)[physicalExamTableList objectAtIndex:indexPath.row];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                [cell setupCellWithPhysicalExamTable:table];
+            });
+        }
+    });
+    return cell;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    PhysicalExamTable *table = (PhysicalExamTable *)[physicalExamTableList objectAtIndex:indexPath.row];
+    
+    PHPhysicalExamTableReportViewController *phPhysicalExamTableReportVC = [[PHPhysicalExamTableReportViewController alloc] initWithPhysicalExamTable:table];
+    [self.navigationController pushViewController:phPhysicalExamTableReportVC animated:YES];
+}
+
+@end

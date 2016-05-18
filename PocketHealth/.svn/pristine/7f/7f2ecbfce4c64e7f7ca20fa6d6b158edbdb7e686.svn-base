@@ -1,0 +1,32 @@
+//
+//  PHAppStartManager.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-5.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "PHAppNavigationViewController.h"
+#import "Member.h"
+@class PHGroupChatHomeViewController;
+@interface PHAppStartManager : NSObject
+{
+    Member *host;
+    PHGroupChatHomeViewController *phGroupChatHomeVC;
+}
+
+@property(nonatomic, strong) PHAppNavigationViewController *navigationController;
+@property(nonatomic, strong) UITabBarController *tabBarController;
+
++(id)defaultManager;
+-(PHGroupChatHomeViewController *)returnPHGroupChatHomeView;
+-(Member *)userHost;
+-(void)setHostMember:(Member *)member;
+
+-(void)pushHomeViewWithSelectIndex:(NSInteger)index;
+-(void)startApp;
+-(void)loginOut;
+
+-(void)doNecessaryPreparationsAfterAppStart;
+@end

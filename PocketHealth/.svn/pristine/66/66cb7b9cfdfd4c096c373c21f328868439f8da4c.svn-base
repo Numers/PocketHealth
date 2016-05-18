@@ -1,0 +1,27 @@
+//
+//  PHProtocol.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-21.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#ifndef PocketHealth_PHProtocol_h
+#define PocketHealth_PHProtocol_h
+#import "Member.h"
+@class Group;
+@protocol PHPushChatViewDelegate <NSObject>
+-(void)pushChatViewWithMemberId:(long long)memberId WithUserType:(MemberUserType)type;
+
+//add by yangfan  添加了一个删除好友的委托方法
+-(void)deleteFriendWithMemberId:(long long)memberId result:(void (^)(BOOL flag))result;
+-(void)pushCHatViewWIthGroup:(Group *)group;
+@end
+
+@protocol PHPushFindDocotorViewDelegate <NSObject>
+
+-(void)pushFindDoctorView;
+
+@end
+
+#endif

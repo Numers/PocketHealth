@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="6250" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" rowHeight="72" id="KGk-i7-Jjw" customClass="PHPhysicalExamTableViewCell">
+            <rect key="frame" x="0.0" y="0.0" width="320" height="72"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
+                <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="2014年04月" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gJ0-Sq-o9u">
+                        <rect key="frame" x="69" y="25" width="210" height="21"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="21" id="Cqg-Wy-ZrT"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <color key="textColor" red="0.15832960660000001" green="0.79549243479999998" blue="0.87328603319999998" alpha="1" colorSpace="calibratedRGB"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="1" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Wbs-Bj-HCt">
+                        <rect key="frame" x="8" y="25" width="53" height="21"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="21" id="2l7-sH-bsr"/>
+                            <constraint firstAttribute="width" constant="53" id="JrD-N1-Ovp"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                </subviews>
+                <constraints>
+                    <constraint firstAttribute="trailingMargin" secondItem="gJ0-Sq-o9u" secondAttribute="trailing" id="8e9-RW-TJH"/>
+                    <constraint firstAttribute="centerY" secondItem="Wbs-Bj-HCt" secondAttribute="centerY" id="Cel-gq-PGz"/>
+                    <constraint firstItem="gJ0-Sq-o9u" firstAttribute="leading" secondItem="Wbs-Bj-HCt" secondAttribute="trailing" constant="8" id="PMe-Ma-lfX"/>
+                    <constraint firstItem="Wbs-Bj-HCt" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="XJX-sE-M4Z"/>
+                    <constraint firstAttribute="centerY" secondItem="gJ0-Sq-o9u" secondAttribute="centerY" id="zoe-9l-64v"/>
+                </constraints>
+            </tableViewCellContentView>
+            <connections>
+                <outlet property="lblNoText" destination="Wbs-Bj-HCt" id="Edy-h9-jSi"/>
+                <outlet property="lblTime" destination="gJ0-Sq-o9u" id="Qfr-31-CMo"/>
+            </connections>
+            <point key="canvasLocation" x="393" y="323"/>
+        </tableViewCell>
+    </objects>
+</document>

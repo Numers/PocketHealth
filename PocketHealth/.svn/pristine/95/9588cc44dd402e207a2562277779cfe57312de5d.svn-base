@@ -1,0 +1,16 @@
+//
+//  PHGroupHttpRequest.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "PHAFHttpHelper.h"
+
+@interface PHGroupHttpRequest : NSObject
+
+
+//+(void)requestSelfGroupLsitDone:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback;
+@end

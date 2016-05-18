@@ -1,0 +1,57 @@
+//
+//  PHGroupChatHomeViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupChatHomeViewController.h"
+#import "Member.h"
+#import "PHAppStartManager.h"
+
+@interface PHGroupChatHomeViewController ()
+{
+    Member *host;
+}
+@end
+
+@implementation PHGroupChatHomeViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    //获取当前用户
+    [self createHost];
+    //后台请求自己的群信息 同步群信息
+    [self performSelectorInBackground:@selector(selectMyGroupWithServer) withObject:nil];
+    
+    // Do any additional setup after loading the view.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark -
+#pragma mark - createMemberHost
+#pragma mark -
+-(void)createHost{
+   host =  [[PHAppStartManager defaultManager] userHost];
+}
+#pragma mark -  每次启动到这里 查询自己加入的群 更新群信息（不包括群成员）
+-(void)selectMyGroupWithServer{
+    
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

@@ -1,0 +1,245 @@
+//
+//  Member.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "Member.h"
+#import "CommonUtil.h"
+#import "OneForOneMessage.h"
+#import "PrivateChatViewViewController.h"
+#import "GlobalVar.h"
+
+@implementation Member
+
++ (NSDictionary *)JSONKeyPathsByPropertyKey {
+    
+    // properties defined in header < : > key in JSON Dictionary
+    return @{
+             @"loginName":@"Loginname",
+             @"realName":@"Usertruename",
+             @"nickName":@"Nickname",
+             @"passWord":@"Password",
+             @"memberId" : @"Userid",
+             @"headImage" : @"Headimg" ,
+             @"location": @"Userlocation",
+             
+             @"oiId":@"Oiid",
+             @"organizationName":@"Organ_name",
+             @"organizationHeadImage":@"Orgheadimg",
+             @"organizationLevel":@"Orgleave",
+             @"organizationAddress":@"Orgaddress",
+             @"organizationTel":@"Organtel",
+             
+             @"friendCount":@"FriendCount",
+             @"doctorCount":@"DoctorCount",
+             @"organizaitonCount":@"OrganCount",
+             
+             @"diId":@"Diid",
+             @"diJobTitle":@"Dijobtitle",
+             @"diDepartment":@"Didepartments",
+             
+             @"userHeight" : @"Userheight",
+             @"userWeight" : @"Userweight",
+             @"userSex" : @"Usersex",
+             @"userState" : @"Userstate" ,
+             
+             @"friendType" : @"FriendType" ,
+             @"userType" : @"Usertype" ,
+             @"userRegister" :@"Userregister",
+//             @"token" :@"Token"
+             };
+}
+
+
+-(void)setNilValueForKey:(NSString *)key{
+    [self setValue:@0 forKey:key];
+//    NSMutableDictionary *dic = [[super dictionaryValue] mutableCopy];
+//    [dic removeObjectForKey:key];
+//    [self setValuesForKeysWithDictionary:dic];
+//    [self dictionaryValue];
+}
++(NSValueTransformer *)headImageJSONTransformer{
+    return [MTLValueTransformer
+            reversibleTransformerWithForwardBlock:^(NSString *str) {
+
+                return [NSString stringWithFormat:@"%@%@",ServerBaseURL,str];
+            }
+            reverseBlock:^(NSString *num) {
+                return num;
+            }];
+}
+
+//- (NSDictionary *)dictionaryValue {
+//    NSMutableDictionary *modifiedDictionaryValue = [[super dictionaryValue] mutableCopy];
+//    
+//    for (NSString *originalKey in [super dictionaryValue]) {
+//        if ([self valueForKey:originalKey] == nil) {
+//            [modifiedDictionaryValue removeObjectForKey:originalKey];
+//        }
+//    }
+//    
+//    return [modifiedDictionaryValue copy];
+//}
+//- (NSDictionary *)dictionaryValue {
+//    NSMutableDictionary *modifiedDictionaryValue = [[super dictionaryValue] mutableCopy];
+//    for (NSString *originalKey in [super dictionaryValue]) {
+//        if ([self valueForKey:originalKey] == nil) {
+//            [modifiedDictionaryValue removeObjectForKey:originalKey];
+//        }
+//    }
+//    return [modifiedDictionaryValue copy];
+//}
+
+-(NSString *)getHttpKey
+{
+    return [CommonUtil createSendKeyWithUserName:_loginName Userid:[NSString stringWithFormat:@"%lld",_memberId]];
+}
+
+-(NSDictionary *)dictionaryInfo
+{
+    NSMutableDictionary *dic = [[NSMutableDictionary alloc] init];
+    [dic setObject:[NSNumber numberWithLongLong:_memberId] forKey:@"memberId"];
+    if (_loginName != nil) {
+        [dic setObject:_loginName forKey:@"loginName"];
+    }
+    
+    if (_passWord != nil) {
+        [dic setObject:_passWord forKey:@"password"];
+    }
+    
+    if (_nickName != nil) {
+        [dic setObject:_nickName forKey:@"nickName"];
+    }
+    
+    if (_realName != nil) {
+        [dic setObject:_realName forKey:@"realName"];
+    }
+    
+    if (_headImage != nil) {
+        [dic setObject:_headImage forKey:@"headImage"];
+    }
+    
+    if (_location != nil) {
+        [dic setObject:_location forKey:@"location"];
+    }
+    
+    /////////////////////////////////////////////////////////////////
+    //机构属性
+    [dic setObject:[NSNumber numberWithInteger:_oiId] forKey:@"oiid"];
+    if (_organizationName != nil) {
+        [dic setObject:_organizationName forKey:@"organizationName"];
+    }
+    
+    if (_organizationHeadImage != nil) {
+        [dic setObject:_organizationHeadImage forKey:@"organizationHeadImage"];
+    }
+    
+    if (_organizationLevel != nil) {
+        [dic setObject:_organizationLevel forKey:@"organizationLevel"];
+    }
+    
+    if (_organizationAddress != nil) {
+        [dic setObject:_organizationAddress forKey:@"organizationAddress"];
+    }
+    
+    if (_organizationTel != nil) {
+        [dic setObject:_organizationTel forKey:@"organizationTel"];
+    }
+    ////////////////////////////////////////////////////////////////////////
+    
+    ////////////////////////////////////////////////////////////////////////
+    //关注的好友医生医院数
+    [dic setObject:[NSNumber numberWithInteger:_friendCount] forKey:@"friendCount"];
+    [dic setObject:[NSNumber numberWithInteger:_doctorCount] forKey:@"doctorCount"];
+    [dic setObject:[NSNumber numberWithInteger:_organizaitonCount] forKey:@"organizationCount"];
+    ///////////////////////////////////////////////////////////////////////
+    
+    ///////////////////////////////////////////////////////////////////////
+    //医生的职位信息
+    [dic setObject:[NSNumber numberWithInteger:_diId] forKey:@"diid"];
+    if (_diJobTitle != nil) {
+        [dic setObject:_diJobTitle forKey:@"diJobTitle"];
+    }
+    
+    if (_diDepartment != nil) {
+        [dic setObject:_diDepartment forKey:@"diDepartment"];
+    }
+
+    ///////////////////////////////////////////////////////////////////////
+    
+    [dic setObject:[NSNumber numberWithInteger:_userHeight] forKey:@"userHeight"];
+    [dic setObject:[NSNumber numberWithInteger:_userWeight] forKey:@"userWeight"];
+    [dic setObject:[NSNumber numberWithInteger:_userSex] forKey:@"userSex"];
+    [dic setObject:[NSNumber numberWithInteger:_userState] forKey:@"userState"];
+    [dic setObject:[NSNumber numberWithDouble:_userRegister] forKey:@"userRegister"];
+    return dic;
+}
+
+-(Member *)initlizedWithDictionary:(NSDictionary *)dic
+{
+    Member *member = nil;
+    if (self) {
+        if (dic != nil) {
+            @try {
+                member = [[Member alloc] init];
+                member.memberId = [[dic objectForKey:@"memberId"] longLongValue];
+                member.loginName = [dic objectForKey:@"loginName"];
+                member.realName = [dic objectForKey:@"realName"];
+                member.passWord = [dic objectForKey:@"password"];
+                member.nickName = [dic objectForKey:@"nickName"];
+                member.headImage = [dic objectForKey:@"headImage"];
+                member.location = [dic objectForKey:@"location"];
+                
+                
+                ////////////////////////////////////////////////////////
+                //机构属性
+                member.oiId = [[dic objectForKey:@"oiid"] integerValue];
+                member.organizationName = [dic objectForKey:@"organizationName"];
+                member.organizationHeadImage = [dic objectForKey:@"organizationHeadImage"];
+                member.organizationLevel = [dic objectForKey:@"organizationLevel"];
+                member.organizationAddress = [dic objectForKey:@"organizationAddress"];
+                member.organizationTel = [dic objectForKey:@"organizationTel"];
+                ///////////////////////////////////////////////////////
+                member.friendCount = [[dic objectForKey:@"friendCount"] integerValue];
+                member.doctorCount = [[dic objectForKey:@"doctorCount"] integerValue];
+                member.organizaitonCount = [[dic objectForKey:@"organizationCount"] integerValue];
+                ///////////////////////////////////////////////////////
+                member.diId = [[dic objectForKey:@"diid"] integerValue];
+                member.diJobTitle = [dic objectForKey:@"diJobTitle"];
+                member.diDepartment = [dic objectForKey:@"diDepartment"];
+                ///////////////////////////////////////////////////////
+                member.userHeight = [[dic objectForKey:@"userHeight"] integerValue];
+                member.userWeight = [[dic objectForKey:@"userWeight"] integerValue];
+                member.userSex = (sexCode)[[dic objectForKey:@"userSex"] integerValue];
+                member.userState = [[dic objectForKey:@"userState"] integerValue];
+                member.userRegister = [[dic objectForKey:@"userRegister"] doubleValue];
+            }
+            @catch (NSException *exception) {
+                
+            }
+            @finally {
+                
+            }
+        }
+
+    }
+    return member;
+}
+-(instancetype)initWithDictionary:(NSDictionary *)dictionaryValue error:(NSError *__autoreleasing *)error{
+    self = [super initWithDictionary:dictionaryValue error:error];
+    if (self == nil) {
+        return nil;
+    }
+    return self;
+}
+-(id)init{
+    self = [super init];
+    if (self) {
+        _messageArr = [[NSMutableArray alloc] init];
+    }
+    return self;
+}
+@end

@@ -1,0 +1,133 @@
+//
+//  GroupHelperIndexViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/10.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "GroupHelperIndexViewController.h"
+//界面
+#import "GroupIndexTableViewCell.h"
+#import "GroupChatViewController.h"
+
+//数据
+#import "CalculateViewFrame.h"
+#import "SGroupDB.h"
+#import "Group.h"
+#import "Member.h"
+#import "PHAppStartManager.h"
+
+static NSString *identifierGroupHelperIndexCell = @"PHGroupHelperIndexTableViewCell";
+
+@interface GroupHelperIndexViewController ()<UITableViewDataSource,UITableViewDelegate>
+{
+    Member *host;
+}
+@end
+
+@implementation GroupHelperIndexViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    //———————————————————————————————————— 数据部分初始化 (标号相同为可并行  ———————————————————————
+    //1.获取当前用户
+    [self createHost];
+    //————————————————————————————————————— 界面部分初始化
+    //1.创建tableview
+    _tableView = [[UITableView alloc] init];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView.frame = frame;
+    
+    [_tableView registerNib:[UINib nibWithNibName:@"GroupIndexTableViewCell" bundle:nil] forCellReuseIdentifier:identifierGroupHelperIndexCell];
+    
+    //从数据库拉取群组信息 加入到数组
+    [self createPHGroupsAttentionTableViewDataSourceMainArray];
+    //数组作为tableview的数据源
+    [self.view addSubview:_tableView];
+    
+    // Do any additional setup after loading the view.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+
+#pragma mark - 
+#pragma mark - 数据类
+#pragma mark -
+#pragma mark - createHost
+-(void)createHost{
+    host =  [[PHAppStartManager defaultManager] userHost];
+}
+#pragma mark - createPHGroupsAttentionTableViewDataSourceMainArray
+-(void)createPHGroupsAttentionTableViewDataSourceMainArray{
+    if (!self.PHGroupsAttentionTableViewDataSourceMainArray) {
+        self.PHGroupsAttentionTableViewDataSourceMainArray = [[NSMutableArray alloc]init];
+    }
+    SGroupDB * sgroupDB = [[SGroupDB alloc]init];
+    [self.PHGroupsAttentionTableViewDataSourceMainArray addObjectsFromArray:[sgroupDB selectAllGroupWithBelongId:host.memberId]];
+}
+
+#pragma mark
+#pragma mark - 界面类
+#pragma mark -
+
+#pragma mark - 创建tableview委托以及数据塞入
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return self.PHGroupsAttentionTableViewDataSourceMainArray.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    GroupIndexTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifierGroupHelperIndexCell];
+    if (cell == nil) {
+        cell = [[GroupIndexTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierGroupHelperIndexCell];
+    }
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            id inCellMember = [self.PHGroupsAttentionTableViewDataSourceMainArray objectAtIndex:indexPath.row];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                if ([inCellMember isKindOfClass:[Group class]]) {
+                    [cell setUpCellWithGroup:inCellMember];
+                }
+                
+//                if ([inCellMember isKindOfClass:[HospitalAggregation class]]) {
+//                    [cell setUpCellWithHospitalsAggregation:inCellMember];
+//                }
+//                
+//                if ([inCellMember isKindOfClass:[GroupHelpAggregation class]]) {
+//                    [cell setUpCellWithGroupsAggregation:inCellMember];
+//                }
+            });
+        }
+    });
+    
+    
+    return cell;
+}
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    Group * inCellmember = [self.PHGroupsAttentionTableViewDataSourceMainArray objectAtIndex:indexPath.row];
+    if (inCellmember != nil) {
+        GroupChatViewController *groupChatVC = [[GroupChatViewController alloc]init];
+        inCellmember.groupChatVC = groupChatVC;
+        [self.navigationController pushViewController:groupChatVC animated:YES];
+    }
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

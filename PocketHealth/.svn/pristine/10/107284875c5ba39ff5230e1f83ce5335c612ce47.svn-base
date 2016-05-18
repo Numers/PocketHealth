@@ -1,0 +1,343 @@
+//
+//  PHAddDetailFindNewGroupTableViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/18.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHAddDetailFindNewGroupTableViewController.h"
+//界面类
+#import "PHChatHomeAddDetailResultViewController.h"
+#import "PGAddDetailFindNewGroupHotTypeCollectionViewController.h"
+#import "GroupChatGroupDetailMemberListTableViewCell.h"
+#import "PHChathomeAddDetailTableViewCell.h" //这个就是传说中的对齐cell
+#import "CustomSubtitleTableViewCell.h"
+
+//数据类
+#import "PHGroupHttpRequest.h"
+#import "CommonUtil.h"
+//#import "UIImageView+AFNetworking.h"
+#import "UIImageView+WebCache.h"
+
+
+
+#import "PHAppStartManager.h"
+//界面子类
+#import "PHAddDetailHotTypeTableViewController.h"
+
+
+
+
+static NSString *identifierCustomGroupChatAddDetailCell = @"xibCustomTableViewCellADDDetail";
+@interface PHAddDetailFindNewGroupTableViewController ()<UISearchBarDelegate,PGAddDetailFindNewGroupHotTypeCollectionViewControllerDelegate>
+{
+    NSArray * sectionHeadTitleArray; //标题section
+    
+//    UITextField * searchTextField;
+    PHChatHomeAddDetailResultViewController *AddDetailResultVC;
+    PGAddDetailFindNewGroupHotTypeCollectionViewController * hottypeVC;
+    
+    NSArray * interestingBarArray;
+    NSArray * hotTypeArray;
+    
+}
+@end
+
+@implementation PHAddDetailFindNewGroupTableViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    
+     sectionHeadTitleArray= [[NSArray alloc]initWithObjects:@"请输入群号/关键字",@"热门分类",@"可能感兴趣的群", nil];
+    // Uncomment the following line to preserve selection between presentations.
+    // self.clearsSelectionOnViewWillAppear = NO;
+    //searchController 初始化
+    [self createSearchBarController];
+    
+    [self.tableView registerNib:[UINib nibWithNibName:@"CustomSubtitleTableViewCell" bundle:nil] forCellReuseIdentifier:identifierCustomGroupChatAddDetailCell];
+    //定位地址
+    [self locationSelect];
+    //中间的热门分类初始化
+    [self createHotType];
+    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
+    //下方感兴趣群数据源http请求获取
+    [self createInterestBar];
+    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    self.navigationController.navigationBar.translucent = true;
+}
+-(void)viewWillDisappear:(BOOL)animated{
+    [super viewWillDisappear:animated];
+    self.navigationController.navigationBar.translucent = false;
+}
+#pragma mark - 部分数据初始化
+-(void)createInterestBar{
+    interestingBarArray = [[NSArray alloc]init];
+    [PHGroupHttpRequest searchInterestBarWithdone:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            NSDictionary * dic = (NSDictionary *)responseObject;
+            interestingBarArray = [dic objectForKey:@"Result"];
+        }
+        [self.tableView reloadData];
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+}
+//定位最近机构用来显示附近医院
+-(void)locationSelect{
+#warning 添加显示最近机构的方法
+}
+#pragma mark - 界面初始化
+#pragma mark - searchController 初始化
+-(void)createSearchBarController{
+    AddDetailResultVC = [[PHChatHomeAddDetailResultViewController alloc]init];
+    self.searchController = [[UISearchController alloc]initWithSearchResultsController:AddDetailResultVC];
+    self.searchController.searchResultsUpdater = AddDetailResultVC;
+    self.searchController.searchBar.delegate = self;
+    [self.searchController.searchBar sizeToFit];
+    self.definesPresentationContext = YES;
+    
+    self.searchController.searchBar.placeholder = @"输入健康号";
+}
+#pragma mark -  热门分类初始化
+-(void)createHotType{
+    //请求服务器
+    [PHGroupHttpRequest searchHopTypeGroupWithdone:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            NSDictionary * dic = (NSDictionary *)responseObject;
+//            NSLog(@" hot gropu %@",dic);
+            hotTypeArray = [dic objectForKey:@"Result"];
+            [self.tableView reloadData];
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+
+}
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    // Return the number of sections.
+    return 3;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+
+    // Return the number of rows in the section.
+    if (section == 2) {
+        return interestingBarArray.count;
+    }else{
+        return 1;
+    }
+}
+-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
+    return 35;
+}
+-(NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
+    return sectionHeadTitleArray[section];
+}
+#pragma mark -  cell 高度
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    CGFloat height;
+    switch (indexPath.section) {
+        case 0:
+        {
+            height = 44;
+        }
+            break;
+        case 1:{
+            height = 170;
+        }
+            break;
+        case 2:{
+            height = 70;
+        }
+        default:
+            height = 70;
+            break;
+    }
+    return height;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    UITableViewCell * cell = nil;
+    switch (indexPath.section) {
+        case 0:
+        {
+            UITableViewCell * cell = nil;
+            NSString *identifierGroupChatAddDetailCell = [NSString stringWithFormat:@"PHGroupChatAddDetail%ldwith%ld",(long)indexPath.section,(long)indexPath.row];
+            cell = [tableView  dequeueReusableCellWithIdentifier:identifierGroupChatAddDetailCell];
+            if (!cell) {
+                cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierGroupChatAddDetailCell];
+            }
+//            self.definesPresentationContext = YES;
+            [cell.contentView addSubview:self.searchController.searchBar];
+//            searchTextField = nil;
+//            searchTextField = [[UITextField alloc]initWithFrame:CGRectMake(0, 0, 100, 44)];
+//            searchTextField.delegate = self;
+//            [cell addSubview:searchTextField];
+            return cell;
+            
+        }
+            break;
+        case 1:{
+            UITableViewCell * cell = nil;
+            NSString *identifierGroupChatAddDetailCell = [NSString stringWithFormat:@"PHGroupChatAddDetail%ldwith%ld",(long)indexPath.section,(long)indexPath.row];
+            cell = [tableView  dequeueReusableCellWithIdentifier:identifierGroupChatAddDetailCell];
+            cell = [[GroupChatGroupDetailMemberListTableViewCell alloc]init];
+            UICollectionViewFlowLayout * flowLayout = [[UICollectionViewFlowLayout alloc]init];
+            hottypeVC = nil;
+            hottypeVC = [[PGAddDetailFindNewGroupHotTypeCollectionViewController alloc]initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 150) collectionViewLayout:flowLayout WithHotArray:hotTypeArray];
+            hottypeVC.delegate = self;
+            [cell addSubview:hottypeVC.view];
+            return cell;
+        }
+            break;
+        case 2:{
+            CustomSubtitleTableViewCell *cell = [tableView  dequeueReusableCellWithIdentifier:identifierCustomGroupChatAddDetailCell];
+
+            if (!cell) {
+                cell = [[CustomSubtitleTableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifierCustomGroupChatAddDetailCell];
+            }
+
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+            if (interestingBarArray.count!=0) {
+                NSDictionary * interestBar = interestingBarArray[indexPath.row];
+//                cell.textLabel.text =@"sdfsdf";
+//    
+//                cell.detailTextLabel.text = @"sdfhksdh  ";
+                cell.customLabel.text =[interestBar objectForKey:@"Hbname"];
+                NSLog(@"%@ %@",[interestBar objectForKey:@"Hbname"], [interestBar objectForKey:@"Hbremark"]);
+                
+                cell.customDetailLabel.text = [interestBar objectForKey:@"Hbremark"];
+                NSString *imageUrl = [NSString stringWithFormat:@"%@%@",ServerBaseURL,[interestBar objectForKey:@"Hblogourl"]];
+               
+//                cell.customImageView.frame = CGRectMake(0, 0, 45, 45);
+          
+                if (imageUrl!=nil) {
+                    
+                    [cell.customImageView sd_setImageWithURL:[NSURL URLWithString:imageUrl] placeholderImage:[UIImage imageNamed:@"scan-icon"]];
+                }
+
+            }
+            return cell;
+           
+        }
+            break;
+        default:
+            break;
+    }
+
+    
+    // Configure the cell...
+    
+    return cell;
+}
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    switch (indexPath.section) {
+        case 0:
+        {
+            
+        }
+            break;
+        case 1:{
+            
+        }
+            break;
+        case 2:{
+            NSDictionary * groupDic = interestingBarArray[indexPath.row];
+            unsigned groupId  = [[groupDic objectForKey:@"Hbid"]intValue];;
+            [self.navigationController popToRootViewControllerAnimated:NO];
+           
+            if ([self.delegate respondsToSelector:@selector(pushCHatViewWIthGroupId:)]) {
+                [self.delegate pushCHatViewWIthGroupId:groupId];
+            }
+            
+            
+            
+        }
+            break;
+        default:
+            break;
+    }
+}
+#pragma mark - sendSelectBtid 子界面 coll view 的委托
+-(void)sendSelectBtid:(unsigned )btid{
+    NSLog(@"%u",btid);
+    //先推入群列表界面
+    PHAddDetailHotTypeTableViewController * phhotTypeVC = [[PHAddDetailHotTypeTableViewController alloc]init];
+    phhotTypeVC.hotTypeId = btid;
+    phhotTypeVC.delegate = [[PHAppStartManager defaultManager]returnPHGroupChatHomeView];
+    [self.navigationController pushViewController:phhotTypeVC animated:YES];
+    
+}
+/*
+// Override to support conditional editing of the table view.
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the specified item to be editable.
+    return YES;
+}
+*/
+
+/*
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        // Delete the row from the data source
+        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
+        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+    }   
+}
+*/
+
+/*
+// Override to support rearranging the table view.
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath {
+}
+*/
+
+/*
+// Override to support conditional rearranging of the table view.
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the item to be re-orderable.
+    return YES;
+}
+*/
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+#pragma mark - UISearchBar delegates
+-(BOOL)searchBarShouldBeginEditing:(UISearchBar *)searchBar{
+//    self.navigationController.navigationBar.translucent = false;
+    [self.navigationController setNavigationBarHidden:YES animated:YES];
+    return YES;
+}
+-(BOOL)searchBarShouldEndEditing:(UISearchBar *)searchBar{
+//    self.navigationController.navigationBar.translucent = true;
+    [self.navigationController setNavigationBarHidden:NO animated:YES];
+    return YES;
+}
+
+
+@end

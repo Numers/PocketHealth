@@ -1,0 +1,392 @@
+//
+//  GroupChatGroupDetailTableViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/16.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "GroupChatGroupDetailTableViewController.h"
+#import "CommonUtil.h"
+#import "GroupChatGroupDetailMemberViewController.h"
+
+//数据
+#import "SGroupDB.h"
+#import "SGroupMemberDB.h"
+#import "PHGroupHttpRequest.h"
+#import "PHAppStartManager.h"
+#import "CommonUtil.h"
+
+//界面
+#import "GroupChatGroupDetailMemberListTableViewCell.h"
+
+//子界面
+#import "GroupChatGroupMemberListTableViewController.h"
+#import "PHGroupInfoEditViewController.h"
+
+//界面btn
+#import "PHBlueButton.h"
+#import "MBProgressHUD.h"
+#import "UIImageView+WebCache.h"
+
+
+static NSString *identifierGroupChatDetailCommonCell = @"PHGroupChatDetailCommonCell";
+static NSString *identifierGroupChatDetailMemberListCell = @"PHGroupChatDetailMemberListCell";
+@interface GroupChatGroupDetailTableViewController ()<UIAlertViewDelegate>
+{
+    GroupChatGroupDetailMemberViewController * memberListView;
+    Member *host;
+    
+    GroupMember * selectedMember;
+    UIAlertView * exitAlert;
+}
+@end
+
+@implementation GroupChatGroupDetailTableViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title =@"群信息";
+    //从数据库获取该社区的groupMemberlist;
+    //group 已经获取到了
+    //从服务器更新group信息
+    host = [[PHAppStartManager defaultManager]userHost];
+    //判断该成员是否在群中
+    if (YES) {
+        //将按钮添加到tableviewFooterview
+        [self createExitBtnToTableViewFooterView];
+    }
+    //查找我在群中的身份
+    [self selectMemberIdentityThenCreateEditBtn];
+    
+   
+    
+    // Uncomment the following line to preserve selection between presentations.
+    // self.clearsSelectionOnViewWillAppear = NO;
+    
+    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
+    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.tableView reloadData];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark - 验证身份 确定是否要加入编辑按钮
+-(void)selectMemberIdentityThenCreateEditBtn{
+//    UIBarButtonItem *rightBarItem = [[UIBarButtonItem alloc] initWithTitle:@"编辑" style:UIBarButtonItemStylePlain target:self action:@selector(pushGroupInfoEditView)];
+//    [self.navigationItem setRightBarButtonItem:rightBarItem];
+//    return;
+    for (GroupMember * groupmember in _group.groupMember) {
+        if (groupmember.memberId == host.memberId) {
+            //
+            selectedMember = groupmember;
+            break;
+        }
+    }
+    if (selectedMember!=nil) {
+        //如果是管理员或者群组 可以编辑群
+        if (selectedMember.groupMemberType == groupAdmin || selectedMember.groupMemberType == groupOwner) {
+            //添加按钮
+            UIBarButtonItem *rightBarItem = [[UIBarButtonItem alloc] initWithTitle:@"编辑" style:UIBarButtonItemStylePlain target:self action:@selector(pushGroupInfoEditView)];
+            [self.navigationItem setRightBarButtonItem:rightBarItem];
+        }
+        
+    }
+}
+
+-(void)pushGroupInfoEditView
+{
+    PHGroupInfoEditViewController *phGroupInfoEditVC = [[PHGroupInfoEditViewController alloc] initWithGroup:self.group];
+    [self.navigationController pushViewController:phGroupInfoEditVC animated:YES];
+}
+#pragma mark - createExitBtnToTableViewFooterView
+-(void)createExitBtnToTableViewFooterView{
+    PHBlueButton * blueBtn = [[PHBlueButton alloc]initWithFrame:CGRectMake(kBtnLeftMargin, 0, kBottomBtnWidth, 44)];
+    blueBtn.backgroundColor = [UIColor paperColorRed900];
+    [blueBtn setTitle:@"退出群组" forState:UIControlStateNormal];
+    [blueBtn addTarget:self action:@selector(clickExitGroupBtn) forControlEvents:UIControlEventTouchUpInside];
+    UIView * aView = [[UIView alloc]initWithFrame:CGRectMake(kBtnLeftMargin, 0, kBottomBtnWidth, 44)];
+    [aView addSubview:blueBtn];
+    self.tableView.tableFooterView = aView;
+}
+//退出群按钮点击
+-(void)clickExitGroupBtn{
+    NSLog(@"退出该群按钮点击");
+    exitAlert = [[UIAlertView alloc]initWithTitle:@"确认退出该群" message:nil delegate:self cancelButtonTitle:@"退出" otherButtonTitles:@"取消", nil];
+    [exitAlert show];
+}
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
+    if (buttonIndex==0) {
+        //退出
+        MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+        
+        // Configure for text only and offset down
+        hud.mode = MBProgressHUDModeText;
+        hud.labelText = @"正在退出...";
+        hud.margin = 10.f;
+        hud.removeFromSuperViewOnHide = YES;
+        
+        
+        [PHGroupHttpRequest deleteUserFromBarWithDeleteUid:host.memberId WithGid:self.group.groupId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+            NSDictionary * dic = (NSDictionary *)responseObject;
+            NSString * messageStr = [dic objectForKey:@"Message"];
+            //
+            [hud hide:YES afterDelay:0];
+            if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+                //如果成功退出 那么就删除本地数据库 然后推出到root
+                SGroupDB *sgroupDb=[[SGroupDB alloc]init];
+                [sgroupDb deleteGroup:self.group];
+                messageStr!=nil?[CommonUtil HUDShowText:messageStr InView:self.navigationController.view]:NSLog(@"delete group success");
+//                [self.navigationController popToRootViewControllerAnimated:YES];
+                [[PHAppStartManager defaultManager]popToTabBarControllerWithIndex:1];
+            }else{
+                
+                messageStr!=nil?[CommonUtil HUDShowText:messageStr InView:self.navigationController.view]:NSLog(@"delete group error");
+            }
+        } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+            //
+            [hud hide:YES afterDelay:0];
+            [CommonUtil HUDShowText:@"网络错误" InView:self.view];
+        }];
+    }
+}
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    // Return the number of sections.
+    return 4;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    // Return the number of rows in the section.
+    if (section == 4) {
+        return 2;
+    }else{
+        return 1;
+    }
+}
+-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
+    if (section==0) {
+        return 0;
+    }else{
+      return 10;
+    }
+    
+}
+//-(CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section{
+//    return 1;
+//}
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    NSLog(@"indexPath.section %ld indexPath.row %ld",(long)indexPath.section,(long)indexPath.row);
+    if (indexPath.section == 0) {
+        return 65;
+    }
+    else if (indexPath.section == 3){
+        
+//        if (indexPath.row == 0) {
+            return 100;
+//        }else{
+//            return 9999;
+//        }
+    }
+    else if (indexPath.section == 2){
+//        UITableViewCell *cell = [self tableView:tableView cellForRowAtIndexPath:indexPath];
+//        
+//        return cell.frame.size.height + 40;
+        NSString *text =self.group.groupBriefIntroduction;
+        //限制宽度，高度最大为10000.0f
+        CGSize constrainSize = CGSizeMake(230.0f, CGFLOAT_MAX);
+        //创建一个NSAttributedString对象为相应的字符串添加font属性，
+        NSAttributedString *attributeText = [[NSAttributedString alloc]initWithString:text attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:13.0f]}];
+        //得到一个根据文本获得的rect,我们取size
+        CGRect rect = [attributeText boundingRectWithSize:constrainSize options:NSStringDrawingUsesLineFragmentOrigin context:nil];
+        CGSize size = rect.size;
+        return size.height + 40.0f;
+        
+//        return 65;
+    }
+    else{
+        return 44;
+    }
+//    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+//    return cell.frame.size.height;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell * cell = nil;
+    NSString *identifierGroupChatDetailCell = [NSString stringWithFormat:@"PHGroupChatDetail%ldwith%ld",(long)indexPath.section,(long)indexPath.row];
+    cell = [tableView  dequeueReusableCellWithIdentifier:identifierGroupChatDetailCell];
+    
+    
+    switch (indexPath.section) {
+        case 0:
+        {
+//            static NSString *identifierGroupChatDetailTopHeadCell = @"PHGroupChatDetailTopHeadCell";
+            if (!cell) {
+                cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifierGroupChatDetailCell];
+            }
+            [cell.imageView sd_setImageWithURL:[NSURL URLWithString:self.group.groupHeadImage] placeholderImage:[UIImage imageNamed:@"defult_hospital_icons"]];
+            float sw=45/cell.imageView.image.size.width;
+            float sh=45/cell.imageView.image.size.height;
+            cell.imageView.transform=CGAffineTransformMakeScale(sw,sh);
+            cell.textLabel.text = self.group.groupName;
+            cell.detailTextLabel.text = [NSString stringWithFormat:@"%u",self.group.groupId];
+            
+        }
+            break;
+        case 1:{
+            if (!cell) {
+               cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:identifierGroupChatDetailCell];
+            }
+            
+            cell.textLabel.text=@"机构";
+            cell.detailTextLabel.text =self.group.groupStructure;
+            cell.detailTextLabel.tintColor = [UIColor lightGrayColor];
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        }
+            break;
+        case 2:{
+            if (!cell) {
+                cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifierGroupChatDetailCell];
+            }
+
+            cell.textLabel.text=@"群简介";
+            cell.detailTextLabel.text =self.group.groupBriefIntroduction;
+//            cell.detailTextLabel.tintColor = [UIColor lightGrayColor];
+//            cell.detailTextLabel.font = [UIFont systemFontOfSize:14];
+            cell.detailTextLabel.numberOfLines = 0;
+//            CGSize boundSize = CGSizeMake(216, CGFLOAT_MAX);
+//            NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc]init];
+//            paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
+//            NSDictionary *attributes = @{NSFontAttributeName:cell.detailTextLabel.font, NSParagraphStyleAttributeName:paragraphStyle.copy};
+//            CGRect rect = [cell.detailTextLabel.text boundingRectWithSize:boundSize options:NSStringDrawingTruncatesLastVisibleLine|NSStringDrawingUsesLineFragmentOrigin attributes:attributes context:nil];
+//            cell.frame = rect;
+        }
+            break;
+        case 3:{
+            if (!cell) {
+//                cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifierGroupChatDetailCell];
+                cell = [[GroupChatGroupDetailMemberListTableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierGroupChatDetailCell];
+            }
+            memberListView = nil;
+            memberListView= [[GroupChatGroupDetailMemberViewController alloc]initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 100)];
+
+            memberListView.groupMemberList = self.group.groupMember;
+            NSLog(@"%f %f",memberListView.view.frame.size.height,memberListView.view.frame.size.width);
+            
+            [cell addSubview:memberListView.view];
+//            [cell.contentView addSubview:memberListView.view];
+//            [cell.contentView addConstraint:[NSLayoutConstraint constraintWithItem:memberListView.view attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:cell.contentView attribute:NSLayoutAttributeWidth multiplier:1 constant:[UIScreen mainScreen].bounds.size.width]];
+            
+//            CGRect rect = memberListView.view.frame;
+//            cell.frame = rect;
+//            NSLog(@"%f %f",cell.frame.size.height,cell.frame.size.width);
+//            UIViewController * VC = [[UIViewController alloc]init];
+//            VC.view.backgroundColor = [UIColor blueColor];
+//            [cell.contentView addSubview:VC.view];
+//            UIViewController * viewCOntroller = [UIViewController alloc]init
+//            UILabel * fff = [[UILabel alloc]initWithFrame:CGRectMake(9, 9, 100, 40)];
+//            fff.text = @"lskdhfksdhjfks";
+//            UIView *kkk = [[UIView alloc]initWithFrame:CGRectMake(0, 0, 100, 100)];
+//            kkk.backgroundColor = [UIColor redColor];
+//            [cell.contentView addSubview:kkk];
+//            [cell.contentView addSubview:fff];
+            
+            
+//                        cell.detailTextLabel.text = @"100人";
+
+        }
+            break;
+        case 4:{
+            if (!cell) {
+                cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierGroupChatDetailCell];
+            }
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+            switch (indexPath.row) {
+                case 0:
+                {
+                    cell.textLabel.text=@"分享群";
+                }
+                    break;
+                case 1:{
+                    cell.textLabel.text = @"聊天记录";
+                }
+                    break;
+//                case 2:{
+//                    cell.textLabel.text = @"聊天记录3";
+//                }
+//                    break;
+                default:
+                    break;
+            }
+            
+        }
+            break;
+        default:
+            break;
+    }
+
+//    cell.textLabel.text=@"sdfsdf";
+    return cell;
+}
+
+#pragma mark -  详情点击
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    if (indexPath.section == 3) {
+        //推入群详情页面
+        GroupChatGroupMemberListTableViewController * memberListVC = [[GroupChatGroupMemberListTableViewController alloc]initWithGroup:_group];
+        [self.navigationController pushViewController:memberListVC animated:YES];
+    }
+}
+/*
+// Override to support conditional editing of the table view.
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the specified item to be editable.
+    return YES;
+}
+*/
+
+/*
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        // Delete the row from the data source
+        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
+        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+    }   
+}
+*/
+
+/*
+// Override to support rearranging the table view.
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath {
+}
+*/
+
+/*
+// Override to support conditional rearranging of the table view.
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the item to be re-orderable.
+    return YES;
+}
+*/
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

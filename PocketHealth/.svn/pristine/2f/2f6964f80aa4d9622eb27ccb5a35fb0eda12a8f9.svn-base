@@ -1,0 +1,227 @@
+//
+//  PHSocketManagerHelper.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHSocketManagerHelper.h"
+#import "ClientHelper.h"
+#import "XGPSocketMsgDistributer.h"
+#import "CommonUtil.h"
+#import "AppDelegate.h"
+
+static PHSocketManagerHelper * phSocketManager;
+static BOOL doSync = NO;
+
+@implementation PHSocketManagerHelper
+{
+    XGPSocketMsgDistributer *socketDistributer;
+    NSTimer * clientHelperHeartTestTimer;
+    NSLock * theLock;
+    long long mId;
+}
++(id)defaultManager
+{
+    if (phSocketManager == nil) {
+        phSocketManager = [[PHSocketManagerHelper alloc] init];
+    }
+    return phSocketManager;
+}
+
+-(void)startSocketWithMemberId:(long long )memberId{
+    clientHelperHeartTestTimer = [NSTimer scheduledTimerWithTimeInterval:60 target:self selector:@selector(clientHelperHeartTestFire) userInfo:nil repeats:YES];
+    
+    
+    mId = memberId;
+    NSString * memberIdStr = [NSString stringWithFormat:@"%lld",memberId];
+    theLock = [[NSLock alloc]init];
+    
+    socketDistributer=[[XGPSocketMsgDistributer alloc]initWithMyID:memberIdStr];
+    [self createMessageNotification];
+    [ClientHelper connect];
+}
+
+-(void)endSocket
+{
+    [clientHelperHeartTestTimer invalidate];
+    clientHelperHeartTestTimer = nil;
+    //调用主动关闭socket聊天链接
+    AppDelegate * delegate = [UIApplication sharedApplication].delegate;
+    delegate.isInitiativeExitChatConnect = YES;
+    [ClientHelper close];
+    [socketDistributer pMsgCodeRelease];
+}
+
+-(void)clientHelperHeartTestFire{
+    int ret = [ClientHelper test];
+    if (ret<0) {
+        
+        [self performSelectorInBackground:@selector(reConnectSocketChatHost) withObject:nil];
+        
+    }else{
+        NSLog(@"[ClientHelper test]; heart heart heart heart heart");
+    }
+    
+}
+#pragma mark - 聊天消息通知处理
+-(void)createMessageNotification{
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(OnConnect:) name:@"ONCONNECT" object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(OnNotify:) name:@"ONNOTIFY" object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(OnSyncRes:) name:@"ONSYNCRES" object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(OnMessageRes:) name:@"ONMESSAGERES" object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(OnClose:) name:@"ONCLOSE" object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(OnConnectTimeout:) name:@"ONCONNECTTIMEOUT" object:nil];
+}
+#pragma Notification
+-(void)OnConnect:(NSNotification *)notification
+{
+    NSLog(@"Connect Successfully");
+    
+    NSUserDefaults *userDefaults=[NSUserDefaults standardUserDefaults];
+    
+    NSString *newsynckey= [userDefaults objectForKey:@"newsynckey"];
+    if (!newsynckey) {
+        newsynckey=@"";
+        NSLog(@"has no  sync key");
+        [userDefaults setObject:newsynckey forKey:@"newsynckey"];
+    }
+    
+    //    UserStatus *userStatus=[UserStatus getGlobalUserStatus];
+    [self doSyncThread];
+    //    int ret=[ClientHelper sync:[userStatus.userid intValue] Token:@"qweqweqwe" Synckey:newsynckey];
+    //    NSLog(@"ret is %u",ret);
+}
+
+-(void) OnNotify:(NSNotification *)notification{
+    NSLog(@"OnNotify");
+    
+    NSDictionary *dic = [notification object];
+    
+    NSLog(@"%@",dic);
+    
+    NSUserDefaults *userDefaults=[NSUserDefaults standardUserDefaults];
+    NSString *newsynckey= [userDefaults objectForKey:@"newsynckey"];
+    if (!newsynckey) {
+        
+        newsynckey=@"";
+        NSLog(@"has  no sync key");
+        [userDefaults setObject:newsynckey forKey:@"newsynckey"];
+    }
+    //    UserStatus *userStatus=[UserStatus getGlobalUserStatus];
+    [self doSyncThread];
+    //    [ClientHelper sync:[userStatus.userid intValue] Token:@"qweqweqwe" Synckey:newsynckey];
+}
+
+-(void) OnSyncRes:(NSNotification *)notification{
+    NSLog(@"SyncRes");
+    
+    NSDictionary *dic = [notification object];
+    
+    NSLog(@"%@",dic);
+    
+    
+    
+    
+    NSUserDefaults *userDefaults=[NSUserDefaults standardUserDefaults];
+    [userDefaults setObject:[dic objectForKey:@"newsynckey"] forKey:@"newsynckey"];
+    [userDefaults synchronize];
+    doSync=NO;
+    
+    NSArray *data=[dic objectForKey:@"data"];
+    //在 handleGroupSyncMessage 中处理收到的sync消息
+    //    [self handleGroupSyncMessage:data];
+    NSLog(@"%@",data);
+    [[NSNotificationCenter defaultCenter]postNotificationName:@"YFCHATGROUPMESSAGENOTIFICATION" object:data];
+    
+    
+}
+-(void)doSyncThread
+{
+    [theLock lock];
+    if (!doSync) {
+        NSUserDefaults *userDefaults=[NSUserDefaults standardUserDefaults];
+        NSString *newsynckey= [userDefaults objectForKey:@"newsynckey"];
+        if (newsynckey == nil) {
+            newsynckey = @"fdfdkj";
+        }
+        doSync = YES;
+
+        NSInteger ret= [ClientHelper sync:mId Token:[CommonUtil MyToken] Synckey:newsynckey];
+        if (ret<0) {
+            [[PHSocketManagerHelper defaultManager]reConnectSocketChatHost];
+
+        }
+        //        NSInteger ret = [ClientHelper sync:[userStatus.userid intValue] Token:[CommonUtil MyToken] Synckey:newsynckey];
+        //        if (ret<0) {
+        //             [self performSelectorInBackground:@selector(reConnectChatHost) withObject:nil];
+        //            [ClientHelper connectToHost];
+        //        }
+    }
+    [theLock unlock];
+}
+-(void) OnMessageRes:(NSNotification *)notification{
+    NSLog(@"OnMessageRes");
+    NSDictionary *dic = [notification object];
+    NSInteger msgsn = [[dic valueForKey:@"msgsn"] integerValue];
+    if (msgsn < 10000) {
+        //调用通知，修改消息状态
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"TABLEVIEWRELOAD" object:dic];
+    }
+}
+
+-(void) OnClose:(NSNotification *)notification{
+    NSLog(@"Close");
+//    [ClientHelper connectToHost];
+    
+//    AppDelegate *appdelegate=(AppDelegate *)[UIApplication sharedApplication].delegate;
+//    if (!appdelegate.isInitiativeExitChatConnect) {
+
+
+        NSLog(@"isInitiativeExitChatConnect Close");
+        //如果是主动要求退出的close请求 那么不需要重连
+        [self performSelectorInBackground:@selector(reConnectSocketChatHost) withObject:nil];
+    
+
+//    }
+}
+
+-(void)OnExit{
+    NSLog(@"ExitChat");
+    [ClientHelper close];
+}
+
+-(void) OnConnectTimeout:(NSNotification *)notification{
+    NSLog(@"TimeOut");
+    [self performSelectorInBackground:@selector(reConnectSocketChatHost) withObject:nil];
+    //    [ClientHelper connectToHost];
+    
+}
+-(void)reConnectSocketChatHost{
+    AppDelegate *appdelegate=(AppDelegate *)[UIApplication sharedApplication].delegate;
+    if (!appdelegate.isInitiativeExitChatConnect) {
+        [ClientHelper connectToHost];
+        appdelegate.isInitiativeExitChatConnect=NO;
+        NSLog(@"reconnect socket chat host");
+    }else{
+        NSLog(@"主动退出 拒绝重连");
+    }
+    
+}
+//-(void)reConnectSocketChatHostSelf{
+//    AppDelegate *appdelegate=(AppDelegate *)[UIApplication sharedApplication].delegate;
+//    if (!appdelegate.isInitiativeExitChatConnect) {
+//        [ClientHelper connectToHost];
+//        appdelegate.isInitiativeExitChatConnect=NO;
+//    }else{
+//        NSLog(@"主动退出 拒绝重连");
+//    }
+//}
+
+@end

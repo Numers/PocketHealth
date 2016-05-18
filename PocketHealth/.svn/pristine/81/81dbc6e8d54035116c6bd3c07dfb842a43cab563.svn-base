@@ -1,0 +1,15 @@
+//
+//  PGAddDetailFindNewGroupHotTypeCollectionViewController.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/18.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface PGAddDetailFindNewGroupHotTypeCollectionViewController : UICollectionViewController
+
+-(id)initWithFrame:(CGRect )frame collectionViewLayout:(UICollectionViewLayout *)layout WithHotArray:(NSArray *)hotArray;
+//@property (nonatomic , strong) NSArray * hotTypeArray;
+@end

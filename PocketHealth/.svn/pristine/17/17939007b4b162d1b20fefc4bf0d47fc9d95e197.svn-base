@@ -1,0 +1,130 @@
+//
+//  PHPhysicalExamTableListViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-21.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHPhysicalExamTableListViewController.h"
+#import "PHPhysicalExamTableManager.h"
+#import "CalculateViewFrame.h"
+#import "PHPhysicalExamTableViewCell.h"
+#import "PHUserCenterInputPhysicalExamViewController.h"
+#import "PhysicalExamTable.h"
+
+static NSString *identifyCell = @"PHPhysicalExamTableViewCell";
+@interface PHPhysicalExamTableListViewController ()<UITableViewDelegate, UITableViewDataSource>
+{
+    NSMutableArray *physicalExamTableList;
+}
+@property(nonatomic, strong) UITableView *tableView;
+@end
+
+@implementation PHPhysicalExamTableListViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView = [[UITableView alloc] initWithFrame:frame];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    [self.view addSubview:_tableView];
+    [_tableView registerNib:[UINib nibWithNibName:@"PHPhysicalExamTableViewCell" bundle:nil] forCellReuseIdentifier:identifyCell];
+    [self navigationControllerSetting];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self requestTableList];
+}
+
+-(void)navigationControllerSetting
+{
+    UIBarButtonItem *rightItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(clickAddNewPhysicalExamTable)];
+    [self.navigationItem setRightBarButtonItem:rightItem];
+}
+
+-(void)requestTableList
+{
+    if (physicalExamTableList == nil) {
+        physicalExamTableList = [[NSMutableArray alloc] init];
+    }else{
+        [physicalExamTableList removeAllObjects];
+    }
+    
+    [[PHPhysicalExamTableManager defaultManager] requestPhysicalExamTableListCallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSArray *resultArr = [dic objectForKey:@"Result"];
+            for (NSDictionary *m in resultArr) {
+                NSError *error = nil;
+                PhysicalExamTable *physicalExamTable = [MTLJSONAdapter modelOfClass:[PhysicalExamTable class] fromJSONDictionary:m error:&error];
+                if (!error) {
+                    [physicalExamTableList addObject:physicalExamTable];
+                }
+            }
+            [self sortPhysicalExamTableList];
+            [_tableView reloadData];
+        }else{
+            
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+-(void)sortPhysicalExamTableList
+{
+    NSSortDescriptor *sortDescriptor = [NSSortDescriptor sortDescriptorWithKey:@"ebId" ascending:NO];
+    [physicalExamTableList sortUsingDescriptors:[NSArray arrayWithObject:sortDescriptor]];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)clickAddNewPhysicalExamTable
+{
+    PHUserCenterInputPhysicalExamViewController *phUserCenterInputPhysicalExamVC = [[PHUserCenterInputPhysicalExamViewController alloc] init];
+    [self.navigationController pushViewController:phUserCenterInputPhysicalExamVC animated:YES];
+}
+
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return physicalExamTableList.count;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 72.0f;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    PHPhysicalExamTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyCell];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            PhysicalExamTable *table = (PhysicalExamTable *)[physicalExamTableList objectAtIndex:indexPath.row];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                [cell setupCellWithPhysicalExamTable:table WithIndex:indexPath.row + 1];
+            });
+        }
+    });
+    return cell;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    PhysicalExamTable *table = (PhysicalExamTable *)[physicalExamTableList objectAtIndex:indexPath.row];
+    
+    
+}
+
+@end

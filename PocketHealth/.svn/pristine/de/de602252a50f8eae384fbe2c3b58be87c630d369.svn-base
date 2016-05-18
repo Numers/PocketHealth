@@ -1,0 +1,120 @@
+//
+//  PHResetPasswordViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-15.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHResetPasswordViewController.h"
+#import "CommonUtil.h"
+#import "NSString+Additions.h"
+#import "PHAppStartManager.h"
+#import "PHUpdateUserInfoManager.h"
+#import "MBProgressHUD+Add.h"
+
+@interface PHResetPasswordViewController ()<UITextFieldDelegate>
+@property (strong, nonatomic) IBOutlet UITextField *txtOldPassword;
+@property (strong, nonatomic) IBOutlet UITextField *txtNewPassword;
+@property (strong, nonatomic) IBOutlet UITextField *txtValidatePassword;
+
+@end
+
+@implementation PHResetPasswordViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    [self.view setBackgroundColor:ViewBackGroundColor];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationItem setTitle:@"重置密码"];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    return [textField resignFirstResponder];
+}
+
+-(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    if ([_txtOldPassword isFirstResponder]) {
+        [_txtOldPassword resignFirstResponder];
+    }
+    
+    if ([_txtNewPassword isFirstResponder]) {
+        [_txtNewPassword resignFirstResponder];
+    }
+    
+    if ([_txtValidatePassword isFirstResponder]) {
+        [_txtValidatePassword resignFirstResponder];
+    }
+}
+
+-(void)resetPassword:(NSString *)newPassword
+{
+    [[PHUpdateUserInfoManager defaultManager] updateUserInfoWithParameter:[NSString md5:[NSString stringWithFormat:@"%@%@",key_password,newPassword]] WithProperty:@"Password" CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+            NSError *error = nil;
+            Member *host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+            if (!error) {
+                [[PHAppStartManager defaultManager] setHostMember:host];
+                [MBProgressHUD showSuccess:@"更新成功" toView:self.view];
+                [self.navigationController popViewControllerAnimated:NO];
+            }
+        }else{
+            [MBProgressHUD showError:@"更新失败!" toView:self.view];
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        [MBProgressHUD showError:@"网络错误!" toView:self.view];
+    }];
+}
+
+- (IBAction)clickComfirmBtn:(id)sender {
+    UIAlertView *alert = nil;
+    if (![CommonUtil isValidatePassWord:_txtOldPassword.text]) {
+        alert = [[UIAlertView alloc] initWithTitle:@"重设密码" message:@"旧密码不合法" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return;
+    }
+    
+    Member *host = [[PHAppStartManager defaultManager] userHost];
+    if (![[NSString md5:[NSString stringWithFormat:@"%@%@",key_password,_txtOldPassword.text]] isEqualToString:host.passWord]) {
+        alert = [[UIAlertView alloc] initWithTitle:@"重设密码" message:@"旧密码不正确" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return;
+    }
+    
+    if (![CommonUtil isValidatePassWord:_txtNewPassword.text]) {
+        alert = [[UIAlertView alloc] initWithTitle:@"重设密码" message:@"新密码不合法" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return;
+    }
+    
+    if([_txtNewPassword.text containsString:@" "])
+    {
+        alert = [[UIAlertView alloc] initWithTitle:@"重设密码" message:@"密码不能包含空格" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return;
+    }
+    
+    if (![_txtNewPassword.text isEqualToString:_txtValidatePassword.text]) {
+        alert = [[UIAlertView alloc] initWithTitle:@"重设密码" message:@"新密码两次输入不一致" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return;
+    }
+    
+    [self resetPassword:_txtNewPassword.text];
+}
+@end

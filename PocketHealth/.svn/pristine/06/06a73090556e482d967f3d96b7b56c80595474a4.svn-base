@@ -1,0 +1,98 @@
+//
+//  PHLoginViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-5.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHLoginViewController.h"
+#import "PHLoginManager.h"
+#import "PHAppStartManager.h"
+#import "CommonUtil.h"
+#import "PHVerificatePhoneViewController.h"
+
+@interface PHLoginViewController ()<UITextFieldDelegate>
+@property (strong, nonatomic) IBOutlet UITextField *txtLoginName;
+@property (strong, nonatomic) IBOutlet UITextField *txtPassword;
+
+@end
+
+@implementation PHLoginViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    
+    // 禁用 iOS7 返回手势
+    if ([self.navigationController respondsToSelector:@selector(interactivePopGestureRecognizer)]) {
+        self.navigationController.interactivePopGestureRecognizer.enabled = NO;
+    }
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationController setNavigationBarHidden:NO];
+    [self.navigationController.navigationBar setTranslucent:NO];
+    [self.navigationItem setTitle:@"登录"];
+}
+//调整约束
+-(void)updateViewConstraints{
+    [super updateViewConstraints];
+}
+
+-(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    if ([_txtLoginName becomeFirstResponder]) {
+        [_txtLoginName resignFirstResponder];
+    }
+    
+    if ([_txtPassword becomeFirstResponder]) {
+        [_txtPassword resignFirstResponder];
+    }
+}
+
+- (IBAction)clickFindPasswordBtn:(id)sender {
+    PHVerificatePhoneViewController *phVerificatePhoneVC = [[PHVerificatePhoneViewController alloc] init];
+    [self.navigationController pushViewController:phVerificatePhoneVC animated:YES];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    return [textField resignFirstResponder];
+}
+
+- (IBAction)clickLoginBtn:(id)sender {
+//    NSString *pushUserId = [CommonUtil localUserDefaultsForKey:KMY_PUSH_USERID];
+//    NSString *pushChannelId = [CommonUtil localUserDefaultsForKey:KMY_PUSH_CHANNELID];
+    NSString *pushUserId = @"aaa";
+    NSString *pushChannelId = @"bbb";
+
+    [[PHLoginManager defaultManager] loginWithLoginName:_txtLoginName.text WithPassword:_txtPassword.text WithChanneid:pushChannelId WithBuserid:pushUserId WithDeviceType:Device_IOS CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+            NSError *error = nil;
+            Member *host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+            if (!error) {
+                [[PHAppStartManager defaultManager] setHostMember:host];
+                [CommonUtil localUserDefaultsValue:[resultDic objectForKey:@"Token"] forKey:KMY_TOKEN];
+                [CommonUtil localUserDefaultsValue:[NSNumber numberWithBool:YES] forKey:KMY_AutoLogin];
+                [[PHAppStartManager defaultManager] doNecessaryPreparationsAfterAppStart];
+                [[PHAppStartManager defaultManager] pushHomeViewWithSelectIndex:0];
+            }
+        }else{
+            
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+@end

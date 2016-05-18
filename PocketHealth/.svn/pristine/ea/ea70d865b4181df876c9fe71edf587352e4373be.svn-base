@@ -1,0 +1,23 @@
+//
+//  XGPSocketAVideoHelper.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/3/10.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface XGPSocketAVideoHelper : NSObject
+{
+    NSMutableDictionary * roomInfoDic;
+}
++(id)defaultManager;
+
+-(void)releaseSelf;
+
+-(void)registerRoomWithDic:(NSDictionary *)dic;
+-(void)finishAVWithDic:(NSDictionary *)dic;
+
+-(void)acceptSessionWithSessionId:(long long)sessionId withMyid:(long long)memberId;
+@end

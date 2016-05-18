@@ -1,0 +1,29 @@
+//
+//  PHLoginManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHLoginManager.h"
+#import "NSString+Additions.h"
+static PHLoginManager *loginManager;
+static AFHTTPRequestOperationManager *requestManager;
+@implementation PHLoginManager
++(id)defaultManager
+{
+    if (loginManager == nil) {
+        loginManager = [[PHLoginManager alloc] init];
+        requestManager = [AFHTTPRequestOperationManager manager];
+    }
+    return loginManager;
+}
+
+-(void)loginWithLoginName:(NSString *)loginName WithPassword:(NSString *)password WithChanneid:(NSString *)channeid WithBuserid:(NSString *)buserid WithDeviceType:(DeviceType)deviceType CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_Login_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:loginName,@"loginname",[NSString md5:password],@"password",channeid,@"channeid",buserid,@"buserid",deviceType,@"devicetype", nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+@end

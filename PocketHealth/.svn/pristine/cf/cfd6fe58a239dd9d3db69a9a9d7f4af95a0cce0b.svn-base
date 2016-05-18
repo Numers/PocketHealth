@@ -1,0 +1,52 @@
+//
+//  PHUserCenterFeedBackViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-2-2.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHUserCenterFeedBackViewController.h"
+#import "PHTextView.h"
+
+@interface PHUserCenterFeedBackViewController ()
+@property (strong, nonatomic) IBOutlet PHTextView *suggestionTextView;
+@property (strong, nonatomic) IBOutlet UITextField *contactText;
+@property (strong, nonatomic) IBOutlet UILabel *lblCall;
+
+
+@end
+
+@implementation PHUserCenterFeedBackViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    [_lblCall.layer setCornerRadius:12.f];
+    [_lblCall.layer setMasksToBounds:YES];
+    [_suggestionTextView inilizedView];
+    [_suggestionTextView setPlaceHolder:@"描述问题、吐槽或对产品的建议..."];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (IBAction)clickSubmitBtn:(id)sender {
+}
+
+- (IBAction)clickCallBtn:(id)sender {
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

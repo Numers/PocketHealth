@@ -1,0 +1,6 @@
+pod 'FMDB', '~> 2.3'
+
+pod 'SDWebImage', '~>3.6'
+pod 'Mantle', '~> 1.4.1'
+
+#pod 'BaiduPushSDK', '~> 1.1.0'

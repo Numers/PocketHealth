@@ -1,0 +1,61 @@
+//
+//  PHOrganizationDetailsViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-18.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOrganizationDetailsViewController.h"
+#import "PHDetailsOtherInfoViewController.h"
+#import "PHInterestingGroupViewController.h"
+#import "CalculateViewFrame.h"
+
+@interface PHOrganizationDetailsViewController ()
+{
+    UIScrollView *scrollView;
+    Organization *organization;
+    PHDetailsOtherInfoViewController *phDetailsOtherInfoVC;
+    PHInterestingGroupViewController *phInterestingGroupVC;
+}
+
+@end
+
+@implementation PHOrganizationDetailsViewController
+-(id)initWithOrganization:(Organization *)org
+{
+    self = [super init];
+    if (self) {
+        organization = org;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    scrollView = [[UIScrollView alloc] initWithFrame:frame];
+    [self.view addSubview:scrollView];
+    phDetailsOtherInfoVC = [[PHDetailsOtherInfoViewController alloc] init];
+    [scrollView addSubview:phDetailsOtherInfoVC.view];
+    [scrollView setContentSize:phDetailsOtherInfoVC.view.frame.size];
+//    [self.view setFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, phDetailsOtherInfoVC.view.frame.size.height)];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

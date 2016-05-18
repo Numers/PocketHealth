@@ -1,0 +1,62 @@
+//
+//  PHBackView.m
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHBackView.h"
+#import "PHVideoModelManager.h"
+#define BottomToolBarHeight 120.0f
+
+@implementation PHBackView
+-(instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self setUserInteractionEnabled:YES];
+        [self setBackgroundColor:[UIColor whiteColor]];
+    }
+    return self;
+}
+
+-(void)createAVModuleWithServerIP:(NSString *)serverIp WithPort:(int)port WithRoomId:(int)roomId WithUserId:(int)userId WithAnchorUserId:(int)anchorUserId WithFrameSize:(CGSize)size
+{
+    currentUserId = userId;
+    currentAnchorUserid = anchorUserId;
+    [[PHVideoModelManager defaultManager] createAVModuleWithServerIP:serverIp WithPort:port WithRoomId:roomId WithUserId:userId WithAnchorUserId:anchorUserId WithFrameSize:size InView:self];
+    
+    if (toolBar == nil) {
+        toolBar = [[PHBackViewBottomToolBar alloc] initWithFrame:CGRectMake(0, self.frame.size.height, self.frame.size.width, BottomToolBarHeight)];
+        toolBar.myDelegate = self;
+        [[[UIApplication sharedApplication] keyWindow] addSubview:toolBar];
+    }
+    [toolBar show];
+}
+
+-(void)shutDownCall
+{
+    if ([[PHVideoModelManager defaultManager] isChatting]) {
+        [[PHVideoModelManager defaultManager] deleteVideoOutPutWithAnchorUserId:currentAnchorUserid];
+//        [toolBar hidden];
+        [toolBar removeFromSuperview];
+        toolBar = nil;
+        if ([_delegate respondsToSelector:@selector(alertCommentsView)]) {
+            [_delegate alertCommentsView];
+        }
+    }
+}
+
+#pragma -mark PHBackViewBottomToolBarDelegate 主动挂断
+-(void)shutUpCall
+{
+//    [[PHVideoModelManager defaultManager] deleteVideoOutPutWithAnchorUserId:currentAnchorUserid];
+////    [toolBar hidden];
+//    [toolBar removeFromSuperview];
+//    toolBar = nil;
+    if ([_delegate respondsToSelector:@selector(shutUpVideoCall)]) {
+        [_delegate shutUpVideoCall];
+    }
+}
+@end

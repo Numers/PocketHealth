@@ -1,0 +1,115 @@
+//
+//  CommonUtil.m
+//  ylmm
+//
+//  Created by macmini on 14-5-28.
+//  Copyright (c) 2014年 YiLiao. All rights reserved.
+//
+
+#import "CommonUtil.h"
+#import <CommonCrypto/CommonDigest.h>
+#import "WQPlaySound.h"
+#import "PGlobal.h"
+@implementation CommonUtil
+
++(id)localUserDefaultsForKey:(NSString *)key
+{
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    NSString *token = [userDefaults objectForKey:key];
+    return token;
+}
++(void)localUserDefaultsValue:(id)value forKey:(NSString *)key
+{
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    [userDefaults setObject:value forKey:key];
+    [userDefaults synchronize];
+}
+
++(id)MyToken
+{
+    return [CommonUtil localUserDefaultsForKey:@"TOKEN"];
+//    return @"qweqwe";
+    //暂时未使用,随意填写
+}
+
++(NSString *)TimeStrWithInterval:(NSTimeInterval)interval
+{
+    NSDate *date = [[NSDate alloc] initWithTimeIntervalSince1970:interval];
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    
+    NSString *time=[formatter stringFromDate:date];
+    return time;
+}
++(NSTimeInterval )IntervalWithTimeStr:(NSString *)time{
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+     NSDate *date = [formatter dateFromString:time];
+    return [date timeIntervalSince1970];
+}
+
++(NSString *)LocalTimeStr
+{
+    NSDate *date = [NSDate date];
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    return [formatter stringFromDate:date];
+}
+
++(NSString *)md5WithUid:(unsigned)uid
+{
+    NSString *temp = [NSString stringWithFormat:@"%u%@",uid,KEY];
+    NSString *ret = [self md5:[NSString stringWithFormat:@"%@%@",[self md5:temp],KEY]];
+    return ret;
+}
+
++(NSString *)md5WithLoginName:(NSString *)loginName WithPassword:(NSString *)password
+{
+    NSString *temp = [NSString stringWithFormat:@"%@%@",loginName,KEY];
+    NSString *md5Str = [self md5:temp];
+    NSString *temp2 = [NSString stringWithFormat:@"%@%@%@",md5Str,password,KEY];
+    return [self md5:temp2];
+}
+
++(NSString *)md5:(NSString *)str
+{
+    const char *cStr = [str UTF8String];
+    unsigned char result[16];
+    CC_MD5(cStr, strlen(cStr), result); // This is the md5 call
+    return [NSString stringWithFormat:
+            @"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+            result[0], result[1], result[2], result[3],
+            result[4], result[5], result[6], result[7],
+            result[8], result[9], result[10], result[11],
+            result[12], result[13], result[14], result[15]
+            ]; 
+}
+
++(UIImage *)croppedImage:(UIImage *)image
+
+{
+    if (image)
+    {
+        float min = MIN(image.size.width,image.size.height);
+        CGRect rectMAX = CGRectMake((image.size.width-min)/2, (image.size.height-min)/2, min, min);
+        
+        CGImageRef subImageRef = CGImageCreateWithImageInRect(image.CGImage, rectMAX);
+        
+        UIGraphicsBeginImageContext(rectMAX.size);
+        CGContextRef context = UIGraphicsGetCurrentContext();
+        CGContextDrawImage(context, CGRectMake(0, 0, min, min), subImageRef);
+        UIImage *viewImage = [UIImage imageWithCGImage:subImageRef];
+        UIGraphicsEndImageContext();
+        CGImageRelease(subImageRef);
+        return viewImage;
+    }
+    
+    return nil;
+}
+
++(void)playMessageComeNotify
+{
+    WQPlaySound *sound = [[WQPlaySound alloc] initForPlayingSoundWith:1010];
+    [sound play];
+}
+@end

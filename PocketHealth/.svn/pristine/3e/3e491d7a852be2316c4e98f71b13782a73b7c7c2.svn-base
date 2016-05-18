@@ -1,0 +1,32 @@
+//
+//  PHInputPhysicalExamManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHInputPhysicalExamManager.h"
+#import "CommonUtil.h"
+static PHInputPhysicalExamManager *phInputPhysicalExamManager;
+static AFHTTPRequestOperationManager *requestManager;
+@implementation PHInputPhysicalExamManager
++(id)defaultManager
+{
+    if (phInputPhysicalExamManager == nil) {
+        phInputPhysicalExamManager = [[PHInputPhysicalExamManager alloc] init];
+        requestManager = [AFHTTPRequestOperationManager manager];
+        [requestManager.requestSerializer setTimeoutInterval:10.0f];
+    }
+    return phInputPhysicalExamManager;
+}
+
+-(void)requestNearestOrganizetionWithLat:(float)lat WithLon:(float)lon CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_NearOraganization_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%f",lat],@"lat",
+                                [NSString stringWithFormat:@"%f",lon],@"lon",
+                                AFNetWorkKey,@"key",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+@end

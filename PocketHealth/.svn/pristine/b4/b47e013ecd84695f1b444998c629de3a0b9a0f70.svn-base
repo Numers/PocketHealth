@@ -1,0 +1,224 @@
+//
+//  PHCustomMonitorViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/22.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHCustomMonitorViewController.h"
+
+//分支界面
+#import "PHActivityInsideViewController.h"
+#import "PHSleepInsideViewController.h"
+#import "PHMoodInsideViewController.h"
+@interface PHCustomMonitorViewController ()<PHActivityInsideViewControllerDelegate>
+{
+    PHHealthType phhealthtype;
+    
+    
+    PHMoodInsideViewController * phmoodVC ;
+    PHActivityInsideViewController * phacVC;
+}
+@end
+
+@implementation PHCustomMonitorViewController
+-(id)initWithHealthType:(PHHealthType)healthType{
+    self = [super init];
+    if (self) {
+        //
+        phhealthtype = healthType;
+    }
+    return self;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [backView.layer setCornerRadius:2.f];
+    [backView.layer setMasksToBounds:YES];
+    self.containView.backgroundColor = [UIColor clearColor];
+    switch (phhealthtype) {
+        case PHHealthTypeMood:
+        {
+            [self initMoodView];
+        }
+            break;
+        case PHHealthTypeActivity:{
+            [self initActivityView];
+        }
+            break;
+        case PHHealthTypeSleep:{
+            [self initSleepView];
+        }
+            break;
+        default:
+            break;
+    }
+//    self.view.backgroundColor = [UIColor blackColor];
+//    self.view.alpha = 0.54 ;
+    
+    // Do any additional setup after loading the view from its nib.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark -
+#pragma mark - 3种界面不同的初始化
+#pragma mark -
+#pragma mark - 心情初始化 
+-(void)initMoodView{
+    
+    self.labelTopTitle.text = @"心情概况";
+    self.labelProper1.text = @"今日天气";
+    self.labelProper2.text = @"PM2.5";
+    self.labelProper3.text = @"紫外线强度";
+    self.labelDetailLabel.text = @"今日心情";
+    
+    phmoodVC= [[PHMoodInsideViewController alloc]init];
+    phmoodVC.view.frame = self.containView.frame;
+    [self.containView addSubview:phmoodVC.view];
+}
+#pragma mark - 运动初始化
+-(void)initActivityView{
+    self.labelTopTitle.text = @"运动概况";
+    self.labelProper1.text = @"今日运动";
+    self.labelProper2.text = @"运动步数";
+    self.labelProper3.text = @"消耗热量";
+    self.labelDetailLabel.text = @"今日热量消耗";
+    
+    phacVC = [[PHActivityInsideViewController alloc]init];
+    phacVC.view.frame = self.containView.frame;
+    phacVC.delegate = self;
+    [self.containView addSubview:phacVC.view];
+}
+#pragma mark - 睡眠数据
+-(void)initSleepView{
+    self.labelTopTitle.text = @"睡眠概况";
+    self.labelProper1.text = @"睡眠状态";
+    self.labelProper2.text = @"入睡时间";
+    self.labelProper3.text = @"入睡时长";
+    self.labelDetailLabel.text = @"今日睡眠状况";
+    
+    PHSleepInsideViewController * sleepVC = [[PHSleepInsideViewController alloc]init];
+    sleepVC.view.frame = self.containView.frame;
+    [self.containView addSubview:sleepVC.view];
+}
+//重写设置分数方法
+
+#pragma mark -  主动设置一些静态的属性
+-(void)setDynamicLabelWithDic:(NSDictionary *)dic{
+    switch (phhealthtype) {
+        case PHHealthTypeMood:
+        {
+            NSInteger score = [[dic objectForKey:@"score"]integerValue];
+            self.labelScore.attributedText = [self calculateScore:score];
+            phmoodVC.progressValue = score;
+            
+            NSString *weatherStr = [dic objectForKey:@"weather"];
+            if (weatherStr == nil) {
+                self.labelValue1.text = @"未获取";
+            }else{
+                self.labelValue1.text = weatherStr;
+            }
+            
+            NSString *uv = [dic objectForKey:@"uv"];
+            if (uv == nil) {
+                self.labelValue3.text = @"未获取";
+            }else{
+                self.labelValue3.text = uv;
+            }
+            
+            float pmValue = [[dic objectForKey:@"pm25"] floatValue];
+            if (pmValue > 0.f) {
+                self.labelValue2.text = [NSString stringWithFormat:@"%.2f",pmValue];
+            }else{
+                self.labelValue2.text = @"未获取";
+            }
+        }
+            break;
+        case PHHealthTypeActivity:{
+            NSInteger score = [[dic objectForKey:@"score"]integerValue];
+            self.labelScore.attributedText = [self calculateScore:score];
+            //设置分数对应的 标签 好 差
+            NSString * scoreDescribe;
+            if (score<65) {
+                scoreDescribe = @"太少";
+            }else if (score<78){
+                scoreDescribe = @"适当";
+            }else if(score <= 100){
+                scoreDescribe = @"极佳";
+            }
+            self.labelValue1.text = scoreDescribe;
+            phacVC.leftCalorie = [[dic objectForKey:@"leftCalorie"]integerValue];
+            [phacVC resettingCalorie:phacVC.leftCalorie];
+        }
+            break;
+        case PHHealthTypeSleep:{
+            
+            NSInteger score = [[dic objectForKey:@"score"]integerValue];
+            self.labelScore.attributedText = [self calculateScore:score];
+            
+            NSString * scoreDescribe;
+            if (score < 65) {
+                scoreDescribe = @"较差";
+            }else if (score < 78){
+                scoreDescribe = @"适当";
+            }else if (score <= 100){
+                scoreDescribe = @"极佳";
+            }
+            self.labelValue1.text = scoreDescribe;
+            
+            self.labelValue2.text = [dic objectForKey:@"sleepstart"];
+            NSInteger duration = [[dic objectForKey:@"duration"]integerValue];
+            if (duration==0) {
+                self.labelValue3.text = @"";
+            }else{
+                int hour = (int)duration / 60 ;
+                int min = duration % 60 ;
+                self.labelValue3.text = [NSString stringWithFormat:@"%u小时%u分",hour,min];
+            }
+           
+            
+        }
+            break;
+        default:
+            break;
+    }
+    
+}
+-(void)settingScore:(NSInteger )score{
+    self.labelScore.attributedText = [self calculateScore:score];
+}
+//calculateScore
+-(NSAttributedString *)calculateScore:(NSInteger )score{
+    NSString * scoreStr = [NSString stringWithFormat:@"%ld分",(long)score];
+    NSRange range = [scoreStr rangeOfString:@"分"];
+    NSMutableAttributedString * showScoreStr = [[NSMutableAttributedString alloc]initWithString:scoreStr];
+    [showScoreStr addAttribute:NSFontAttributeName value:[UIFont fontWithName:@"HelveticaNeue" size:45.0] range:NSMakeRange(0, range.location)];
+    [showScoreStr addAttribute:NSFontAttributeName value:[UIFont fontWithName:@"HelveticaNeue" size:25.0] range:range];
+    return showScoreStr;
+}
+
+#pragma mark -  各个界面委托
+-(void)btnSettingMetabolismClick{
+    if ([self.delegate respondsToSelector:@selector(activityVCBtnSettingMetabolismBtnClick)]) {
+        [self.delegate activityVCBtnSettingMetabolismBtnClick];
+    }
+}
+-(void)btnSettingPNIClick{
+    if ([self.delegate respondsToSelector:@selector(activityVCBtnSettingPNIBtnClick)]) {
+        [self.delegate activityVCBtnSettingPNIBtnClick];
+    }
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

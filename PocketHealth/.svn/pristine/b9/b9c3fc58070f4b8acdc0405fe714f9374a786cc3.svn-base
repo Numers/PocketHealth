@@ -1,0 +1,142 @@
+/*
+ * proto.h
+ *
+ *  Created on: 2014��5��22��
+ *      Author: xugp
+ */
+
+#pragma once
+
+#define OP_TEST 0x0000
+#define OP_LOGIN 0x0001
+#define OP_LOGIN_RES 0x0002
+#define OP_LOGOUT 0x0003
+#define OP_TALK 0x0004
+
+
+//΢��Э��,Э�����ʽΪjson
+#define OP_SYNC 0x0009
+#define OP_SYNC_RES 0x000A
+#define OP_MESSAGE 0x000B
+#define OP_MESSAGE_RES 0x000C
+#define OP_NOTIFY 0x000D
+
+
+//音视频一对一
+#define OP_REGISTERSESSION 0x0101
+#define OP_ACCEPTSESSION 0x0102
+#define OP_FINISHSESSION 0x0103
+#define OP_CHECKSESSION 0x0104
+
+#pragma pack(push,1)
+/*
+typedef struct __head_t{
+	DWORD opid;
+	DWORD datalen;
+}head_t;
+*/
+
+typedef unsigned long long UID;
+
+typedef struct __sync_t{
+	UID uid;
+	char token[16];
+	char synckey[14];
+}sync_t;
+
+typedef struct __sync_res_t{
+	char newsynckey[14];
+	short zipflag; //0��ʾδѹ����1��ʾgzipѹ��
+	int length;
+	//�����䳤����
+}sync_res_t;
+
+
+
+typedef struct __sendmsg_t{
+	UID uid;
+	char token[16];
+	UID touid;
+	int msgsn;
+	int msgtype;
+	int msglength;
+	//����msg����
+}sendmsg_t;
+
+typedef struct __sendmsg_res_t{
+	int retcode;
+	int msgtype;
+	int msgsn;
+	int length;
+	//������������
+}sendmsg_res_t;
+
+
+//typedef struct __notify_t{
+//	UID uid;
+//	int length;
+//	//����notify�ַ���
+//}notify_t;
+
+typedef struct __common_res_t{
+	int retcode;
+}common_res_t;
+
+typedef struct __join_leave_audio_t{
+	int srcid;
+}join_leave_audio_t;
+
+
+//音视频
+typedef struct __register_session_t{
+	UID uid;
+	//char roomserverip[20];
+	//int roomport;
+	//int roomid;
+}register_session_t;
+
+typedef struct __register_session_res_t{
+	int code;
+	long long sessionid;
+}register_session_res_t;
+
+typedef struct __accept_session_t{
+	long long sessionid;
+	UID uid;
+}accept_session_t;
+
+typedef struct __finish_session_t{
+	long long sessionid;
+	UID uid;
+}finish_session_t;
+
+
+typedef struct __finish_session_res_t{
+	long long sessionid;
+	int code;
+	long long createtime;
+	long long accepttime;
+	long long finishtime;
+	UID uid;
+	UID peerid;
+}finish_session_res_t;
+
+typedef struct __accept_session_res_t{
+	long long sessionid;
+	int code;
+	UID uid;
+	//char roomserverip[20];
+	//int roomport;
+	//int roomid;
+}accept_session_res_t;
+
+typedef struct __check_session_t{
+	long long sessionid;
+}check_session_t;
+
+typedef struct __check_session_res_t{
+	long long sessionid;
+	int status;
+}check_session_res_t;
+
+#pragma pack(pop)

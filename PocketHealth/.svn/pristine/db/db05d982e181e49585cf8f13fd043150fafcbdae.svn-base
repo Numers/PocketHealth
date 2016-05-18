@@ -1,0 +1,30 @@
+//
+//  GroupHelpAggregation.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "GroupHelpAggregation.h"
+#import "GroupMessage.h"
+
+@implementation GroupHelpAggregation
+
+-(id)initWithLastGroupMessage:(GroupMessage *)groupMessage{
+    self = [super init];
+    if (self) {
+        //
+        self.content = groupMessage.content;
+    }
+    return self;
+}
+-(id)initWithNotReadCount:(int)notReadCount{
+    self = [super init];
+    if (self) {
+        //
+        self.content = [NSString stringWithFormat:@"%u条未读消息",notReadCount];
+    }
+    return self;
+}
+@end

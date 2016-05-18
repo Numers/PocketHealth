@@ -1,0 +1,31 @@
+//
+//  PHAttentionFriendTableViewCell.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-17.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHAttentionFriendTableViewCell.h"
+#import "Member.h"
+#import "GlobalVar.h"
+#import "UIImageView+WebCache.h"
+
+@implementation PHAttentionFriendTableViewCell
+
+- (void)awakeFromNib {
+    // Initialization code
+}
+
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
+    [super setSelected:selected animated:animated];
+
+    // Configure the view for the selected state
+}
+
+-(void)setupWithMember:(Member *)member
+{
+    [_imgHeadImage setImageWithURL:[NSURL URLWithString:member.headImage] placeholderImage:[UIImage imageNamed:DefaultUserHeadImage]];
+    _lblNickName.text = member.nickName;
+}
+@end

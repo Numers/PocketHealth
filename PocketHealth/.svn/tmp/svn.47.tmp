@@ -1,0 +1,74 @@
+//
+//  GlobalVar.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#ifndef PocketHealth_GlobalVar_h
+#define PocketHealth_GlobalVar_h
+
+#define IOS_8_0 8.0f
+
+
+#define TimeOut 10.0f
+#define ServerBaseURL @"http://192.168.2.117"
+
+//***********LoginWebAPI************//
+#define PH_Login_API @""ServerBaseURL"/Web/Home/Login"
+
+//////////////////////////////////////
+//***********RegisterWebAPI************//
+#define PH_IdentifyCode_API @""ServerBaseURL"/Web/Home/SendPhoneCode"
+#define PH_RegisterUser_API @""ServerBaseURL"/Web/Home/Register"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********InputPhysicalExamWebAPI************//
+#define PH_NearOraganization_API @""ServerBaseURL"/Web/Home/GetCloseOrgan"
+#define PH_OrganizationInfoList_API @""ServerBaseURL"/Web/Home/GetOrganInfoList"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamTableWebAPI************//
+#define PH_PhysicalExamTable_API @""ServerBaseURL"/Web/User/OrderBillList"
+#define PH_PhysicalExamReport_API @""ServerBaseURL"/Web/User/MyReport"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamBookWebAPI************//
+#define PH_PhysicalExamBook_API @""ServerBaseURL"/Web/User/DoomExam"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamQuestionWebAPI************//
+#define PH_PhysicalExamQuestion_API @""ServerBaseURL"/Web/User/Questionnaire"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamTestWebAPI************//
+#define PH_PhysicalExamTest_API @""ServerBaseURL"/Web/User/SelfTest"
+//////////////////////////////////////
+
+//群接口
+#define ServerGroupBaseUrl @""ServerBaseURL"/Web/Group"
+//#define GroupTest //群测试使用 
+
+#define PH_MyFirendList @""ServerGroupBaseUrl"/MyFriendList"
+#define PH_MyGroupList @""ServerGroupBaseUrl"/MyGroups"
+#define PH_SearchFriendList @""ServerGroupBaseUrl"/SearchFriend"
+/**
+ *  AllGroups 填入参数
+ */
+#define PH_SearchHospitalList @""ServerGroupBaseUrl"/AllGroups"
+
+
+#define PH_ADDFriend @""ServerGroupBaseUrl"/AddFriend"
+#define PH_ADDGroup @""ServerGroupBaseUrl"/JoinGroups"
+
+//退群接口
+//参数 uid 发起动作人 如果自己退群 uid写自己 gid 群号
+#define PH_Delete_GroupUser @""ServerGroupBaseUrl"/DelUserFromBar"
+
+#endif

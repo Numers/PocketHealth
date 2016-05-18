@@ -1,0 +1,74 @@
+//
+//  PHOneKeyFindDocListViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/3/9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOneKeyFindDocListViewController.h"
+#import "PHVideoChatManager.h"
+#import "PHFindDoctorsManager.h"
+
+@interface PHOneKeyFindDocListViewController ()<UITableViewDelegate,UITableViewDataSource>
+{
+    NSMutableArray *doctorList;
+}
+@property(nonatomic, strong) UITableView *tableView;
+@end
+
+@implementation PHOneKeyFindDocListViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)startDOC{
+//    PHOneKeyFindDocShowViewController * viewC = [[PHOneKeyFindDocShowViewController alloc]init];
+//    [self.navigationController pushViewController:viewC animated:YES];
+    [[PHVideoChatManager defaultManager] createVideoChatWithDicInfo:[NSDictionary new] WithCallState:YES];
+}
+
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return doctorList.count;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 72.0f;
+}
+
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
+
+{
+
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                
+            });
+        }
+    });
+    return nil;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+}
+@end

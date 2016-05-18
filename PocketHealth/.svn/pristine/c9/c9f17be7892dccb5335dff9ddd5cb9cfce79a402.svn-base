@@ -1,0 +1,26 @@
+//
+//  PHUserCenterHeadViewController.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@protocol PHUserCenterHeadViewDelegate <NSObject>
+
+@optional
+-(void)friendBtnClick;
+-(void)doctorBtnClick;
+-(void)organizaitonBtnClick;
+-(void)userHeadBtnClick;
+@end
+
+@interface PHUserCenterHeadViewController : UIViewController
+@property (strong, nonatomic) IBOutlet UILabel *userNameLabel;
+
+
+@property (nonatomic,weak) id <PHUserCenterHeadViewDelegate> delegate;
+-(void)updateUIViewContent;
+@end

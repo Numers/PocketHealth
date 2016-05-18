@@ -1,0 +1,19 @@
+//
+//  PHSocketManagerHelper.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface PHSocketManagerHelper : NSObject
+
++(id)defaultManager;
+
+-(void)startSocketWithMemberId:(long long )memberId;
+
+-(void)endSocket;
+-(void)reConnectSocketChatHost;
+@end

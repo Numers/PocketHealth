@@ -1,0 +1,37 @@
+//
+//  PHLoginViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-5.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHLoginViewController.h"
+#import "TPKeyboardAvoidingScrollView.h"
+
+@interface PHLoginViewController ()
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *scrollViewHeightConstraint;
+
+@end
+
+@implementation PHLoginViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+//调整约束
+-(void)updateViewConstraints{
+    [super updateViewConstraints];
+    self.scrollViewHeightConstraint.constant = CGRectGetWidth([UIScreen mainScreen].bounds)*2;
+    
+}
+- (IBAction)clickLoginBtn:(id)sender {
+    
+}
+@end

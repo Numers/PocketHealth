@@ -1,0 +1,82 @@
+//
+//  PHChatDatabaseHelper.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHChatDatabaseHelper.h"
+#import "Member.h"
+#import "SFirendDB.h"
+#import "PHAppStartManager.h"
+#import "SGroupDB.h"
+#import "Group.h"
+
+
+@implementation PHChatDatabaseHelper
+
++(void)saveMyAllFriendListToDb:(id)responseObject{
+    //1.获取字典
+    NSDictionary *dic = (NSDictionary *)responseObject;
+    int code = [[dic objectForKey:@"Code"]intValue];
+    if ( code  == 1) {
+        NSArray * resultArray = [dic objectForKey:@"Result"];
+        SFirendDB * sfirend = [[SFirendDB alloc]init];
+        
+        for (NSDictionary *memberDic  in resultArray) {
+            //字典模型转换
+            NSError * error ;
+            Member * member = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:memberDic error:&error];
+            if (!error) {
+                long long hostid =[[PHAppStartManager defaultManager] userHost].memberId;
+                //判断是否存在好友
+                if (![sfirend isExistMemberWithUid:member.memberId WithBelongUid:hostid]) {
+                    [sfirend saveUser:member WithBelongUid:hostid];
+                    NSLog(@"用户好友 数据库中插入一条数据");
+                }else{
+                    [sfirend mergeWithUser:member WithBelongUid:hostid];
+                    NSLog(@"用户好友 数据库中更新一条数据");
+                }
+            }else{
+                NSLog(@"数据错误，返回");
+            }
+        }
+    }else{
+        NSLog(@"请求好友列表错误");
+    }
+    
+}
++(void)saveMyGroupListToDb:(id)responseObject{
+    //1.获取字典
+    NSDictionary *dic = (NSDictionary *)responseObject;
+    int code = [[dic objectForKey:@"Code"]intValue];
+    if ( code  == 1) {
+        NSArray * resultArray = [dic objectForKey:@"Result"];
+        SGroupDB * sgroupdb = [[SGroupDB alloc]init];
+        
+        for (NSDictionary *groupdic  in resultArray) {
+            //字典模型转换
+            NSError * error ;
+            Group * group = [MTLJSONAdapter modelOfClass:[Group class] fromJSONDictionary:groupdic error:&error];
+            if (!error) {
+                long long hostid =[[PHAppStartManager defaultManager] userHost].memberId;
+                //判断是否存在好友
+                if (![sgroupdb isExistGroupWithGid:group.groupId WithBelongUid:hostid]) {
+                    [sgroupdb saveGroup:group];
+                        Group * g =[sgroupdb selectGroupWithGid:group.groupId WithBelongUid:hostid];
+                    NSLog(@"群组 数据库中插入一条数据");
+                }else{
+                    [sgroupdb mergeGroup:group];
+                    NSLog(@"群组 数据库中更新一条数据");
+                }
+            }else{
+                NSLog(@"数据错误，返回");
+            }
+        }
+    }else{
+        NSLog(@"请求群组数据网络错误");
+    }
+    
+}
+@end

@@ -1,0 +1,63 @@
+//
+//  GroupMember.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Mantle.h"
+#import "Member.h"
+
+typedef enum {
+    
+    groupOwner=1, //群主
+    groupAdmin=2,//管理员
+    groupUser=3 //用户
+}GroupMemberType;
+
+//typedef enum {
+//    groupUserTypeSuperAdmin=1,
+//    groupUserTypeSuperDoc=2,
+//    groupUserTypeDoc=3,
+//    groupUserTypeUser=4
+//}GroupUserType;
+
+typedef enum {
+    groupActionTypeAllow = 1,
+    groupActionTypeDeny = 2
+}groupActionType;
+
+typedef enum {
+    groupSettingAdminTypeSetting = 1,
+    groupSettingAdminTypeCancal = 2
+}groupSettingAdminType;
+
+@interface GroupMember : Member
+
+@property(nonatomic) unsigned groupId;
+//@property(nonatomic) long long memberId;
+//@property(copy, nonatomic) NSString *loginName;
+//@property(copy, nonatomic) NSString *nickName;
+//@property(retain, nonatomic) NSString *headImage;
+@property (nonatomic) GroupMemberType groupMemberType; //groupType 群中的身份
+@property (nonatomic) NSString * lastChatTime;
+
+
+//@property (nonatomic) sexCode usersex;
+//@property (nonatomic,copy) NSString *userPro;
+//@property (nonatomic,copy) NSString *userCity;
+
+//医生特殊属性
+//@property (retain,nonatomic) NSString *orgName;
+//@property (retain ,nonatomic) NSString *typeName;
+//@property (retain,nonatomic) NSString *userIntroduce;
+//@property (retain,nonatomic) NSString *userRecord;
+//@property (nonatomic) GroupUserType userType;
+//@property (retain,nonatomic) NSString *userPost;
+//
+////特定情况下使用
+//+(GroupMember *)allocWithMember:(Member *)tmpMember;
+
+@end

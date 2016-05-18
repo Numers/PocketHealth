@@ -1,0 +1,325 @@
+//
+//  PHVideoChatViewController.m
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHVideoChatViewController.h"
+#import "PHVideoChatManager.h"
+#import "PHAppStartManager.h"
+#import "PHFindDoctorsManager.h"
+#import "XGPSocketAVideoHelper.h"
+#import "PHFrontView.h"
+#import "PHFrontAcceptView.h"
+#import "PHFrontHangupView.h"
+#import "PHBackView.h"
+#import "PHCommentAlertViewController.h"
+#import "CommonUtil.h"
+
+#import "WQPlaySound.h"
+#import "MBProgressHUD+Add.h"
+
+@interface PHVideoChatViewController ()<PHFrontViewDelegate,PHBackViewDelegate,PHCommentAlertViewDelegate>
+{
+    PHFrontView *frontView;
+    PHBackView *backView;
+    PHCommentAlertViewController *phCommentAlertView;
+    
+    BOOL commingCall;
+    NSDictionary *videoInfoDic;
+    
+    NSInteger chatSeconds;
+    NSInteger commentScore;
+    
+    WQPlaySound *sound;
+    
+    NSTimer *timer;
+    NSInteger callTime;
+}
+@end
+
+@implementation PHVideoChatViewController
+-(id)initWithDictionary:(NSDictionary *)dic CallState:(BOOL)isCommingCall
+{
+    self = [super init];
+    if (self) {
+        commingCall = isCommingCall;
+        videoInfoDic = [NSDictionary dictionaryWithDictionary:dic];
+        needComment = NO;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillResignActive) name:UIApplicationWillResignActiveNotification object:nil];
+    backView = [[PHBackView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
+    backView.delegate = self;
+    [self.view addSubview:backView];
+    
+    if (commingCall) {
+        NSString *headImageUrl = [videoInfoDic objectForKey:@"HeadImg"];
+        NSString *nickName = [videoInfoDic objectForKey:@"NickName"];
+        frontView = [[PHFrontAcceptView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
+        [frontView setUpViewWithHeadImage:headImageUrl WithNickName:nickName];
+    }else{
+        NSString *headImage = [videoInfoDic objectForKey:@"ToUserHeadImage"];
+        NSString *nickName = [videoInfoDic objectForKey:@"ToUserNickName"];
+        frontView = [[PHFrontHangupView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
+        [frontView setUpViewWithHeadImage:headImage WithNickName:nickName];
+    }
+    [frontView setDelegate:self];
+    [self.view insertSubview:frontView aboveSubview:backView];
+    [self.view bringSubviewToFront:frontView];
+    
+    [self playCallAudio];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)applicationWillResignActive
+{
+    if (!needComment) {
+        [self shutUpVideoCall];
+    }
+}
+
+-(void)playCallAudio
+{
+    if (!commingCall) {
+        callTime = 0;
+        timer = [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(caculateCallTime) userInfo:nil repeats:YES];
+    }
+    sound = [[WQPlaySound alloc] initForPlayingSoundWith:1070];
+    [sound playCirculation];
+}
+
+-(void)stopCallAudio
+{
+    if (timer) {
+        [timer invalidate];
+        timer = nil;
+    }
+    [sound finishAudio];
+}
+
+-(void)caculateCallTime
+{
+    callTime ++;
+    if (callTime > 60) {
+        [timer invalidate];
+        timer = nil;
+        [self cancelCall];
+    }
+    
+    if(callTime > 30)
+    {
+        if ([frontView isKindOfClass:[PHFrontHangupView class]]) {
+            PHFrontHangupView *view = (PHFrontHangupView *)frontView;
+            if ([view isCallNotifyHidden]) {
+                [view showCallNotifyLabelWithDesc:@"对方长时间没有回应，可能正忙"];
+            }
+        }
+    }
+}
+
+-(void)flipFrontViewToBackView
+{
+    [UIView transitionFromView:frontView toView:backView duration:1.0f options:UIViewAnimationOptionTransitionFlipFromLeft completion:^(BOOL finished) {
+        if (finished) {
+            if (videoInfoDic) {
+                NSString *roomIp = [videoInfoDic objectForKey:@"roomip"];
+                NSInteger port = [[videoInfoDic objectForKey:@"port"] integerValue];
+                NSInteger roomId = [[videoInfoDic objectForKey:@"roomid"] integerValue];
+                long long fromUserId = [[videoInfoDic objectForKey:@"fromId"] longLongValue];
+                long long toUid = [[videoInfoDic objectForKey:@"touid"] longLongValue];
+                if (commingCall) {
+                    long long temp = fromUserId;
+                    fromUserId = toUid;
+                    toUid = temp;
+                }
+                chatSeconds = 0;
+                [backView createAVModuleWithServerIP:roomIp WithPort:port WithRoomId:roomId WithUserId:fromUserId WithAnchorUserId:toUid WithFrameSize:CGSizeMake(avOutputWidth, avOutputHeight)];
+                [self memberIsOnCall];
+            }
+        }
+    }];
+}
+
+-(void)memberIsOnCall
+{
+    long toUid = [[videoInfoDic objectForKey:@"touid"] longValue];
+    long long sessionId = [[videoInfoDic objectForKey:@"SessionID"] longLongValue];
+    [[PHFindDoctorsManager defaultManager] setDoctorOnCallState:toUid SessionId:sessionId CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            
+        }else{
+            
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+-(void)memberIsFinishCall
+{
+    NSInteger iid = [[videoInfoDic objectForKey:@"iid"] integerValue];
+    long long sessionId = [[videoInfoDic objectForKey:@"SessionID"] longLongValue];
+    long long fromUserId = [[videoInfoDic objectForKey:@"fromId"] longLongValue];
+    long long toUid = [[videoInfoDic objectForKey:@"touid"] longLongValue];
+    [[PHFindDoctorsManager defaultManager] finishCallWithIid:iid fromUserId:fromUserId ToUserId:toUid WithSessionId:sessionId WithSeconds:chatSeconds WithCommentScore:commentScore CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            if (commentScore != 0) {
+                [CommonUtil HUDShowText:@"评价成功" InView:[[UIApplication sharedApplication] keyWindow]];
+            }
+        }else{
+            if (commentScore != 0) {
+                [CommonUtil HUDShowText:@"评价失败" InView:[[UIApplication sharedApplication] keyWindow]];
+            }
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        if (commentScore != 0) {
+            [CommonUtil HUDShowText:@"网络错误" InView:[[UIApplication sharedApplication] keyWindow]];
+        }
+    }];
+}
+
+-(void)didConnected
+{
+    [self stopCallAudio];
+    commentScore = 0;
+    [self performSelectorOnMainThread:@selector(flipFrontViewToBackView) withObject:nil waitUntilDone:NO];
+}
+
+-(void)didDisConnected
+{
+    [self stopCallAudio];
+    if (backView) {
+        [backView shutDownCall];
+    }
+}
+
+-(void)sendAcceptCallRequest
+{
+    Member *host = [[PHAppStartManager defaultManager] userHost];
+    long long sessionId = [[videoInfoDic objectForKey:@"SessionID"] longLongValue];
+    [[XGPSocketAVideoHelper defaultManager] acceptSessionWithSessionId:sessionId withMyid:host.memberId];
+}
+
+-(void)showViewCompletion:(void (^)(BOOL finished))completion
+{
+    [UIView animateWithDuration:1.0f animations:^{
+        [self.view setFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
+    } completion:completion];
+}
+
+-(void)hiddenCompletion:(void (^)(BOOL finished))completion
+{
+    [UIView animateWithDuration:1.0f animations:^{
+        [self.view setFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height, self.view.frame.size.width, self.view.frame.size.height)];
+    } completion:completion];
+}
+
+#pragma -mark PHFrontViewDelegate
+-(void)acceptCall
+{
+    [self sendAcceptCallRequest];
+}
+
+-(void)rejectCall
+{
+    [[XGPSocketAVideoHelper defaultManager] finishAVWithDic:videoInfoDic WithType:finishAVTypeNormal];
+    [self didDisConnected];
+}
+
+-(void)cancelCall
+{
+    [[XGPSocketAVideoHelper defaultManager] finishAVWithDic:videoInfoDic WithType:finishAVTypeNormal];
+    [self didDisConnected];
+}
+
+#pragma -mark PHBackViewDelegate
+-(void)dismissComment
+{
+    if (phCommentAlertView) {
+        [phCommentAlertView hidden];
+        [self commentWithScore:0];
+    }
+}
+
+-(void)shutUpVideoCall
+{
+    [[XGPSocketAVideoHelper defaultManager] finishAVWithDic:videoInfoDic WithType:finishAVTypeNormal];
+    [self didDisConnected];
+}
+
+-(void)dismissViewWithChatState:(BOOL)isChatting
+{
+    if (backView) {
+        [backView releaseAllModel];
+    }
+
+    [self dismissViewControllerAnimated:YES completion:^{
+        if (frontView) {
+            [frontView removeFromSuperview];
+            frontView = nil;
+        }
+        
+        if (backView) {
+            [backView removeFromSuperview];
+            backView = nil;
+        }
+        
+        if (isChatting) {
+            [self memberIsFinishCall];
+        }
+        
+        [[PHVideoChatManager defaultManager] releaseVideoChatVC];
+        [[UIApplication sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationNone];
+        [UIApplication sharedApplication].idleTimerDisabled = NO;//自动锁屏
+    }];
+}
+
+-(void)alertCommentsViewWithTime:(NSTimeInterval)time
+{
+    Member *host = [[PHAppStartManager defaultManager] userHost];
+    long long fromUserId = [[videoInfoDic objectForKey:@"fromId"] longLongValue];
+    if (fromUserId == host.memberId) {
+        needComment = YES;
+        phCommentAlertView = [[PHCommentAlertViewController alloc] initWithCallTime:time];
+        phCommentAlertView.delegate = self;
+        [phCommentAlertView showInView:[[UIApplication sharedApplication] keyWindow]];
+    }else{
+        [self dismissViewWithChatState:YES];
+    }
+}
+
+-(void)passChatSeconds:(NSInteger)sec
+{
+    chatSeconds = sec;
+}
+
+#pragma -mark commentAlertViewDelegate
+-(void)commentWithScore:(NSInteger)score
+{
+    commentScore = score;
+    needComment = NO;
+    [self dismissViewWithChatState:YES];
+}
+@end

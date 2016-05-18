@@ -1,0 +1,75 @@
+//
+//  PHMonitoringViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHMonitoringViewController.h"
+#import "PHAppStartManager.h"
+#import "PHLoginManager.h"
+#import "CommonUtil.h"
+
+@interface PHMonitoringViewController ()
+{
+    Member *host;
+}
+
+@end
+
+@implementation PHMonitoringViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    if ([[PHAppStartManager defaultManager] shouldAutoLogin]) {
+        [self autoLogin];
+    }
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationController setNavigationBarHidden:NO];
+    [self.navigationController.navigationBar setTranslucent:NO];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)autoLogin
+{
+    [[PHLoginManager defaultManager] loginWithLoginName:@"13890909090" WithPassword:@"123456" WithChanneid:@"aaa" WithBuserid:@"bbb" WithDeviceType:Device_IOS CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSError *error = nil;
+            host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:[dic objectForKey:@"Result"] error:&error];
+            if (!error) {
+                [[PHAppStartManager defaultManager] setHostMember:host];
+                 AFNetWorkKey = [CommonUtil createSendKeyWithUserName:host.loginName Userid:[NSString stringWithFormat:@"%lld",host.memberId]];
+            }
+        }else{
+            [[PHAppStartManager defaultManager] loginOut];
+        }
+        [[PHAppStartManager defaultManager] loginOut];
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        [[PHAppStartManager defaultManager] loginOut];
+    }];
+
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

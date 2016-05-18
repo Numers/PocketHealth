@@ -1,0 +1,28 @@
+//
+//  Doctor.h
+//  PocketHealth
+//
+//  Created by macmini on 15-3-11.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Member.h"
+#import "Mantle.h"
+@interface Doctor : MTLModel<MTLJSONSerializing>
+@property(nonatomic) long long memberId;
+@property(copy, nonatomic) NSString *nickName;
+@property(retain, nonatomic) NSString *headImage;
+@property(nonatomic) sexCode userSex; //1 男 2女 0未知
+@property (nonatomic) MemberUserType userType ;
+@property(copy, nonatomic) NSString *realName;
+@property(copy, nonatomic) NSString *location;
+@property(nonatomic) NSTimeInterval birthDate;
+@property(nonatomic) NSInteger diId;
+@property(nonatomic, copy) NSString *diJobTitle;
+@property(nonatomic) NSInteger dpId;
+@property(nonatomic) NSInteger oiId;
+@property(nonatomic, copy) NSString *remark;
+@property(nonatomic) BOOL diCancall;
+@property(nonatomic) BOOL diCalling;
+@end

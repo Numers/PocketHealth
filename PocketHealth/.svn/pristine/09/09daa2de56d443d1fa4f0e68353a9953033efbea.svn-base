@@ -1,0 +1,31 @@
+//
+//  GlobalVar.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#ifndef PocketHealth_GlobalVar_h
+#define PocketHealth_GlobalVar_h
+
+#define IOS_8_0 8.0f
+
+
+
+#define ServerBaseURL @"http://192.168.2.117"
+
+//***********LoginWebAPI************//
+#define PH_Login_API @""ServerBaseURL"/Web/Home/Login"
+
+//////////////////////////////////////
+//***********RegisterWebAPI************//
+#define PH_IdentifyCode_API @""ServerBaseURL"/Web/Home/SendPhoneCode"
+#define PH_RegisterUser_API @""ServerBaseURL"/Web/Home/Register"
+//////////////////////////////////////
+//群接口
+#define ServerGroupBaseUrl @""ServerBaseURL"/Web/Group"
+#define GroupTest //群测试使用 
+
+#define PH_MyFirendList @""ServerGroupBaseUrl"/MyFriendList"
+#endif

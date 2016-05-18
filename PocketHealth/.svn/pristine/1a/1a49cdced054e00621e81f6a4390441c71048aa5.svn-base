@@ -1,0 +1,135 @@
+//
+//  PHNotificaionViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/11.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHNotificaionViewController.h"
+
+#import "CalculateViewFrame.h"
+//数据
+#import "NotificationMessage.h"
+#import "SNotificationMessage.h"
+#import "Member.h"
+#import "ClientHelper.h"
+#import "CommonUtil.h"
+
+#import "PHAppStartManager.h"
+#import "PHGroupHttpRequest.h"
+
+
+@interface PHNotificaionViewController ()<UITableViewDataSource,UITableViewDelegate>
+{
+    UITableView * notificationFriendTypeTableView;
+    NSArray * notifiMsgArray;
+    Member *host;
+}
+@end
+
+@implementation PHNotificaionViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    host = [[PHAppStartManager defaultManager] userHost];
+    //tablview初始化
+    notificationFriendTypeTableView = [[UITableView alloc]init];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    frame.origin.y = self.notificaionMessageTypeSwitchSegmentControl.frame.size.height + 8;
+    notificationFriendTypeTableView.delegate = self;
+    notificationFriendTypeTableView.dataSource = self;
+    notificationFriendTypeTableView.frame = frame;
+    [self.view addSubview:notificationFriendTypeTableView];
+    //从数据库读取所有的好友消息
+    if (notifiMsgArray)notifiMsgArray = [[NSArray alloc]init];
+    notifiMsgArray = [self loadNotificaionFriendTypeMsgFromDB];
+    
+    // Do any additional setup after loading the view from its nib.
+}
+#pragma mark - 从数据库拿出加群消息
+-(NSArray *)loadNotificaionFriendTypeMsgFromDB{
+    SNotificationMessage * sNotifiMsgDB = [[SNotificationMessage alloc]init];
+    return [sNotifiMsgDB selectAllNoticationMessageWithHostId:host.memberId MessageCode:MessageCodeAddFriend ResultCount:10];
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark - tableView datasourse & delegate
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return notifiMsgArray.count;
+}
+
+// Row display. Implementers should *always* try to reuse cells by setting each cell's reuseIdentifier and querying for available reusable cells with dequeueReusableCellWithIdentifier:
+// Cell gets various attributes set automatically based on table (separators) and data source (accessory views, editing controls)
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    NSString *identifier = @"NotificaionFriendTypeTableViewCell";
+    
+    NotificationMessage *notifiMsg =  [notifiMsgArray objectAtIndex:indexPath.row];
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
+        UIButton *loginButton=  [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        loginButton.frame = CGRectMake( 5 ,5, 50, 20);
+        loginButton.tag = indexPath.row;
+        [loginButton setTitle:@"同意点击这个cell" forState:UIControlStateNormal];
+        loginButton.backgroundColor = [UIColor clearColor];
+        [loginButton addTarget:self action:@selector(agreeBtnClick:)forControlEvents:UIControlEventTouchUpInside];
+        [cell.contentView addSubview:loginButton];
+        //        cell.accessoryView = loginButton;
+    }
+    cell.textLabel.text=notifiMsg.content;
+    
+    
+    return cell;
+    
+}
+#pragma  mark - 点击同意之后
+-(void)agreeBtnClick:(UIButton *)sender{
+    
+    NSLog(@"%ld",(long)sender.tag);
+    NotificationMessage *notifiMsg =  [notifiMsgArray objectAtIndex:sender.tag];
+    
+    [PHGroupHttpRequest requestAddAnFriend:notifiMsg.memberId WithMemberType:(MemberUserType)MemberUserTypeNil done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        bool isValidate =[CommonUtil isValidateHttpResponseObject:responseObject];
+//        if (isValidate) {
+        if (YES) {
+            NSDictionary *dic = (NSDictionary *)responseObject;
+            NSLog(@"requestAddAnFriend message is  %@",[dic objectForKey:@"message"]);
+            //一个允许通过
+            [ClientHelper acceptFriend:host.memberId Token:[CommonUtil MyToken] ToUid:notifiMsg.memberId Msgsn:88888];
+//            NSString *content  = [NSString stringWithFormat:@"%@通过了你的请求，你们可以开始聊天了",host.nickName];
+//             NSString *msg = [NSString stringWithFormat:@"{\"txt\":\"%@\",\"ct\":%u}",content,MessageContentText];
+//            [ClientHelper sendMessage:host.memberId Token:[CommonUtil MyToken] ToUid:notifiMsg.memberId Message:msg Msgsn:100000];
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+
+    //一个允许通过
+//    [XJDChangeUserInfoHelp agreeInGroupByGroupId:sender.tag done:^(AFHTTPRequestOperation *operation, id responseObject) {
+//        //
+//        NSLog(@"agree is ? : %@",responseObject);
+//        //如果现在数据库中没有这个群 后台重新获取数据 发送通知 调用[self performSelectorInBackground:@selector(selectMyGroupWithServer) withObject:nil];
+//        [[NSNotificationCenter defaultCenter] postNotificationName:@"REFRESHMYGROUPLSITFROMSERVER" object:nil];
+//        
+//        
+//    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+//        //
+//        NSLog(@"agree grou error");
+//    }];
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

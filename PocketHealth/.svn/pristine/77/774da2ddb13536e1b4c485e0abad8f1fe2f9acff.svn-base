@@ -1,0 +1,133 @@
+//
+//  PHAppStartManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-5.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHAppStartManager.h"
+#import "CommonUtil.h"
+#import "AppDelegate.h"
+
+#import "PHLoginViewController.h"
+#import "PHMonitoringViewController.h"
+#import "PHGroupChatHomeViewController.h"
+static PHAppStartManager *appStartManager;
+static NSString *hostProfilePlist = @"PersonProfile.plist";
+@implementation PHAppStartManager
++(id)defaultManager
+{
+    if (appStartManager == nil) {
+        appStartManager = [[PHAppStartManager alloc] init];
+    }
+    return appStartManager;
+}
+
+-(Member *)userHost
+{
+    return host;
+}
+
+-(void)setHostMember:(Member *)member
+{
+    host = member;
+}
+
+-(void)saveProfileToPlist
+{
+    
+}
+
+-(Member *)getProfileFromPlist
+{
+    Member *member = nil;
+    return member;
+}
+
+-(void)startApp
+{
+    NSString *loginName = [CommonUtil localUserDefaultsForKey:kMY_USER_LoginName];
+    NSString *password = [CommonUtil localUserDefaultsForKey:kMY_USER_PASSWORD];
+//    NSString *pushUserId = [CommonUtil localUserDefaultsForKey:KMY_PUSH_USERID];
+//    NSString *pushChannelId = [CommonUtil localUserDefaultsForKey:KMY_PUSH_CHANNELID];
+    NSString *pushUserId = @"aaa";
+    NSString *pushChannelId = @"bbb";
+
+    if (loginName && password && pushUserId && pushChannelId){
+        shouldAutoLogin = YES;
+        [self setHomeView];
+    }else{
+        shouldAutoLogin = NO;
+        [self setLoginView];
+    }
+}
+
+-(void)setHomeView
+{
+    _tabBarController = [[UITabBarController alloc] init];
+    [_tabBarController.navigationItem setHidesBackButton:YES];
+    PHMonitoringViewController *phMonitoringVC = [[PHMonitoringViewController alloc] init];
+    PHGroupChatHomeViewController *phGroupChatHomeVC = [[PHGroupChatHomeViewController alloc] init];
+    _tabBarController.viewControllers = @[phMonitoringVC,phGroupChatHomeVC];
+    UITabBar *tabBar = _tabBarController.tabBar;
+    UITabBarItem *item1 = [tabBar.items objectAtIndex:0];
+    [item1 setImage:[UIImage imageNamed:@"tz"]];
+    [item1 setSelectedImage:[UIImage imageNamed:@"tz1"]];
+    UITabBarItem *item2 = [tabBar.items objectAtIndex:1];
+    [item2 setImage:[UIImage imageNamed:@"txl"]];
+    [item2 setSelectedImage:[UIImage imageNamed:@"txl1"]];
+//    UITabBarItem *item3 = [tabBar.items objectAtIndex:2];
+//    [item3 setImage:[UIImage imageNamed:@"lt"]];
+//    [item3 setSelectedImage:[UIImage imageNamed:@"lt1"]];
+    item1.title = @"天天健康";
+    item2.title = @"健康吧";
+//    item3.title = @"我";
+    _navigationController = [[UINavigationController alloc] initWithRootViewController:_tabBarController];
+    [[(AppDelegate *)[UIApplication sharedApplication].delegate window] setRootViewController:_navigationController];
+}
+
+-(void)pushHomeView
+{
+    _tabBarController = [[UITabBarController alloc] init];
+    [_tabBarController.navigationItem setHidesBackButton:YES];
+    PHMonitoringViewController *phMonitoringVC = [[PHMonitoringViewController alloc] init];
+    PHGroupChatHomeViewController *phGroupChatHomeVC = [[PHGroupChatHomeViewController alloc] init];
+    _tabBarController.viewControllers = @[phMonitoringVC,phGroupChatHomeVC];
+    UITabBar *tabBar = _tabBarController.tabBar;
+    UITabBarItem *item1 = [tabBar.items objectAtIndex:0];
+    [item1 setImage:[UIImage imageNamed:@"tz"]];
+    [item1 setSelectedImage:[UIImage imageNamed:@"tz1"]];
+    UITabBarItem *item2 = [tabBar.items objectAtIndex:1];
+    [item2 setImage:[UIImage imageNamed:@"txl"]];
+    [item2 setSelectedImage:[UIImage imageNamed:@"txl1"]];
+    //    UITabBarItem *item3 = [tabBar.items objectAtIndex:2];
+    //    [item3 setImage:[UIImage imageNamed:@"lt"]];
+    //    [item3 setSelectedImage:[UIImage imageNamed:@"lt1"]];
+    item1.title = @"天天健康";
+    item2.title = @"健康吧";
+    //    item3.title = @"我";
+    [_navigationController pushViewController:_tabBarController animated:YES];
+}
+
+-(void)setLoginView
+{
+    PHLoginViewController *phLoginVC = [[PHLoginViewController alloc] init];
+    _navigationController = [[UINavigationController alloc] initWithRootViewController:phLoginVC];
+    [[(AppDelegate *)[UIApplication sharedApplication].delegate window] setRootViewController:_navigationController];
+}
+
+-(void)loginOut
+{
+    [_navigationController popToRootViewControllerAnimated:NO];
+    _navigationController = nil;
+    _tabBarController = nil;
+    shouldAutoLogin = NO;
+    [self setLoginView];
+}
+
+-(BOOL)shouldAutoLogin
+{
+    return shouldAutoLogin;
+}
+@end

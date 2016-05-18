@@ -1,0 +1,105 @@
+//
+//  PHOrganizationDetailsViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-18.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOrganizationDetailsViewController.h"
+#import "PHDetailsOtherInfoViewController.h"
+#import "PHInterestingGroupViewController.h"
+#import "PHGetMemberInfoManager.h"
+#import "CalculateViewFrame.h"
+#import "Organization.h"
+#import "Group.h"
+
+@interface PHOrganizationDetailsViewController ()
+{
+    UIScrollView *scrollView;
+    Organization *organization;
+    PHDetailsOtherInfoViewController *phDetailsOtherInfoVC;
+    PHInterestingGroupViewController *phInterestingGroupVC;
+}
+
+@end
+
+@implementation PHOrganizationDetailsViewController
+-(id)initWithOrganization:(Organization *)org
+{
+    self = [super init];
+    if (self) {
+        organization = org;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    scrollView = [[UIScrollView alloc] initWithFrame:frame];
+    [self.view addSubview:scrollView];
+    phDetailsOtherInfoVC = [[PHDetailsOtherInfoViewController alloc] initWithOrganizaiton:organization];
+    [scrollView addSubview:phDetailsOtherInfoVC.view];
+    [self updateScrollFrame];
+    [self getGroupByUserId:organization.organizationId];
+//    [self.view setFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, phDetailsOtherInfoVC.view.frame.size.height)];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)updateScrollFrame
+{
+    if (phInterestingGroupVC != nil) {
+        [scrollView setContentSize:CGSizeMake([UIScreen mainScreen].bounds.size.width, phDetailsOtherInfoVC.view.frame.size.height + phInterestingGroupVC.view.frame.size.height)];
+    }
+    else{
+        [scrollView setContentSize:CGSizeMake(phDetailsOtherInfoVC.view.frame.size.width, phDetailsOtherInfoVC.view.frame.size.height)];
+    }
+}
+
+-(void)getGroupByUserId:(long long)userId
+{
+    [[PHGetMemberInfoManager defaultManager] requestGroupByUserId:userId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSArray *resultArr = [dic objectForKey:@"Result"];
+            NSMutableArray *arr = [[NSMutableArray alloc] init];
+            for (id m in resultArr) {
+                Group *g = [[Group alloc] init];
+                g.groupId = [[m objectForKey:@"Hbid"] unsignedIntValue];
+                g.groupName = [m objectForKey:@"Hbname"];
+                g.groupHeadImage = [NSString stringWithFormat:@"%@%@",ServerBaseURL,[m objectForKey:@"Hblogourl"]];
+                g.groupBriefIntroduction = [m objectForKey:@"Hbremark"];
+                g.groupOwner = [[m objectForKey:@"Hbownerid"] longLongValue];
+                g.groupMemberCount = [[m objectForKey:@"UserCount"] integerValue];
+                [arr addObject:g];
+            }
+            phInterestingGroupVC = [[PHInterestingGroupViewController alloc] initWithGroups:arr];
+            [phInterestingGroupVC.view setFrame:CGRectMake(0, 650, [UIScreen mainScreen].bounds.size.width, arr.count * 87.0f + 25)];
+            [scrollView addSubview:phInterestingGroupVC.view];
+            [self updateScrollFrame];
+        }else{
+
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

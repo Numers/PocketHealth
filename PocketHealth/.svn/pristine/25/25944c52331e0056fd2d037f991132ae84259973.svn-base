@@ -1,0 +1,16 @@
+//
+//  PHVideoChatViewController.h
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface PHVideoChatViewController : UIViewController
+-(id)initWithDictionary:(NSDictionary *)dic CallState:(BOOL)isCommingCall;
+-(void)didConnected;
+-(void)showViewCompletion:(void (^)(BOOL finished))completion;
+-(void)hiddenCompletion:(void (^)(BOOL finished))completion;
+@end

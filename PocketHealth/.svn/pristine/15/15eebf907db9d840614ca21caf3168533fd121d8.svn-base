@@ -1,0 +1,96 @@
+//
+//  SFirendDB.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "SDBManager.h"
+#import "Member.h"
+
+@interface SFirendDB : NSObject
+{
+   FMDatabase * _db;
+}
+/**
+ *  创建数据库
+ */
+- (void) createDataBase;
+
+/**
+ *  保存用户
+ *
+ *  @param user      传入用户信息
+ *  @param belongUid 属于的用户
+ */
+- (void) saveUser:(Member *) user WithBelongUid:(long long)belongUid;
+/**
+ *  删除用户
+ *
+ *  @param uid       被删除的用户id
+ *  @param belongUid 属于的用户
+ */
+- (void) deleteUserWithId:(long long) uid WithBelongUid:(long long)belongUid;
+
+/**
+ *  修改用户信息
+ *
+ *  @param user      传入用户信息
+ *  @param belongUid 属于的用户
+ */
+- (void) mergeWithUser:(Member *) user WithBelongUid:(long long)belongUid;
+
+/**
+ *  获取正在会话中的好友数组
+ *
+ *  @param belongUid 属于的用户id
+ *
+ *  @return 返回正在会话中的好友列表
+ */
+-(NSArray *)selectSessionUserWithoutHospitalWithBelongUid:(long long)belongUid;
+
+/**
+ *  获取所有的好友数组(除去医院)
+ *
+ *  @param belongUid 所属的用户id
+ *
+ *  @return 返回所有的好友数组(除去医院)
+ */
+-(NSArray *)selectAllUserWithoutHopspitalWithBelongUid:(long long)belongUid;
+
+/**
+ *  获取“关注”的医院号
+ *
+ *  @param belongUid 属于的用户id
+ *
+ *  @return 返回医院号数组
+ */
+-(NSArray *)selectHospitalWithBelongUid:(long long)belongUid;
+
+
+
+-(NSArray *)selectAttantionWithBelongUid:(long long)belongUid WithAttantionType:(MemberType)attantionType;
+
+/**
+ *  查询用户详情
+ *
+ *  @param uid       查询的用户id
+ *  @param belongUid 所属的用户id
+ *
+ *  @return 返回查询的用户
+ */
+-(Member *)selectUserWithUid:(long long)uid WithBelongUid:(long long)belongUid;
+
+/**
+ *  是否存在该用户
+ *
+ *  @param uid       查询的用户id
+ *  @param belongUid 所属的用户id
+ *
+ *  @return 返回是否存在该用户
+ */
+-(BOOL)isExistMemberWithUid:(long long)uid WithBelongUid:(long long)belongUid;
+
+@end

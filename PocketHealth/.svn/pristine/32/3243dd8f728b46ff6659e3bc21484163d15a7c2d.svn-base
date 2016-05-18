@@ -1,0 +1,46 @@
+//
+//  SFirendDB.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "SFirendDB.h"
+
+#define kFriendTableName @"SFriendDB"
+
+@implementation SFirendDB
+
+- (id) init {
+    self = [super init];
+    if (self) {
+        //========== 首先查看有没有建立message的数据库，如果未建立，则建立数据库=========
+        _db = [SDBManager defaultDBManager].dataBase;
+    }
+    return self;
+}
+- (void) createDataBase {
+    FMResultSet * set = [_db executeQuery:[NSString stringWithFormat:@"select count(*) from sqlite_master where type ='table' and name = '%@'",kFriendTableName]];
+    
+    [set next];
+    
+    NSInteger count = [set intForColumnIndex:0];
+    
+    BOOL existTable = !!count;
+    
+    if (existTable) {
+        // TODO:是否更新数据库
+        NSLog(@"数据库已经存在");
+    } else {
+        // TODO: 插入新的数据库
+        NSString * sql = @"CREATE TABLE SFriend (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, memberid BIGINT,belongmemberid BIGINT,nickname VARCHAR(50),loginname VARCHAR(50), headimage VARCHAR(100), isSession INTEGER,sessiondate TIMESTAMP,orgname VARCHAR(50),typename VARCHAR(50),userintroduce VARCHAR(50),userrecord VARCHAR(50),usertype INTEGER)";
+        BOOL res = [_db executeUpdate:sql];
+        if (!res) {
+            NSLog(@"%@数据库创建失败",kFriendTableName);
+        } else {
+            NSLog(@"%@数据库创建成功",kFriendTableName);
+        }
+    }
+}
+@end

@@ -1,0 +1,31 @@
+//
+//  Organization.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Mantle.h"
+
+@interface Organization : MTLModel<MTLJSONSerializing>
+@property(nonatomic) NSInteger organizationId;
+@property(nonatomic) NSInteger organizationAreaId;
+@property(nonatomic) NSInteger orderId;
+@property(nonatomic) NSInteger oiId;
+@property(nonatomic) NSInteger isUse;
+@property(nonatomic) float latitude;
+@property(nonatomic) float longitude;
+@property(nonatomic, copy) NSString *organizationName;
+@property(nonatomic, copy) NSString *organizationHeadImage;
+@property(nonatomic, copy) NSString *organizationLevel;
+@property(nonatomic, copy) NSString *organizaitonAddress;
+@property(nonatomic) NSInteger questionNum;
+@property(nonatomic) NSTimeInterval startDate;
+@property(nonatomic) NSTimeInterval endDate;
+@property(nonatomic) float distance;
+@property(nonatomic, copy) NSString *healthPadVideo;
+@property(nonatomic, copy) NSString *healthPadWebService;
+
+@end

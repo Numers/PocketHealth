@@ -1,0 +1,316 @@
+#include <fcntl.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <time.h>
+#include <sys/select.h>
+#include "GSClientSocket.h"
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <netdb.h>
+#include <errno.h>
+
+#ifdef ANDROID
+#include <android/log.h>
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "native-activity", __VA_ARGS__))
+#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "native-activity", __VA_ARGS__))
+#define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "native-activity", __VA_ARGS__))
+#else
+#define LOGI(...) ((void)printf(__VA_ARGS__))
+#define LOGW(...) ((void)printf(__VA_ARGS__))
+#define LOGE(...) ((void)printf(__VA_ARGS__))
+#endif
+
+#define MAXBUFF 10240
+
+
+static void* ThreadProc(void * param);
+
+GSClientSocket::GSClientSocket(void)
+{
+	m_sock=0;
+	m_bConnected=false;
+
+	m_pGSBuffer=NULL;
+	m_pGSClientSocketSink=NULL;
+
+	m_bThread=false;
+}
+
+
+GSClientSocket::~GSClientSocket(void)
+{
+	delete m_pGSBuffer;
+}
+
+void GSClientSocket::Close(){
+	if(m_sock>0){
+		close(m_sock);
+		m_sock=0;
+	}
+
+	m_bConnected=false;
+}
+
+int GSClientSocket::Connect( char * ip,int port )
+{
+	Close();
+	m_sock=socket(AF_INET,SOCK_STREAM,0);
+	//m_bConnected=false;
+	//�첽����
+#ifdef WIN32
+		u_long ul=1;
+		ioctlsocket(m_sock,FIONBIO,&ul);
+#else
+		int flags;
+		if((flags = fcntl(m_sock, F_GETFL)) < 0) return -2;
+
+		flags |= O_NONBLOCK;
+
+		if(fcntl(m_sock, F_SETFL, flags) < 0) return -3;
+		//fcntl(m_sock, F_SETFL, O_NDELAY);
+#endif
+
+	if(m_sock<0) return -2;
+
+	char * sip=NULL;
+	struct hostent * ent=gethostbyname(ip);
+	if(ent){
+		if(ent->h_length>0){
+			sip=ent->h_addr_list[0];
+		}
+	}
+
+
+	if(sip==NULL){
+		return -3;
+	}
+	//LOGE("%s",inet_ntoa(*(struct in_addr *)sip));
+
+	struct sockaddr_in s_add;
+	memset(&s_add,0,sizeof(struct sockaddr_in));
+	s_add.sin_family=AF_INET;
+	//s_add.sin_addr.s_addr=inet_addr(ip);
+	s_add.sin_addr=*(struct in_addr *)sip;
+	s_add.sin_port=htons(port);
+	int ret=connect(m_sock,(struct sockaddr *)&s_add,sizeof(s_add));
+	int e=errno;
+	if(ret==-1 && e==EINPROGRESS){
+		//return ret;
+		//if(ret==0){
+		if(!m_bThread){
+			//m_bConnected=true;
+
+	#ifdef WIN32
+
+			HANDLE h=CreateThread(NULL, //Choose default security
+				0, //Default stack size
+				(LPTHREAD_START_ROUTINE)&ThreadProc,
+				//Routine to execute
+				(LPVOID) this, //Thread parameter
+				0, //Immediately run the thread
+				&dwThreadId //Thread Id
+				);
+	#else
+			pthread_create(&thread,NULL,ThreadProc,this);
+			m_bThread=true;
+	#endif
+
+		}
+	}else{
+		LOGE("ret=%d;errno=%d\n",ret,e);
+		return -1;
+	}
+	return 0;
+}
+
+
+int GSClientSocket::WriteCmd(DWORD opid,void * data,int datalen){
+
+	BYTE * allData=(BYTE*)malloc(sizeof(head_t) + datalen);
+	head_t * h=(head_t *)allData;
+	h->opid=opid;
+	h->datalen=datalen;
+	if(datalen>0){
+		memcpy(allData+sizeof(head_t),data,datalen);
+	}
+	
+	int ret=-1;
+	if(m_sock>0){
+		ret=send(m_sock,(const char *)allData,sizeof(head_t) + datalen,0);
+	}
+	free(allData);
+	return ret;
+}
+
+GSBuffer * GSClientSocket::GetBuffer()
+{
+	if(m_pGSBuffer==NULL){
+		m_pGSBuffer=new GSBuffer();
+	}
+
+	return m_pGSBuffer;
+}
+
+void GSClientSocket::SetSocketSink( GSClientSocketSink * pGSClientSocketSink )
+{
+	m_pGSClientSocketSink=pGSClientSocketSink;
+}
+
+void GSClientSocket::OnClose(){
+	close(m_sock);
+	m_sock=0;
+	m_bConnected=false;
+	if(m_pGSClientSocketSink){
+		m_pGSClientSocketSink->OnClose();
+	}
+}
+
+void GSClientSocket::OnConnect(){
+
+	m_bConnected=true;
+	if(m_pGSClientSocketSink){
+		m_pGSClientSocketSink->OnConnect();
+	}
+}
+
+void GSClientSocket::OnConnectTimeout(){
+
+	m_bConnected=false;
+	if(m_pGSClientSocketSink){
+		m_pGSClientSocketSink->OnConnectTimeout();
+	}
+}
+
+static void * ThreadProc(void * param)
+{
+	//return 0;
+
+#define TV_TIME 10000
+#define TIMEOUT ((1000*1000)/10000)*10
+
+	GSClientSocket * gsClientSocket=(GSClientSocket *)param;
+	fd_set fdset;
+	fd_set fdsetwrite;
+
+	struct timeval tv;
+
+
+	int timeout=0;
+
+	while(!gsClientSocket->IsConnected()){
+
+		FD_ZERO(&fdsetwrite);
+		FD_SET(gsClientSocket->GetSocket(),&fdsetwrite);
+		tv.tv_sec=0;
+		tv.tv_usec=TV_TIME;
+		int ret=select(gsClientSocket->GetSocket()+1,NULL,&fdsetwrite,NULL,&tv);
+
+		if(ret>0){
+			int error;
+			socklen_t len=sizeof(int);
+			getsockopt(gsClientSocket->GetSocket(), SOL_SOCKET, SO_ERROR, &error, &len);
+			if(error==0){
+				gsClientSocket->OnConnect();
+			}else{
+				LOGE("error:%d",error);
+			}
+		}else{
+			timeout++;
+
+			if(timeout>TIMEOUT){
+				timeout=0;
+				gsClientSocket->OnConnectTimeout();
+				break;
+			}
+			//LOGE("ret:%d",ret);
+		}
+	}
+
+
+	while(gsClientSocket->IsConnected()){
+		FD_ZERO(&fdset);
+		FD_SET(gsClientSocket->GetSocket(),&fdset);
+		tv.tv_sec=0;
+		tv.tv_usec=TV_TIME;
+		int ret=select(gsClientSocket->GetSocket()+1,&fdset,NULL,NULL,&tv);
+
+		if(ret==-1){
+			//LOGE("OnClose1");
+			gsClientSocket->OnClose();
+		}else if(ret==0){
+			//��ʱ����
+		}else{
+			if(FD_ISSET(gsClientSocket->GetSocket(),&fdset)){
+				char * buffer=(char *)malloc(MAXBUFF);
+				memset(buffer,0,MAXBUFF);
+				int len=recv(gsClientSocket->GetSocket(),buffer,MAXBUFF,0);
+				if(len<=0){
+					//LOGE("OnClose2:%d",len);
+					gsClientSocket->OnClose();
+					break;
+				}
+				gsClientSocket->GetBuffer()->Write(buffer,len);
+
+				GSClientSocketSink * psink= gsClientSocket->GetClientSocketSink();
+
+				if(psink!=NULL){
+					while(true){
+						int n=psink->decode(gsClientSocket->GetBuffer());
+						if(n>0){
+							void * tmp=malloc(n);
+							gsClientSocket->GetBuffer()->Read(tmp,n);
+							psink->OnRecvPacket(tmp,n);
+							free(tmp);
+						}else{
+							break;
+						}
+					}
+				}
+
+				free(buffer);
+			}
+
+		}
+	}
+	gsClientSocket->SetThread(false);
+	//LOGE("thread terminated");
+	return 0;
+}
+
+
+GSClientSocketSink::GSClientSocketSink( void )
+{
+
+}
+
+GSClientSocketSink::~GSClientSocketSink( void )
+{
+
+}
+
+int GSClientSocketSink::OnRecvPacket( void * data,int len )
+{
+	return 0;
+}
+
+int GSClientSocketSink::decode( GSBuffer * pBuffer )
+{
+	int len=pBuffer->GetSize();
+
+	head_t head={0};
+	pBuffer->ReadCopyOut(&head,sizeof(head_t));
+
+	if(len>=sizeof(head_t)){
+		int needlen=head.datalen+sizeof(head_t);
+		if(len>=needlen){
+			return needlen;
+		}
+	}
+	return 0;
+}
+
+

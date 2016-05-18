@@ -1,0 +1,274 @@
+//
+//  NSStringAdditions.m
+//  Weibo
+//
+//  Created by junmin liu on 10-9-29.
+//  Copyright 2010 Openlab. All rights reserved.
+//
+
+#import "NSString+Additions.h"
+#import <CommonCrypto/CommonDigest.h>
+
+@implementation NSString (Additions)
+
++ (NSString *)generateGuid {
+	CFUUIDRef	uuidObj = CFUUIDCreate(nil);//create a new UUID
+	//get the string representation of the UUID
+    
+#if __has_feature(objc_arc)
+	NSString	*uuidString = (__bridge_transfer  NSString*)CFUUIDCreateString(nil, uuidObj);
+#else
+    NSString	*uuidString = (NSString*)CFUUIDCreateString(nil, uuidObj);
+#endif
+    CFRelease(uuidObj);
+	return [uuidString autorelease];
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+- (BOOL)isWhitespaceAndNewlines {
+	NSCharacterSet* whitespace = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+	for (NSInteger i = 0; i < self.length; ++i) {
+		unichar c = [self characterAtIndex:i];
+		if (![whitespace characterIsMember:c]) {
+			return NO;
+		}
+	}
+	return YES;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+- (BOOL)isEmptyOrWhitespace {
+	return !self.length ||
+	![self stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]].length;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Copied and pasted from http://www.mail-archive.com/cocoa-dev@lists.apple.com/msg28175.html
+- (NSDictionary*)queryDictionaryUsingEncoding:(NSStringEncoding)encoding {
+	NSCharacterSet* delimiterSet = [NSCharacterSet characterSetWithCharactersInString:@"&;"];
+	NSMutableDictionary* pairs = [NSMutableDictionary dictionary];
+	NSScanner* scanner = [[NSScanner alloc] initWithString:self] ;
+	while (![scanner isAtEnd]) {
+		NSString* pairString = nil;
+		[scanner scanUpToCharactersFromSet:delimiterSet intoString:&pairString];
+		[scanner scanCharactersFromSet:delimiterSet intoString:NULL];
+		NSArray* kvPair = [pairString componentsSeparatedByString:@"="];
+		if (kvPair.count == 2) {
+			NSString* key = [[kvPair objectAtIndex:0]
+							 stringByReplacingPercentEscapesUsingEncoding:encoding];
+			NSString* value = [[kvPair objectAtIndex:1]
+							   stringByReplacingPercentEscapesUsingEncoding:encoding];
+			[pairs setObject:value forKey:key];
+		}
+	}
+	[scanner release];//fix by dxp
+	return [NSDictionary dictionaryWithDictionary:pairs];
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+- (NSString*)stringByAddingQueryDictionary:(NSDictionary*)query {
+	NSMutableArray* pairs = [NSMutableArray array];
+	for (NSString* key in [query keyEnumerator]) {
+		NSString* value = [query objectForKey:key];
+		value = [value stringByReplacingOccurrencesOfString:@"?" withString:@"%3F"];
+		value = [value stringByReplacingOccurrencesOfString:@"=" withString:@"%3D"];
+		NSString* pair = [NSString stringWithFormat:@"%@=%@", key, value];
+		[pairs addObject:pair];
+	}
+	
+	NSString* params = [pairs componentsJoinedByString:@"&"];
+	if ([self rangeOfString:@"?"].location == NSNotFound) {
+		return [self stringByAppendingFormat:@"?%@", params];
+	} else {
+		return [self stringByAppendingFormat:@"&%@", params];
+	}
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+- (NSComparisonResult)versionStringCompare:(NSString *)other {
+	NSArray *oneComponents = [self componentsSeparatedByString:@"a"];
+	NSArray *twoComponents = [other componentsSeparatedByString:@"a"];
+	
+	// The parts before the "a"
+	NSString *oneMain = [oneComponents objectAtIndex:0];
+	NSString *twoMain = [twoComponents objectAtIndex:0];
+	
+	// If main parts are different, return that result, regardless of alpha part
+	NSComparisonResult mainDiff;
+	if ((mainDiff = [oneMain compare:twoMain]) != NSOrderedSame) {
+		return mainDiff;
+	}
+	
+	// At this point the main parts are the same; just deal with alpha stuff
+	// If one has an alpha part and the other doesn't, the one without is newer
+	if ([oneComponents count] < [twoComponents count]) {
+		return NSOrderedDescending;
+	} else if ([oneComponents count] > [twoComponents count]) {
+		return NSOrderedAscending;
+	} else if ([oneComponents count] == 1) {
+		// Neither has an alpha part, and we know the main parts are the same
+		return NSOrderedSame;
+	}
+	
+	// At this point the main parts are the same and both have alpha parts. Compare the alpha parts
+	// numerically. If it's not a valid number (including empty string) it's treated as zero.
+	NSNumber *oneAlpha = [NSNumber numberWithInt:[[oneComponents objectAtIndex:1] intValue]];
+	NSNumber *twoAlpha = [NSNumber numberWithInt:[[twoComponents objectAtIndex:1] intValue]];
+	return [oneAlpha compare:twoAlpha];
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+- (NSString*)md5Hash {
+	return [[self dataUsingEncoding:NSUTF8StringEncoding] md5Hash];
+}
+
+- (NSString *)URLEncodedString
+{
+#if __has_feature(objc_arc)
+    NSString *result = (__bridge NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
+                                                                                    (__bridge CFStringRef)self,
+                                                                                    NULL,
+                                                                                    CFSTR("!*'();:@&=+$,/?%#[]"),
+                                                                                    kCFStringEncodingUTF8);
+#else
+    NSString *result = (NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
+                                                                           (CFStringRef)self,
+                                                                           NULL,
+                                                                           CFSTR("!*'();:@&=+$,/?%#[]"),
+                                                                           kCFStringEncodingUTF8);
+#endif
+	return [result autorelease]; //fix by dxp
+}
+
+//MD5加密 old
+//+ (NSString *)md5:(NSString *)str{
+//    if(str){
+//        const char *cStr = [str UTF8String];
+//        unsigned char result[16];
+//        CC_MD5(cStr, strlen(cStr), result);
+//        
+//        return [NSString stringWithFormat:
+//                @"%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+//                result[0], result[1], result[2], result[3],
+//                result[4], result[5], result[6], result[7],
+//                result[8], result[9], result[10], result[11],
+//                result[12], result[13], result[14], result[15]
+//                ];
+//    }
+//    return str;
+//}
+//md5 new
++(NSString *)md5:(NSString *)str
+{
+    const char *cStr = [str UTF8String];
+    unsigned char result[16];
+    CC_MD5(cStr, strlen(cStr), result); // This is the md5 call
+    return [NSString stringWithFormat:
+            @"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+            result[0], result[1], result[2], result[3],
+            result[4], result[5], result[6], result[7],
+            result[8], result[9], result[10], result[11],
+            result[12], result[13], result[14], result[15]
+            ];
+}
+
+//add by yangfan  2014-08-06 19:23:46
+-(double)handleXJDDateTime:(NSString *)dateTime{
+    //    NSString *tmpTime=[result objectForKey:@"Rpdcreatetime"];
+    NSRange range=[dateTime rangeOfString:@"Date("];
+    NSRange range1=[dateTime rangeOfString:@")"];
+    NSString *tmpTime2=[dateTime substringWithRange:NSMakeRange(range.location+range.length
+                                                                , range1.location-range.location-range.length)];
+    return [tmpTime2 doubleValue]/1000;
+}
++(NSString *)strExchangeWithMD5:(NSString *)password{
+    NSString *md5password=[self md5:password];
+    
+    NSString *tmpStr=[md5password substringToIndex:16];
+    NSString *tmpStr2=[md5password substringFromIndex:16];
+    NSString *sendStr=[NSString stringWithFormat:@"%@%@",tmpStr2,tmpStr];
+    
+    return  sendStr;
+    
+}
++(BOOL)isPhoneNumNormal:(NSString *)phoneNum{
+    BOOL isPhoneNum=NO;
+    if (phoneNum.length==11) {
+        if ([self isNumText:phoneNum]) {
+            if ([[phoneNum substringToIndex:1] isEqualToString:@"1"]) {
+                isPhoneNum=YES;
+            }
+        }
+    }
+    return isPhoneNum;
+}
++(BOOL)isNumText:(NSString *)str{
+    NSString * regex        = @"^[0-9]*$";
+    NSPredicate * pred      = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", regex];
+    BOOL isMatch            = [pred evaluateWithObject:str];
+    if (isMatch) {
+        return YES;
+    }else{
+        return NO;
+    }
+    
+}
++(NSString *)encodeToPercentEscapeString: (NSString *) input
+{
+    // Encode all the reserved characters, per RFC 3986
+    // (<http://www.ietf.org/rfc/rfc3986.txt>)
+    NSString *outputStr = (NSString *)
+    CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
+                                            (CFStringRef)input,
+                                            NULL,
+                                            (CFStringRef)@"!*'();:@&=+$,/?%#[]",
+                                            kCFStringEncodingUTF8);
+    return outputStr;
+}
++ (NSString*) replaceUnicode:(NSString*)aUnicodeString
+
+{
+    
+    NSString *tempStr1 = [aUnicodeString stringByReplacingOccurrencesOfString:@"\\u" withString:@"\\U"];
+    
+    NSString *tempStr2 = [tempStr1 stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
+    
+    NSString *tempStr3 = [[@"\"" stringByAppendingString:tempStr2] stringByAppendingString:@"\""];
+    
+    NSData *tempData = [tempStr3 dataUsingEncoding:NSUTF8StringEncoding];
+    
+    NSString* returnStr = [NSPropertyListSerialization propertyListFromData:tempData
+                           
+                                                           mutabilityOption:NSPropertyListImmutable
+                           
+                                                                     format:NULL
+                           
+                                                           errorDescription:NULL];
+    
+    
+    
+    return [returnStr stringByReplacingOccurrencesOfString:@"\\r\\n" withString:@"\n"]; 
+    
+}
+//正则链接
+- (BOOL)isUrl
+{
+    NSString *      regex = @"http(s)?:\\/\\/([\\w-]+\\.)+[\\w-]+(\\/[\\w- .\\/?%&=]*)?";
+    NSPredicate *   pred = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", regex];
+    
+    return [pred evaluateWithObject:self];
+}
+-(NSNumber *)asNumber{
+    NSString *regEx = @"^-?\\d+.?\\d?";
+    NSPredicate * pred      = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", regEx];
+    BOOL isMatch            = [pred evaluateWithObject:self];
+    if (isMatch) {
+        return [NSNumber numberWithDouble:[self doubleValue]];
+    }
+    return nil;
+}
+@end

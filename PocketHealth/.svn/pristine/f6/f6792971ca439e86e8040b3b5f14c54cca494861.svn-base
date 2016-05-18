@@ -1,0 +1,110 @@
+//
+//  PHUserCenterAttentionListViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHUserCenterAttentionListViewController.h"
+#import "SFirendDB.h"
+#import "PHAppStartManager.h"
+#import "CalculateViewFrame.h"
+
+
+static NSString *identifierAttentionListCell = @"PHAttentionListCell";
+
+@interface PHUserCenterAttentionListViewController ()<UITableViewDataSource,UITableViewDelegate>
+{
+    MemberType memberType;
+    Member *host ;
+    NSArray * attentionArray;
+}
+@end
+
+@implementation PHUserCenterAttentionListViewController
+
+-(id)initWithAttentionType:(MemberType)attentionType{
+    self = [super init];
+    if (self) {
+        //
+        memberType = attentionType;
+    }
+    return self;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //数据初始化
+    host = [[PHAppStartManager defaultManager] userHost];
+    attentionArray = [[NSArray alloc]init];
+    //根据不同的关注类型 获取不同的列表
+    //1.后台刷新指定类型的关注列表
+    if (memberType == MemberTypeHospital) {
+        //获取医院列表并显示
+        [self createHopsitalList];
+    }else if (memberType == MemberTypeUser){
+        //获取好友列表并显示
+        [self createFriendlList];
+    }else{
+        
+        NSLog(@"membertyoe error return");
+    }
+    
+    //初始化tableview
+    _tableView = [[UITableView alloc] init];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView.frame = frame;
+    [self.view addSubview:_tableView];
+    
+    // Do any additional setup after loading the view.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+
+#pragma mark  -  构造医院列表
+-(void)createHopsitalList{
+
+}
+#pragma mark  -  构造好友列表
+-(void)createFriendlList{
+    //1.从服务器刷新本地好友列表
+    
+    
+    //1.从本地数据库获取好友列表
+    SFirendDB *sfrienddb = [[SFirendDB alloc]init];
+    attentionArray = [sfrienddb selectAllUserWithoutHopspitalWithBelongUid:host.memberId];
+    
+    
+}
+#pragma mark - tableview delegate and datasource
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return attentionArray.count;
+}
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifierAttentionListCell];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierAttentionListCell];
+    }
+//
+    Member *member  =attentionArray[indexPath.row];
+    cell.textLabel.text = member.nickName;
+    
+    return cell;
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

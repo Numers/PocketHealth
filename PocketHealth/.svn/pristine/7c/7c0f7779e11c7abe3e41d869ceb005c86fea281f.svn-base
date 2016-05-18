@@ -1,0 +1,200 @@
+//
+//  PHGroupPersonalInfoViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/15.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupPersonalInfoViewController.h"
+//界面类
+#import "CalculateViewFrame.h"
+#import "PHGroupPersonalInfoCellHeaderViewController.h"
+
+
+static NSString *identifierPersonalInfoCell = @"PHPersonalInfoCellTableViewCell";
+
+@interface PHGroupPersonalInfoViewController ()<UITableViewDataSource,UITableViewDelegate,UIGestureRecognizerDelegate>
+{
+    GroupMember * selectedMember;
+}
+@property (strong, nonatomic) IBOutlet UITableView *personalMainTableView;
+
+@end
+
+@implementation PHGroupPersonalInfoViewController
+
+-(id)initWithGroupMember:(GroupMember *)member{
+    self = [super init];
+    if (self) {
+        //
+        selectedMember = member;
+    }
+    return self;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //界面构造简介
+    self.navigationController.navigationBar.hidden = YES;
+    [self.navigationController.navigationBar setTranslucent:YES];
+
+    //0.初始化tableview
+    CGRect frame = [CalculateViewFrame viewFrame:nil withTabBarController:self.tabBarController];
+    self.personalMainTableView = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+    self.personalMainTableView.delegate = self;
+    self.personalMainTableView.dataSource = self;
+    self.personalMainTableView.sectionHeaderHeight = 0;
+    PHGroupPersonalInfoCellHeaderViewController * phGPHeadViewVC =[[PHGroupPersonalInfoCellHeaderViewController alloc]initWithGroupMember:selectedMember];
+
+    
+    self.personalMainTableView.tableHeaderView = phGPHeadViewVC.view;
+    UIButton *addFriendBtn=  [UIButton buttonWithType:UIButtonTypeSystem];
+    addFriendBtn.frame = CGRectMake( 0 ,0, 0, 40);
+    [addFriendBtn setBackgroundImage:[UIImage imageNamed:@"naviTopBarColor"] forState:UIControlStateNormal];
+    [addFriendBtn addTarget:self action:@selector(addFriend) forControlEvents:UIControlEventTouchUpInside];
+    addFriendBtn.tintColor = [UIColor colorWithRed:255 green:254 blue:254 alpha:1];
+    [addFriendBtn setTitle:@"加为好友" forState:UIControlStateNormal];
+    self.personalMainTableView.tableFooterView = addFriendBtn;
+    [self.view addSubview:self.personalMainTableView];
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+-(void)viewWillDisappear:(BOOL)animated{
+    [super viewWillDisappear:animated];
+    self.navigationController.navigationBar.hidden = NO;
+    [self.navigationController.navigationBar setTranslucent:NO];
+}
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    if (section == 0) {
+        return 0;
+    }else if(section == 1){
+        return 2;
+    }else if (section == 2){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 2;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ((indexPath.section == 0) && (indexPath.row == 0) ) {
+        return 0.0f;
+    }else{
+        return 48.0f;
+    }
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifierPersonalInfoCell];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:identifierPersonalInfoCell];
+    }
+    switch (indexPath.section) {
+        case 0:{
+            
+        }
+            break;
+        case 1:{
+            switch (indexPath.row) {
+                case 0:
+                {
+                   cell.textLabel.text= @"二维码名片";
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                }
+                    break;
+                case 1:{
+                    cell.textLabel.text= @"上次发言时间";
+                    cell.detailTextLabel.text = selectedMember.lastChatTime;
+                }
+                    break;
+                default:
+                    break;
+            }
+        }
+            break;
+        case 2:{
+        }
+            break;
+        default:
+            break;
+    }
+    
+    
+    return cell;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 1:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    
+                }
+                    break;
+                case 1:
+                {
+                }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 2:
+            switch (indexPath.row) {
+                case 0:
+                    
+                    break;
+                case 1:
+                    
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+#pragma mark - 添加好友addFriend
+-(void)addFriend{
+    
+}
+//-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
+//    return 350;
+//}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

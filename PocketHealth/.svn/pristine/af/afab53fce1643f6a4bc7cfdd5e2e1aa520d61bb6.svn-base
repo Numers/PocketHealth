@@ -1,0 +1,36 @@
+//
+//  PHPhysicalExamTableManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-11.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHPhysicalExamTableManager.h"
+static PHPhysicalExamTableManager *phPhysicalExamTableManager;
+static AFHTTPRequestOperationManager *requestManager;
+@implementation PHPhysicalExamTableManager
++(id)defaultManager
+{
+    if (phPhysicalExamTableManager == nil) {
+        phPhysicalExamTableManager = [[PHPhysicalExamTableManager alloc] init];
+        requestManager = [AFHTTPRequestOperationManager manager];
+        [requestManager.requestSerializer setTimeoutInterval:TimeOut];
+    }
+    return phPhysicalExamTableManager;
+}
+
+-(void)requestPhysicalExamTableListCallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_PhysicalExamTable_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:                               AFNetWorkKey,@"key",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+
+-(void)requestPhysicalExamReportWithEbid:(NSInteger)ebid CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_PhysicalExamReport_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%ld",ebid],@"ebid",AFNetWorkKey,@"key",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+@end

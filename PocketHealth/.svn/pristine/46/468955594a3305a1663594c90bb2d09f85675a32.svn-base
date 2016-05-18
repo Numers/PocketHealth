@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="6254" systemVersion="14A389" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6247"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="PHUserCenterHeadViewController">
+            <connections>
+                <outlet property="friendListBtn" destination="Qyy-KR-SEF" id="4eA-Lf-fQq"/>
+                <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="i5M-Pr-FkT">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="116"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6kP-8U-eEq">
+                    <rect key="frame" x="321" y="66" width="46" height="30"/>
+                    <state key="normal" title="Button">
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                </button>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="8x7-IC-M4J">
+                    <rect key="frame" x="164" y="66" width="46" height="30"/>
+                    <state key="normal" title="Button">
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                </button>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Qyy-KR-SEF">
+                    <rect key="frame" x="14" y="66" width="60" height="30"/>
+                    <state key="normal" title="好友列表">
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                    <connections>
+                        <action selector="friendListBtnClick:" destination="-1" eventType="touchUpInside" id="bUk-hB-O9w"/>
+                    </connections>
+                </button>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Ttf-th-bL6">
+                    <rect key="frame" x="164" y="18" width="46" height="30"/>
+                    <state key="normal" title="Button">
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                </button>
+            </subviews>
+            <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+            <constraints>
+                <constraint firstItem="Qyy-KR-SEF" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="66" id="DFl-dN-vgD"/>
+                <constraint firstItem="Ttf-th-bL6" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="18" id="Ehh-s1-pau"/>
+                <constraint firstItem="Qyy-KR-SEF" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" constant="14" id="PCA-Xq-LLd"/>
+                <constraint firstAttribute="centerX" secondItem="Ttf-th-bL6" secondAttribute="centerX" constant="0.5" id="QUe-9N-RZW"/>
+                <constraint firstItem="8x7-IC-M4J" firstAttribute="top" secondItem="Ttf-th-bL6" secondAttribute="bottom" constant="18" id="TiG-eQ-pyC"/>
+                <constraint firstItem="6kP-8U-eEq" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="66" id="gyF-U8-aGI"/>
+                <constraint firstAttribute="centerX" secondItem="8x7-IC-M4J" secondAttribute="centerX" constant="0.5" id="jWh-AH-gIw"/>
+                <constraint firstAttribute="trailing" secondItem="6kP-8U-eEq" secondAttribute="trailing" constant="8" id="tHh-OB-Suj"/>
+            </constraints>
+            <nil key="simulatedStatusBarMetrics"/>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <point key="canvasLocation" x="294.5" y="-208"/>
+        </view>
+    </objects>
+</document>

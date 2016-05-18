@@ -1,0 +1,15 @@
+//
+//  PHUserCenterTableViewCell.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-11.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface PHUserCenterTableViewCell : UITableViewCell
+@property (strong, nonatomic) IBOutlet UIImageView *imgHeadView;
+@property (strong, nonatomic) IBOutlet UILabel *lblTitle;
+@property (strong, nonatomic) IBOutlet UILabel *lblDetailTitle;
+@end

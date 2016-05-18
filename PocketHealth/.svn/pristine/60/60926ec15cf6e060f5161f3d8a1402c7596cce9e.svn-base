@@ -1,0 +1,184 @@
+//
+//  ClientHelper.m
+//  ylmm
+//
+//  Created by macmini on 14-5-26.
+//  Copyright (c) 2014年 YiLiao. All rights reserved.
+//
+
+#import "ClientHelper.h"
+#import "ylmm.h"
+#import "JSONKit.h"
+//#include "GSSimpleClientSocket.h"
+
+#import "EmojiConvert.h"
+
+
+
+
+//GSSimpleClientSocket *gs_SimpleClient=NULL;
+
+void OnNotify(char *data){
+    if (data == NULL ||  data[0]==0) {
+        NSLog(@"0*********************************");
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"ONNOTIFY" object:nil];
+    }else{
+        NSLog(@"error error error ! has a big OnNotify!!!!!!");
+        NSString * str=[NSString stringWithUTF8String:data];
+        NSDictionary *dic = [str objectFromJSONString];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"ONNOTIFY" object:dic];
+    }
+    
+}
+
+void OnSyncRes(char * msg){
+    NSString * str=[NSString stringWithUTF8String:msg];
+    NSDictionary *dic = [str objectFromJSONString];
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"ONSYNCRES" object:dic];
+}
+
+void OnMessageRes(int retcode,int msgtype,int msgsn,char * data){
+    NSDictionary *dic = [[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithInt:retcode],@"retcode",[NSNumber numberWithInt:msgsn],@"msgsn", nil];
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"ONMESSAGERES" object:dic];
+}
+
+void _OnConnect(){
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"ONCONNECT" object:nil];
+}
+
+void _OnClose(){
+//    NSLog(@"in close");
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"ONCLOSE" object:nil];
+}
+
+void _OnConnectTimeout(){
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"ONCONNECTTIMEOUT" object:nil];
+}
+
+@implementation ClientHelper
++(void)initClient{
+    FOnNotify *fOnNotify = OnNotify;
+    FOnSyncRes *fOnSyncRes = OnSyncRes;
+    FOnMessageRes *fOnMessageRes = OnMessageRes;
+    FOnConnect *fOnConnect = _OnConnect;
+    FOnClose *fOnClose = _OnClose;
+    FOnConnectTimeout *fOnConnectTimeOut = _OnConnectTimeout;
+    _init(fOnNotify,fOnSyncRes,fOnMessageRes,fOnConnect,fOnClose,fOnConnectTimeOut);
+    
+}
+
++(NSInteger)connect
+{
+//    NSString *ip = @"ylmm-server.xugp.com";//@"192.168.100.3";
+    NSString *ip = @"192.168.2.120";//61.164.160.49
+//     NSString *ip = @"192.168.2.102";
+    return  _connect((char *)[ip UTF8String], 10000);
+}
++(NSInteger)connectToHost
+{
+    NSInteger connecteState = 0;
+    if (![self isConnect]) {
+        [self close];
+        connecteState = [self connect];
+    NSLog(@"reconnect");
+    }
+    return connecteState;
+}
+
++(BOOL)isConnect{
+    return _isConnected();
+}
++(NSInteger)sendMessage:(long long )uid Token:(NSString *)token ToUid:(long long )touid Message:(NSString *)msg Msgsn:(NSInteger )msgsn
+{
+    NSString * sendStr = [EmojiConvert emojiConvertToSendString:msg];
+    int ret= sendMessage(uid, (char *)[token UTF8String], touid, (char *)[sendStr UTF8String],[[NSNumber numberWithInteger:msgsn] intValue]);
+    if (ret<0) {
+        [self connect];
+        //重连机制 1
+    }
+    return ret;
+}
+
++(NSInteger)sendGroupMessage:(long long )uid Token:(NSString *)token Gid:(unsigned)gid Message:(NSString *)msg Msgsn:(NSInteger )msgsn
+{
+//    NSDate *dateBefore=[NSDate date];
+//    NSTimeInterval timeBeforeSend=[dateBefore timeIntervalSince1970];
+//    NSLog(@"%f",timeBeforeSend);
+    
+    NSString * sendStr = [EmojiConvert emojiConvertToSendString:msg];
+    int ret=sendGroupMessage(uid, (char *)[token UTF8String], gid, (char *)[sendStr UTF8String],[[NSNumber numberWithInteger:msgsn] intValue]);
+    return ret;
+}
++(void)reConnectChatHost{
+    [self connect];
+}
++(NSInteger)sync:(long long )uid Token:(NSString *)token Synckey:(NSString *)synckey
+{
+    
+    return _sync(uid, (char *)[token UTF8String], (char *)[synckey UTF8String]);
+}
+
++(void)close
+{
+    _close();
+}
+//UserInfo  为键值对的json 字符串
++(NSInteger)addFriend:(long long )uid Token:(NSString *)token ToUid:(long long )touid UserInfo:(NSString *)userinfo Msgsn:(NSInteger)msgsn
+{
+    return addFriend(uid, (char*)[token UTF8String], touid, (char *)[userinfo UTF8String], [[NSNumber numberWithInteger:msgsn] intValue]);
+}
++(NSInteger)acceptFriend:(long long )uid Token:(NSString *)token ToUid:(long long )touid Msgsn:(NSInteger)msgsn
+{
+    return acceptFriend(uid, (char *)[token UTF8String], touid, [[NSNumber numberWithInteger:msgsn] intValue]);
+}
++(NSInteger)removeFriend:(long long )uid Token:(NSString *)token ToUid:(long long )touid Msgsn:(NSInteger)msgsn
+{
+    return removeFriend(uid, (char *)[token UTF8String], touid, [[NSNumber numberWithInteger:msgsn] intValue]);
+}
+
+#pragma mark -心跳包
++(NSInteger)test{
+    return test();
+}
+//短lianjie
+//+(void)initSimpleConnect{
+//    gs_SimpleClient=new GSSimpleClientSocket();
+//}
+//+(NSInteger)simpleConnect{
+//    NSString *ip = @"ylmm-server.xugp.com";//@"192.168.100.3";
+//    return gs_SimpleClient->Connect((char *)[ip UTF8String], 10000);
+//}
+//+(NSInteger)getNewSimpleGroupMessageWithGid:(unsigned int)gid Ownerid:(unsigned int)ownerid Count:(int)count buffer:(NSMutableString **)buffer bufferlen:(int)bufferlen{
+//    
+//    char * tempbuff=(char *)malloc(bufferlen);
+//    memset(tempbuff, 0, bufferlen);
+//    NSInteger ret=gs_SimpleClient->GetNewGroupMessage(gid, ownerid, count, tempbuff,bufferlen);
+//    
+//    
+//    
+////    *buffer =[NSMutableString stringWithUTF8String:tempbuff];
+//    NSString *result=[NSString  stringWithUTF8String:tempbuff];
+//    
+//    *buffer=(NSMutableString *)result;
+//    //    NSString *result=[[NSString alloc]initWithCString:tempbuff encoding:NSUTF8StringEncoding];
+//    //通知传值r
+////    NSDictionary * jsonStr=[[NSString stringWithFormat:@"%s",tempbuff] objectFromJSONString];
+//    
+////    JSONDecoder *jsdc=[[JSONDecoder alloc]init];
+////    NSDictionary * aa=[jsdc mutableObjectWithUTF8String:(unsigned char *)tempbuff length:sizeof(tempbuff)];
+//    
+//    
+//    NSLog(@"%@",result);
+//    
+//    free(tempbuff);
+//    return ret;
+//    
+//}
+//+(void)closeSimpleConnect{
+//    return gs_SimpleClient->Close();
+////    gs_SimpleClient=nil;
+//}
+
+
+
+@end

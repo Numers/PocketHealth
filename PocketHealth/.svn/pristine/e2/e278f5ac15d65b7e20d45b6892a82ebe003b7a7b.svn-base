@@ -1,0 +1,146 @@
+//
+//  PHCommentAlertViewViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-3-13.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHCommentAlertViewViewController.h"
+
+@interface PHCommentAlertView()
+{
+    NSTimeInterval callTime;
+    NSInteger score;
+}
+@property (strong, nonatomic) IBOutlet UILabel *lblDescription;
+@property (strong, nonatomic) IBOutlet UIButton *btnFirstStar;
+@property (strong, nonatomic) IBOutlet UIButton *btnSecondStar;
+@property (strong, nonatomic) IBOutlet UIButton *btnThirdStar;
+@property (strong, nonatomic) IBOutlet UIButton *btnFourthStar;
+@property (strong, nonatomic) IBOutlet UIButton *btnFifthStar;
+
+@end
+
+@implementation PHCommentAlertView
+-(id)initWithCallTime:(NSTimeInterval)timeInterval
+{
+    self = [super init];
+    if (self) {
+        callTime = timeInterval;
+        [self.layer setCornerRadius:5.0f];
+        [self.layer setMasksToBounds:YES];
+        score = 0;
+        [self setImageStateWithScore:score];
+        [self doWithCallTime];
+    }
+    return self;
+}
+
+-(void)doWithCallTime
+{
+    long allTime = [[NSNumber numberWithDouble:callTime] longValue];
+    NSInteger minites = allTime / 60;
+    NSInteger seconds = allTime % 60;
+    double cost = 10 * callTime / 60.0f;
+    NSString *description = [NSString stringWithFormat:@"本次通话累计%ld分%ld秒，共计%.2lf元，实收%.0lf元。感谢您的使用。谢谢！",minites,seconds,cost,cost];
+    _lblDescription.text = description;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)setImageStateWithScore:(NSInteger)commentScore
+{
+    switch (commentScore) {
+        case 0:
+        {
+            [_btnFirstStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnSecondStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnThirdStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnFourthStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnFifthStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+        }
+            break;
+        case 1:
+        {
+            [_btnFirstStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnSecondStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnThirdStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnFourthStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnFifthStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+        }
+            break;
+        case 2:
+        {
+            [_btnFirstStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnSecondStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnThirdStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnFourthStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnFifthStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+        }
+            break;
+        case 3:
+        {
+            [_btnFirstStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnSecondStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnThirdStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnFourthStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+            [_btnFifthStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+        }
+            break;
+        case 4:
+        {
+            [_btnFirstStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnSecondStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnThirdStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnFourthStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnFifthStar setBackgroundImage:[UIImage imageNamed:@"CommentEmptyStarImage"] forState:UIControlStateNormal];
+        }
+            break;
+        case 5:
+        {
+            [_btnFirstStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnSecondStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnThirdStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnFourthStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+            [_btnFifthStar setBackgroundImage:[UIImage imageNamed:@"CommentFullStarImage"] forState:UIControlStateNormal];
+        }
+            break;
+        default:
+            break;
+    }
+}
+
+- (IBAction)clickFirstStarBtn:(id)sender {
+    score = 1;
+    [self setImageStateWithScore:score];
+}
+
+- (IBAction)clickSecondStarBtn:(id)sender {
+    score = 2;
+    [self setImageStateWithScore:score];
+}
+
+- (IBAction)clickThirdStarBtn:(id)sender {
+    score = 3;
+    [self setImageStateWithScore:score];
+}
+
+- (IBAction)clickFourthStarBtn:(id)sender {
+    score = 4;
+    [self setImageStateWithScore:score];
+}
+
+- (IBAction)clickFifthStarBtn:(id)sender {
+    score = 5;
+    [self setImageStateWithScore:score];
+}
+
+-(IBAction)clickSubmitBtn:(id)sender
+{
+    
+}
+@end

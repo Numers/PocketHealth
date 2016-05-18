@@ -1,0 +1,96 @@
+//
+//  GlobalVar.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#ifndef PocketHealth_GlobalVar_h
+#define PocketHealth_GlobalVar_h
+
+#define IOS_8_0 8.0f
+
+
+#define TimeOut 10.0f
+#define ServerBaseURL @"http://192.168.2.117/Web"
+
+//***********LoginWebAPI************//
+#define PH_Login_API @""ServerBaseURL"/Home/Login"
+
+//////////////////////////////////////
+//***********RegisterWebAPI************//
+#define PH_IdentifyCode_API @""ServerBaseURL"/Home/SendPhoneCode"
+#define PH_RegisterUser_API @""ServerBaseURL"/Home/Register"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********InputPhysicalExamWebAPI************//
+#define PH_NearOraganization_API @""ServerBaseURL"/Home/GetCloseOrgan"
+#define PH_OrganizationInfoList_API @""ServerBaseURL"/Home/GetOrganInfoList"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamTableWebAPI************//
+#define PH_PhysicalExamTable_API @""ServerBaseURL"/User/OrderBillList"
+#define PH_PhysicalExamReport_API @""ServerBaseURL"/User/MyReport"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamBookWebAPI************//
+#define PH_PhysicalExamBook_API @""ServerBaseURL"/User/DoomExam"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamQuestionWebAPI************//
+#define PH_PhysicalExamQuestion_API @""ServerBaseURL"/User/Questionnaire"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamTestWebAPI************//
+#define PH_PhysicalExamTest_API @""ServerBaseURL"/User/SelfTest"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********UpdateUserInfoWebAPI************//
+#define PH_UpdateUserInfo_API @""ServerBaseURL"/User/UpdateInfo"
+#define PH_UpdateUserHead_API @""ServerBaseURL"/User/UpUserHead"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********SendPhoneCodeWebAPI************//
+#define PH_SendPhoneCode_API @""ServerBaseURL"/Home/SendPhoneCode"
+#define PH_VerificationCode_API @""ServerBaseURL"/Home/VerificationCode"
+//////////////////////////////////////
+
+
+//***********健康数据上传接口************//
+//健康睡眠数据上传
+//----------------
+#define ServerHealthBaseUrl @""ServerBaseURL"/Health"
+#define PH_Monitoring_UploadSleepDetail @""ServerHealthBaseUrl"/PutSleepDetails"
+
+#define PH_Monitoring_UploadExerciseDetails @""ServerHealthBaseUrl"/PutExerciseDetails"
+
+//群接口
+#define ServerGroupBaseUrl @""ServerBaseURL"/Group"
+//#define GroupTest //群测试使用
+
+#define PH_MyFirendList @""ServerGroupBaseUrl"/MyFriendList"
+#define PH_MyGroupList @""ServerGroupBaseUrl"/MyGroups"
+#define PH_SearchFriendList @""ServerGroupBaseUrl"/SearchFriend"
+/**
+ *  AllGroups 填入参数
+ */
+#define PH_SearchHospitalList @""ServerGroupBaseUrl"/AllGroups"
+
+
+#define PH_ADDFriend @""ServerGroupBaseUrl"/AddFriend"
+#define PH_ADDGroup @""ServerGroupBaseUrl"/JoinGroups"
+
+//退群接口
+//参数 uid 发起动作人 如果自己退群 uid写自己 gid 群号
+#define PH_Delete_GroupUser @""ServerGroupBaseUrl"/DelUserFromBar"
+
+#define PH_UploadMsg_File @""ServerGroupBaseUrl"/UpLoadMsFile"
+#endif

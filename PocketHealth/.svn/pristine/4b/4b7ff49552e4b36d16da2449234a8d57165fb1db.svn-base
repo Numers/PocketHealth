@@ -1,0 +1,23 @@
+//
+//  PHCircleView.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-22.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@class CircleView;
+@interface PHCircleView : UIView
+{
+    CircleView *backCircleView;
+    CircleView *frontCircleView;
+    UIColor *strokeColor;
+    UIImageView *imageView;
+}
+-(void)setBackCircleViewStrokeColor:(UIColor *)color;
+
+-(void)setStrokeColor:(UIColor *)color;
+
+-(void)setProgress:(CGFloat)progress WithAnimate:(BOOL)animate;
+@end

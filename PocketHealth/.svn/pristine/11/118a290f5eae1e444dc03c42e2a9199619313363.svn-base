@@ -1,0 +1,26 @@
+//
+//  PHCountManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-16.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHCountManager.h"
+static PHCountManager *phCountManager;
+@implementation PHCountManager
++(id)defaultManager
+{
+    if (phCountManager == nil) {
+        phCountManager = [[PHCountManager alloc] init];
+    }
+    return phCountManager;
+}
+
++(void)requestFriendCountCallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_SendPhoneCode_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:tel,@"tel",AFNetWorkKey,@"key",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+@end

@@ -1,0 +1,85 @@
+//
+//  Organization.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "Organization.h"
+#import "GlobalVar.h"
+#import "Member.h"
+
+@implementation Organization
++ (NSDictionary *)JSONKeyPathsByPropertyKey
+{
+    return @{
+             @"organizationId":@"Id",
+             @"userId":@"Userid",
+             @"organizationAreaId":@"Organ_area_id",
+             @"orderId":@"Order_id",
+             @"oiId":@"Oiid",
+             @"isUse":@"is_use",
+             @"latitude":@"Latitude",
+             @"longitude":@"Longitude",
+             @"organizationName":@"Organ_name",
+             @"organizationHeadImage":@"Orgheadimg",
+             @"organizationLevel":@"Olname",
+             @"organizationAddress":@"Orgaddress",
+             @"organizationIntroduction":@"Organremark",
+             @"organizationTel":@"Organtel",
+             @"questionNum":@"Question_num",
+             @"startDate":@"Startdate",
+             @"endDate":@"Enddate",
+             @"distance":@"Distance",
+             @"healthPadVideo":@"Healthpad_video",
+             @"healthPadWebService":@"Healthpad_webservice",
+             @"utuid" :@"Utuid:"
+             };
+}
+
++(NSValueTransformer *)organizationHeadImageJSONTransformer{
+    return [MTLValueTransformer reversibleTransformerWithForwardBlock:^(NSString *str) {
+                return [NSString stringWithFormat:@"%@%@",ServerBaseURL,str];
+            }
+            reverseBlock:^(NSString *num) {
+                return num;
+            }];
+}
+
++(NSValueTransformer *)startDateJSONTransformer{
+    return [MTLValueTransformer
+            reversibleTransformerWithForwardBlock:^(id str) {
+                return [NSNumber numberWithDouble:[str doubleValue]/1000.f];
+            }
+            reverseBlock:^(id num) {
+                return num;
+            }];
+}
+
++(NSValueTransformer *)endDateJSONTransformer{
+    return [MTLValueTransformer
+            reversibleTransformerWithForwardBlock:^(id str) {
+                return [NSNumber numberWithDouble:[str doubleValue]/1000.f];
+            }
+            reverseBlock:^(id num) {
+                return num;
+            }];
+}
+
+-(void)setNilValueForKey:(NSString *)key
+{
+    [self setValue:@0 forKey:key];
+//    NSMutableDictionary *dic = [[super dictionaryValue] mutableCopy];
+//    [dic removeObjectForKey:key];
+//    [self setValuesForKeysWithDictionary:dic];
+}
+
+-(id)initWithDictionary:(NSDictionary *)dictionaryValue error:(NSError *__autoreleasing *)error
+{
+    self = [super initWithDictionary:dictionaryValue error:error];
+    if (self) {
+    }
+    return self;
+}
+@end

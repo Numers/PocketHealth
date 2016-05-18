@@ -1,0 +1,201 @@
+//
+//  PHInputPhysicalExamViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHInputPhysicalExamViewController.h"
+#import "PHAppStartManager.h"
+#import "PHInputPhysicalExamManager.h"
+#import "GlobalVar.h"
+#import <CoreLocation/CoreLocation.h>
+#import <MapKit/MapKit.h>
+#import "Organization.h"
+#import "PHCityViewController.h"
+
+@interface PHInputPhysicalExamViewController ()<CLLocationManagerDelegate,UITextFieldDelegate,MKMapViewDelegate>
+{
+    Organization *organization;
+    CLLocationManager *locationManager;
+}
+@property (strong, nonatomic) IBOutlet UIButton *btnOrganization;
+@property (strong, nonatomic) IBOutlet UIActivityIndicatorView *indicatorView;
+@property (strong, nonatomic) IBOutlet UITextField *txtPhysicalCode;
+@property (strong, nonatomic) IBOutlet UITextField *txtPassword;
+@property (strong, nonatomic) IBOutlet UIImageView *imgPhysicalCode;
+@property (strong, nonatomic) IBOutlet UIImageView *imgPassword;
+
+@end
+
+@implementation PHInputPhysicalExamViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    
+    if ([CLLocationManager locationServicesEnabled]) {
+        [self startLocation];
+    }
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self navigationControllerSetting];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(myTextFieldDidChange:) name:UITextFieldTextDidChangeNotification object:nil];
+}
+
+-(void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+-(void)navigationControllerSetting
+{
+    [self.navigationItem setHidesBackButton:YES];
+    [self.navigationController.navigationBar setTranslucent:NO];
+    [self.navigationController setNavigationBarHidden:NO];
+    [self.navigationItem setTitle:@"获取体检报告"];
+    UIBarButtonItem *backItem = [[UIBarButtonItem alloc] init];
+    [backItem setTitle:@""];
+    [self.navigationItem setBackBarButtonItem:backItem];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)startLocation
+{
+    locationManager = [[CLLocationManager alloc] init];
+    locationManager.delegate = self;
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    locationManager.distanceFilter = 1000.0f;
+    if ([[[UIDevice currentDevice] systemVersion] floatValue] >= IOS_8_0)
+    {
+        [locationManager requestAlwaysAuthorization];
+    }
+    [_indicatorView startAnimating];
+    [locationManager startUpdatingLocation];
+}
+
+-(void)requestNearestOrganizationWithLat:(float)lat WithLon:(float)lon
+{
+    [[PHInputPhysicalExamManager defaultManager] requestNearestOrganizetionWithLat:lat WithLon:lon CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+            NSError *error = nil;
+            organization = [MTLJSONAdapter modelOfClass:[Organization class] fromJSONDictionary:resultDic error:&error];
+            if (!error) {
+                [_btnOrganization setTitle:organization.organizationName forState:UIControlStateNormal];
+            }
+        }else{
+            
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+- (IBAction)clickConfirmBtn:(id)sender {
+    
+}
+
+- (IBAction)clickJumpBtn:(id)sender {
+    [[PHAppStartManager defaultManager] pushHomeViewWithSelectIndex:1];
+}
+
+- (IBAction)clickHospitalBtn:(id)sender {
+    PHCityViewController *phCityVC = [[PHCityViewController alloc] initWithGpsOrganization:organization];
+    [self.navigationController pushViewController:phCityVC animated:YES];
+}
+
+-(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    if ([_txtPhysicalCode becomeFirstResponder]) {
+        [_txtPhysicalCode resignFirstResponder];
+    }
+    
+    if ([_txtPassword becomeFirstResponder]) {
+        [_txtPassword resignFirstResponder];
+    }
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    return [textField resignFirstResponder];
+}
+
+-(void)myTextFieldDidChange:(NSNotification *)notification
+{
+    UITextField *textField = [notification object];
+    if([textField isEqual:_txtPhysicalCode]){
+        [self physicalCodeImageViewChange];
+    }
+    
+    if ([textField isEqual:_txtPassword]) {
+        [self passwordImageViewChange];
+    }
+    
+}
+
+-(void)physicalCodeImageViewChange
+{
+    if ((_txtPhysicalCode.text == nil) || (_txtPhysicalCode.text.length == 0)) {
+        [_imgPhysicalCode setImage:[UIImage imageNamed:@"phone-number2"]];
+    }else{
+        [_imgPhysicalCode setImage:[UIImage imageNamed:@"phone-number"]];
+    }
+}
+
+-(void)passwordImageViewChange
+{
+    if ((_txtPassword.text == nil) || (_txtPassword.text.length == 0)) {
+        [_imgPassword setImage:[UIImage imageNamed:@"password-icon2"]];
+    }else{
+        [_imgPassword setImage:[UIImage imageNamed:@"password-icon"]];
+    }
+}
+
+#pragma -mark CLLocaitonManagerDelegate
+-(void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations
+{
+    CLLocation *location = [locations lastObject];
+    if (location.horizontalAccuracy == -1) {
+        [self startLocation];
+    }else{
+        NSLog(@"%.2f,%.2f",location.coordinate.latitude,location.coordinate.longitude);
+        [manager stopUpdatingLocation];
+//        CLGeocoder *geocoder = [[CLGeocoder alloc] init];
+//        [geocoder reverseGeocodeLocation:location completionHandler:^(NSArray *array, NSError *error) {
+//            if (array.count > 0) {
+//                CLPlacemark *placemark = [array objectAtIndex:0];
+////                NSString *country = placemark.ISOcountryCode;
+//                currentCity = placemark.locality;
+//            }
+//        }];
+        [_indicatorView stopAnimating];
+        [self requestNearestOrganizationWithLat:location.coordinate.latitude WithLon:location.coordinate.longitude];
+    }
+}
+
+- (void)locationManager:(CLLocationManager *)manager
+       didFailWithError:(NSError *)error
+{
+    [_indicatorView stopAnimating];
+    if ([error code] == kCLErrorDenied)
+    {
+        //访问被拒绝
+    }
+    if ([error code] == kCLErrorLocationUnknown) {
+        //无法获取位置信息
+    }
+    [manager stopUpdatingLocation];
+}
+@end

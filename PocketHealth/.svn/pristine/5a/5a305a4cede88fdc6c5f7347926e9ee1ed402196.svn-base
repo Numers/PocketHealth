@@ -1,0 +1,118 @@
+//
+//  PHChatHomeAddDetailResultViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHChatHomeAddDetailResultViewController.h"
+
+//界面
+#import "CalculateViewFrame.h"
+//
+#import "Member.h"
+#import "ClientHelper.h"
+#import "PHAppStartManager.h"
+#import "CommonUtil.h"
+#import "PHGroupHttpRequest.h"
+
+static NSString *identifierAddDetailResultVieCell = @"PHAddDetailResultVieTableViewCell";
+
+@interface PHChatHomeAddDetailResultViewController ()<UITableViewDataSource,UITableViewDelegate>
+
+@property (strong, nonatomic) UITableView *tableViewMain;
+
+@end
+
+@implementation PHChatHomeAddDetailResultViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.resultArray = [[NSMutableArray alloc]init];
+    //0.初始化tableview
+    self.tableViewMain = [[UITableView alloc]init];
+    self.tableViewMain.backgroundColor = [UIColor redColor];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    //特殊的位置
+    frame.origin.y = self.tableViewY;
+    self.tableViewMain.frame = frame;
+    self.tableViewMain.delegate = self;
+    self.tableViewMain.dataSource = self;
+    [self.view addSubview:self.tableViewMain];
+    // Do any additional setup after loading the view from its nib.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - 从上方页面刷新本页面tableview
+-(void)reloadResultTableViewWithArray:(NSArray *)sendResultArray{
+    [self.resultArray removeAllObjects];
+
+    for (NSDictionary * memberDic in sendResultArray) {
+        NSError *error ;
+        Member * member = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:memberDic error:&error];
+        [self.resultArray addObject:member];
+    }
+    //处理member 将member添加到数组
+    NSLog(@"%@",sendResultArray);
+    [self.tableViewMain reloadData];
+}
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return self.resultArray.count;
+}
+
+// Row display. Implementers should *always* try to reuse cells by setting each cell's reuseIdentifier and querying for available reusable cells with dequeueReusableCellWithIdentifier:
+// Cell gets various attributes set automatically based on table (separators) and data source (accessory views, editing controls)
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifierAddDetailResultVieCell];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierAddDetailResultVieCell];
+    }
+    Member *member = self.resultArray[indexPath.row];
+    cell.textLabel.text = member.loginName;
+    
+    return cell;
+}
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    Member *member = self.resultArray[indexPath.row];
+    
+    
+    //推入用户详情界面。
+    Member *host = [[PHAppStartManager defaultManager] userHost];
+    [PHGroupHttpRequest requestAddAnFriend:member.memberId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            NSDictionary *dic = (NSDictionary *)responseObject;
+            NSLog(@"%@",[dic objectForKey:@"Message"]);
+            [ClientHelper addFriend:host.memberId Token:[CommonUtil MyToken] ToUid:member.memberId UserInfo:@"jiawo" Msgsn:99999];
+        }else{
+            NSLog(@"帐号错误 一般不会打印");
+        }
+        
+        
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+    
+    
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+#pragma mark - UISearchResultsUpdating
+- (void)updateSearchResultsForSearchController:(UISearchController *)searchController {
+    NSLog(@"Entering:%@",searchController.searchBar.text);
+}
+@end

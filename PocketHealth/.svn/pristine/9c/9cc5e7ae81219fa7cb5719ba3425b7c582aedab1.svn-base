@@ -1,0 +1,73 @@
+//
+//  PHOrganizationDetailsViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-18.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOrganizationDetailsViewController.h"
+//#import "PHDetailsHeadViewController.h"
+//#import "PHIntroductionView.h"
+#import "PHDetailsOtherInfoViewController.h"
+#import "CalculateViewFrame.h"
+
+@interface PHOrganizationDetailsViewController ()
+{
+    UIScrollView *scrollView;
+    Organization *organization;
+    PHDetailsOtherInfoViewController *phDetailsOtherInfoVC;
+}
+
+@end
+
+@implementation PHOrganizationDetailsViewController
+-(id)initWithOrganization:(Organization *)org
+{
+    self = [super init];
+    if (self) {
+        organization = org;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    [self.view setBackgroundColor:[UIColor blueColor]];
+//    phDetailsHeadVC = [[PHDetailsHeadViewController alloc] init];
+//    [phDetailsHeadVC.view setFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 309.0f)];
+//    NSLog(@"%f,%f",phDetailsHeadVC.view.frame.origin.x,phDetailsHeadVC.view.frame.origin.y);
+//    NSLog(@"%f,%f",phDetailsHeadVC.imgBackGroundImage.frame.origin.x,phDetailsHeadVC.imgBackGroundImage.frame.origin.y);
+//    [self.view addSubview:phDetailsHeadVC.view];
+//    
+//    phIntroductionView = [[PHIntroductionView alloc] initWithFrame:CGRectMake(0, phDetailsHeadVC.view.frame.size.height, [UIScreen mainScreen].bounds.size.width, 44.0f)];
+//    [phIntroductionView.lblTextLabel setText:@"简介"];
+//    [phIntroductionView.lblIntroduction setText:@"dfafejwcjhwencnjwankcjeankcjnakjbkjacbnkjanckajcnjaknckajnckjaenckajncaejknckajncjkancjkancjkanckjenkajnck"];
+//    NSLog(@"%f,%f",phIntroductionView.frame.origin.x,phIntroductionView.frame.origin.y);
+//    [self.view addSubview:phIntroductionView];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    scrollView = [[UIScrollView alloc] initWithFrame:frame];
+    [self.view addSubview:scrollView];
+    phDetailsOtherInfoVC = [[PHDetailsOtherInfoViewController alloc] init];
+    [scrollView addSubview:phDetailsOtherInfoVC.view];
+    [scrollView setContentSize:phDetailsOtherInfoVC.view.frame.size];
+//    [self.view setFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, phDetailsOtherInfoVC.view.frame.size.height)];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

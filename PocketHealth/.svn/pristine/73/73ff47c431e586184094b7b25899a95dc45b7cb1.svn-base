@@ -1,0 +1,581 @@
+//
+//  PHMetabolismViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-25.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHMetabolismViewController.h"
+#import "CalculateViewFrame.h"
+#import "PHLabelHeaderView.h"
+#import "PHLabelDetailsView.h"
+#import "PHCalculateView.h"
+#import "PHSexSelectView.h"
+#import "UINavigationController+PHNavigationController.h"
+#import "PHAppStartManager.h"
+#import "CommonUtil.h"
+
+#import "PHUpdateUserInfoManager.h"
+#import "PHWeightViewController.h"
+#import "PHBirthDatePickerViewController.h"
+
+static NSString *IdentifyLabelHeaderView = @"PHLabelHeaderView";
+static NSString *IdentifyLabelDetailsView = @"PHLabelDetailsView";
+static NSString *IdentifyCalculateView = @"PHCalculateView";
+@interface PHMetabolismViewController ()<UITableViewDelegate,UITableViewDataSource,PHSexSelectViewDelegate,PHWeightViewDelegate,PHBirthDatePickerViewDelegate,PHCalculateViewDelegate>
+{
+    Member *host;
+    PHWeightViewController *phWeightVC;
+    PHBirthDatePickerViewController *phBirthDatePickerVC;
+}
+@property(nonatomic, strong) UITableView *tableView;
+@end
+
+@implementation PHMetabolismViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    host = [[PHAppStartManager defaultManager] userHost];
+    
+    [self.view setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    self.tableView = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+    [_tableView setBackgroundColor:ViewBackGroundColor];
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    [self.view addSubview:self.tableView];
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHLabelHeaderView" bundle:nil] forHeaderFooterViewReuseIdentifier:IdentifyLabelHeaderView];
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHLabelDetailsView" bundle:nil] forHeaderFooterViewReuseIdentifier:IdentifyLabelDetailsView];
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHCalculateView" bundle:nil] forHeaderFooterViewReuseIdentifier:IdentifyCalculateView];
+    [self doWithMetabolismData];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationController setOtherViewNavigation];
+    [self.navigationItem setTitle:@"基础代谢值"];
+}
+
+-(void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    [self hiddenPickView];
+}
+
+-(void)hiddenPickView
+{
+    if ((phBirthDatePickerVC != nil) && ([phBirthDatePickerVC isShow])) {
+        [phBirthDatePickerVC hidden];
+    }
+    
+    if ((phWeightVC != nil) && ([phWeightVC isShow])) {
+        [phWeightVC hidden];
+    }
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(BOOL)validateData
+{
+    UIAlertView *alert = nil;
+    if (!((host.userSex == sexMan) || (host.userSex == sexWoman))) {
+        alert = [[UIAlertView alloc] initWithTitle:@"选择性别" message:@"请先选择性别" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return NO;
+    }
+    
+    NSInteger age = [self ageWithDateOfBirth:[NSDate dateWithTimeIntervalSince1970:host.birthDate/1000]];
+    
+    if ((age < 0) || (age > DefalutMaxAge)) {
+        alert = [[UIAlertView alloc] initWithTitle:@"选择年龄" message:@"请先选择年龄" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return NO;
+    }
+    
+    if (!((host.userWeight >= 20) && (host.userWeight <= 300))) {
+        alert = [[UIAlertView alloc] initWithTitle:@"选择体重" message:@"请先选择体重" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alert show];
+        return NO;
+    }
+    return YES;
+}
+
+-(void)calculateMetabolismValue
+{
+    if ([self validateData]) {
+        NSInteger age = [self ageWithDateOfBirth:[NSDate dateWithTimeIntervalSince1970:host.birthDate/1000]];
+        if (host.userSex == sexMan) {
+            host.metabolism = [self calculateManMetabolismWithWeight:host.userWeight WithAge:age];
+        }
+        
+        if (host.userSex == sexWoman) {
+            host.metabolism = [self calculateWomanMetabolismWithWeight:host.userWeight WithAge:age];
+        }
+        [self.tableView reloadData];
+        [self updateUserInfo];
+    }
+}
+
+-(BOOL)boolValidateData
+{
+    if (!((host.userSex == sexMan) || (host.userSex == sexWoman))) {
+        return NO;
+    }
+    
+    NSInteger age = [self ageWithDateOfBirth:[NSDate dateWithTimeIntervalSince1970:host.birthDate/1000]];
+    
+    if ((age < 0) || (age > DefalutMaxAge)) {
+        return NO;
+    }
+    
+    if (!((host.userWeight >= 20) && (host.userWeight <= 300))) {
+        return NO;
+    }
+    return YES;
+}
+
+-(void)doWithMetabolismData
+{
+    if ([self boolValidateData]) {
+        NSInteger age = [self ageWithDateOfBirth:[NSDate dateWithTimeIntervalSince1970:host.birthDate/1000]];
+        if (host.userSex == sexMan) {
+            host.metabolism = [self calculateManMetabolismWithWeight:host.userWeight WithAge:age];
+        }
+        
+        if (host.userSex == sexWoman) {
+            host.metabolism = [self calculateWomanMetabolismWithWeight:host.userWeight WithAge:age];
+        }
+        [self.tableView reloadData];
+    }else{
+        host.metabolism = 0.f;
+    }
+}
+
+-(float)calculateManMetabolismWithWeight:(NSInteger)w WithAge:(NSInteger)age
+{
+    if (age>=0 && age < 4) {
+        return (60.9*w)-54;
+    }
+    
+    if (age < 11) {
+        return (22.7*w)+495;
+    }
+    
+    if (age < 19) {
+        return (17.5 * w)+651;
+    }
+    
+    if (age < 31) {
+        return ((15.3 * w) + 679) *0.95;
+    }
+    
+    if (age < 61) {
+        return ((11.6 * w) + 879) *0.95;
+    }
+    
+    return ((13.5 * w) + 487) * 0.95;
+}
+
+-(float)calculateWomanMetabolismWithWeight:(NSInteger)w WithAge:(NSInteger)age
+{
+    if (age>=0 && age < 4) {
+        return (61.f*w)-51;
+    }
+    
+    if (age < 11) {
+        return (22.5*w)+499;
+    }
+    
+    if (age < 19) {
+        return (12.2 * w)+746;
+    }
+    
+    if (age < 31) {
+        return ((14.7 * w) + 496) *0.95;
+    }
+    
+    if (age < 61) {
+        return ((8.7 * w) + 829) *0.95;
+    }
+    
+    return ((10.5 * w) + 596) * 0.95;
+}
+
+-(void)updateUserInfo
+{
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy/MM/dd"];
+    NSString *birthDateStr = [formatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:host.birthDate]];
+    NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%d",host.userSex],@"Usersex",birthDateStr,@"Userborn",[NSString stringWithFormat:@"%ld",host.userWeight],@"Userweight", nil];
+    [[PHUpdateUserInfoManager defaultManager] updateUserInfoWithDictionary:dic CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+            NSError *error = nil;
+            Member *hostMember = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+            if (!error) {
+                hostMember.metabolism = host.metabolism;
+                hostMember.calorie = host.calorie;
+                [[PHAppStartManager defaultManager] setHostMember:hostMember];
+            }
+        }else{
+            [CommonUtil HUDShowText:@"数据更新失败！" InView:self.view];
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        [CommonUtil HUDShowText:@"网络错误,请检查！" InView:self.view];
+    }];
+}
+//
+//-(void)updateBirthDate:(NSDate *)birthDate
+//{
+//    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+//    [formatter setDateFormat:@"yyyy/MM/dd"];
+//    NSString *dateStr = [formatter stringFromDate:birthDate];
+//    [[PHUpdateUserInfoManager defaultManager] updateUserInfoWithParameter:dateStr WithProperty:@"Userborn" CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+//        NSDictionary *dic = (NSDictionary *)responseObject;
+//        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+//        if (code == 1) {
+//            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+//            NSError *error = nil;
+//            host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+//            if (!error) {
+//                [[PHAppStartManager defaultManager] setHostMember:host];
+//                [self.tableView reloadData];
+//            }
+//        }
+//    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+//        
+//    }];
+//}
+//
+//-(void)updateUserSex:(sexCode)sex
+//{
+//    [[PHUpdateUserInfoManager defaultManager] updateUserInfoWithParameter:[NSString stringWithFormat:@"%d",sex] WithProperty:@"Usersex" CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+//        NSDictionary *dic = (NSDictionary *)responseObject;
+//        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+//        if (code == 1) {
+//            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+//            NSError *error = nil;
+//            host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+//            if (!error) {
+//                [[PHAppStartManager defaultManager] setHostMember:host];
+//                [self.tableView reloadData];
+//            }
+//        }
+//    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+//        
+//    }];
+//}
+//
+//-(void)updateWeight:(NSInteger)weight
+//{
+//    [[PHUpdateUserInfoManager defaultManager] updateUserInfoWithParameter:[NSString stringWithFormat:@"%ld",weight] WithProperty:@"Userweight" CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+//        NSDictionary *dic = (NSDictionary *)responseObject;
+//        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+//        if (code == 1) {
+//            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+//            NSError *error = nil;
+//            host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+//            if (!error) {
+//                [[PHAppStartManager defaultManager] setHostMember:host];
+//                [self.tableView reloadData];
+//            }
+//        }else{
+//            
+//        }
+//    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+//        
+//    }];
+//}
+
+- (NSInteger)ageWithDateOfBirth:(NSDate *)date;
+{
+    // 出生日期转换 年月日
+    NSDateComponents *components1 = [[NSCalendar currentCalendar] components:NSDayCalendarUnit | NSMonthCalendarUnit | NSYearCalendarUnit fromDate:date];
+    NSInteger brithDateYear  = [components1 year];
+    NSInteger brithDateDay   = [components1 day];
+    NSInteger brithDateMonth = [components1 month];
+    
+    // 获取系统当前 年月日
+    NSDateComponents *components2 = [[NSCalendar currentCalendar] components:NSDayCalendarUnit | NSMonthCalendarUnit | NSYearCalendarUnit fromDate:[NSDate date]];
+    NSInteger currentDateYear  = [components2 year];
+    NSInteger currentDateDay   = [components2 day];
+    NSInteger currentDateMonth = [components2 month];
+    
+    // 计算年龄
+    NSInteger iAge = currentDateYear - brithDateYear - 1;
+    if ((currentDateMonth > brithDateMonth) || (currentDateMonth == brithDateMonth && currentDateDay >= brithDateDay)) {
+        iAge++;
+    }
+    
+    return iAge;
+}
+
+-(NSMutableAttributedString *)generateAttriuteStringWithDataStr:(NSString *)dataStr WithColor:(UIColor *)color
+{
+    NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"您的基础代谢值是%@大卡",dataStr]];
+    NSRange range;
+    range.location = 8;
+    range.length = dataStr.length;
+    [attrString beginEditing];
+    [attrString addAttribute: NSForegroundColorAttributeName
+                       value:color
+                       range:range];
+    [attrString endEditing];
+    return attrString;
+}
+
+#pragma -mark TableViewDelegate
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 3;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 44.0f;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    switch (section) {
+        case 0:
+            return 44.0f;
+            break;
+        case 1:
+            return 83.0f;
+            break;
+        case 2:
+            return 156.0f;
+            break;
+            
+        default:
+            break;
+    }
+    return 0.f;
+}
+
+-(CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+{
+    return 0.1f;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
+{
+    switch (section) {
+        case 0:
+        {
+            PHLabelHeaderView *cell = [self.tableView dequeueReusableHeaderFooterViewWithIdentifier:IdentifyLabelHeaderView];
+            return cell;
+        }
+            break;
+        case 1:
+        {
+            PHCalculateView *cell = [self.tableView dequeueReusableHeaderFooterViewWithIdentifier:IdentifyCalculateView];
+            cell.delegate = self;
+            return cell;
+        }
+            break;
+        case 2:
+        {
+            PHLabelDetailsView *cell = [self.tableView dequeueReusableHeaderFooterViewWithIdentifier:IdentifyLabelDetailsView];
+            return cell;
+        }
+            break;
+            
+        default:
+            break;
+    }
+    return nil;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    switch (indexPath.section) {
+        case 0:
+        {
+            switch (indexPath.row) {
+                case 0:
+                {
+                    
+                }
+                    break;
+                case 1:
+                {
+                    phBirthDatePickerVC = [[PHBirthDatePickerViewController alloc] initWithBirthDate:host.birthDate];
+                    phBirthDatePickerVC.delegate = self;
+                    [phBirthDatePickerVC showInView:self.view];
+                }
+                    break;
+                case 2:
+                {
+                    phWeightVC = [[PHWeightViewController alloc] initWithWeight:host.userWeight];
+                    phWeightVC.delegate = self;
+                    [phWeightVC showInView:self.view];
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+            break;
+        case 1:
+        {
+            
+        }
+            break;
+        case 2:
+        {
+            
+        }
+            break;
+            
+        default:
+            break;
+    }
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    switch (section) {
+        case 0:
+            return 3;
+            break;
+        case 1:
+            return 1;
+            break;
+        case 2:
+            return 0;
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    NSString *identifyStr = [NSString stringWithFormat:@"IdentifyNormailTableViewCell_%ld",indexPath.row];
+    switch (indexPath.section) {
+        case 0:
+        {
+            switch (indexPath.row) {
+                case 0:
+                {
+                    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyStr];
+                    if (cell == nil) {
+                        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifyStr];
+                        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                        [cell.textLabel setText:@"性别"];
+                    }
+                    
+                    PHSexSelectView *sexSelectView = [[PHSexSelectView alloc] initWithFrame:CGRectMake(0, 0, 98, 44)];
+                    sexSelectView.delegate = self;
+                    [sexSelectView selectSex:host.userSex];
+                    [cell setAccessoryView:sexSelectView];
+                    return cell;
+                }
+                    break;
+                case 1:
+                {
+                    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyStr];
+                    if (cell == nil) {
+                        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifyStr];
+                        [cell.textLabel setText:@"年龄"];
+                    }
+                    NSDate *birthDate = [NSDate dateWithTimeIntervalSince1970:host.birthDate];
+                    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 80, 21)];
+                    [label setTextAlignment:NSTextAlignmentRight];
+                    [label setText:[NSString stringWithFormat:@"%ld岁",[self ageWithDateOfBirth:birthDate]]];
+                    [cell setAccessoryView:label];
+                    return cell;
+                }
+                    break;
+                case 2:
+                {
+                    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyStr];
+                    if (cell == nil) {
+                        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifyStr];
+                        [cell.textLabel setText:@"体重"];
+                    }
+                    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 80, 21)];
+                    [label setTextAlignment:NSTextAlignmentRight];
+                    [label setText:[NSString stringWithFormat:@"%ldkg",host.userWeight]];
+                    [cell setAccessoryView:label];
+                    return cell;
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+            break;
+        case 1:
+        {
+            switch (indexPath.row) {
+                case 0:
+                {
+                    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifyStr];
+                    if (cell == nil) {
+                        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifyStr];
+                        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                        [cell.textLabel setTextAlignment:NSTextAlignmentCenter];
+                    }
+                    NSMutableAttributedString *str = [self generateAttriuteStringWithDataStr:[NSString stringWithFormat:@"%.0f",nearbyintf(host.metabolism)] WithColor:[UIColor redColor]];
+                    [cell.textLabel setAttributedText:str];
+                    return cell;
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+            break;
+        case 2:
+        {
+            return nil;
+        }
+            break;
+        default:
+            break;
+    }
+    return nil;
+}
+
+#pragma -mark PHSexSelectViewDelegate
+-(void)changeSexNotify:(sexCode)code
+{
+    host.userSex = code;
+}
+
+#pragma -mark PickViewDelegate
+-(void)pickWeight:(NSInteger)weight
+{
+    host.userWeight = weight;
+    [self.tableView reloadData];
+}
+
+#pragma -mark DatePickViewDelegate
+-(void)pickBirthDate:(NSDate *)birthDate
+{
+    host.birthDate = [birthDate timeIntervalSince1970];
+    [self.tableView reloadData];
+}
+
+#pragma -mark PHCalculateViewDelegate
+-(void)calculate
+{
+    [self calculateMetabolismValue];
+}
+@end

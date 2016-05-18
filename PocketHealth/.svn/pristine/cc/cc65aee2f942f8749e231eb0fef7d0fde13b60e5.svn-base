@@ -1,0 +1,29 @@
+//
+//  PHAppStartManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-5.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHAppStartManager.h"
+static PHAppStartManager *appStartManager;
+@implementation PHAppStartManager
++(id)defaultManager
+{
+    if (appStartManager == nil) {
+        appStartManager = [[PHAppStartManager alloc] init];
+    }
+    return appStartManager;
+}
+
+-(void)start
+{
+    
+}
+
+-(void)loginOut
+{
+    
+}
+@end

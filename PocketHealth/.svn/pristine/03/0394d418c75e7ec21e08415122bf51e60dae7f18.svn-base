@@ -1,0 +1,88 @@
+//
+//  PHReportViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-29.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHReportViewController.h"
+#import "UINavigationController+PHNavigationController.h"
+#import "CalculateViewFrame.h"
+#import "PHReportIndexManager.h"
+
+@interface PHReportViewController ()<UIWebViewDelegate>
+{
+    UIActivityIndicatorView *activityView;
+}
+@property(nonatomic, strong) UIWebView *webView;
+@end
+
+@implementation PHReportViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _webView = [[UIWebView alloc] initWithFrame:frame];
+    _webView.delegate = self;
+    [self.view addSubview:_webView];
+    
+    activityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+    [activityView setOpaque:NO];
+    [activityView setCenter:_webView.center];
+    [_webView addSubview:activityView];
+}
+
+-(void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    [_webView loadRequest:[[PHReportIndexManager defaultManager] reportIndexURLRequest]];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationItem setTitle:@"健康报告"];
+    [self.navigationController setOtherViewNavigation];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma -mark  WebViewDelegate
+- (void)webViewDidStartLoad:(UIWebView *)webView
+{
+    [activityView setOpaque:YES];
+    [activityView startAnimating];
+}
+
+- (void)webViewDidFinishLoad:(UIWebView *)webView
+{
+    NSString *title = [webView stringByEvaluatingJavaScriptFromString:@"document.title"];
+    if ((title != nil) && (title.length > 0)) {
+        [self.navigationItem setTitle:title];
+    }
+    [activityView setOpaque:NO];
+    [activityView stopAnimating];
+}
+
+- (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error
+{
+    [activityView setOpaque:NO];
+    [activityView stopAnimating];
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

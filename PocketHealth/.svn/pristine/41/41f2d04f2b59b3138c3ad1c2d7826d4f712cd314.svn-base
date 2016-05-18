@@ -1,0 +1,59 @@
+//
+//  PHDetailsHeadViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-18.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHDetailsHeadViewController.h"
+#import "UIImageView+AFNetworking.h"
+#import "Organization.h"
+#import "GlobalVar.h"
+
+@interface PHDetailsHeadViewController ()
+
+@end
+
+@implementation PHDetailsHeadViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    [self.view setFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 240)];
+//    [self drawDotLine];
+}
+
+-(void)drawDotLine
+{
+    UIGraphicsBeginImageContext(_imgDotLine.frame.size);   //开始画线
+    [_imgDotLine.image drawInRect:CGRectMake(0, 0, _imgDotLine.frame.size.width, _imgDotLine.frame.size.height)];
+    CGContextSetLineCap(UIGraphicsGetCurrentContext(), kCGLineCapRound);  //设置线条终点形状
+    
+    
+    CGFloat lengths[] = {10.0f,5.0f};
+    CGContextRef line = UIGraphicsGetCurrentContext();
+    CGContextSetStrokeColorWithColor(line, [UIColor darkGrayColor].CGColor);
+    
+    CGContextSetLineDash(line,0,lengths,2);  //画虚线
+    CGContextMoveToPoint(line, 0.0, 20.0);    //开始画线
+    CGContextAddLineToPoint(line, _imgDotLine.frame.size.width, 20.0);
+    CGContextStrokePath(line);
+    
+    _imgDotLine.image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+}
+
+-(void)setupWithOrganization:(Organization *)org WithBackGroupImage:(NSString *)backImage
+{
+    [_imgHeadImage setImageWithURL:[NSURL URLWithString:org.organizationHeadImage] placeholderImage:[UIImage imageNamed:DefaultOrganizationHeadImage]];
+    [_imgBackGroundImage setImageWithURL:[NSURL URLWithString:backImage] placeholderImage:[UIImage imageNamed:DefaultOrganizationHeadImage]];
+    _lblOrganizationName.text = org.organizationName;
+    _lblLevel.text = org.organizationLevel;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+@end

@@ -1,0 +1,166 @@
+//
+//  PHUserCenterViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHUserCenterViewController.h"
+
+//数据
+#import "PHAppStartManager.h"
+
+#import "CalculateViewFrame.h"
+//界面类
+#import "PHUserCenterHeadViewController.h"
+#import "PHUserCenterAttentionListViewController.h"
+#import "PHUserCenterTableViewCell.h"
+
+static NSString *identifierUserCenterCell = @"PHUserCenterTableViewCell";
+
+@interface PHUserCenterViewController ()<UITableViewDataSource,UITableViewDelegate,PHUserCenterHeadViewDelegate>
+{
+    PHUserCenterHeadViewController *tableViewHead;
+    Member *host ;
+}
+@property (strong, nonatomic) UITableView *tableViewMain;
+
+
+@end
+
+@implementation PHUserCenterViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //获取用户信息
+    host = [[PHAppStartManager defaultManager] userHost];
+    //界面构造简介
+    [self.navigationController setNavigationBarHidden:NO];
+    [self.navigationController.navigationBar setTranslucent:NO];
+    
+    //0.初始化tableview
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    self.tableViewMain = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+    self.tableViewMain.delegate = self;
+    self.tableViewMain.dataSource = self;
+    
+    //1.上方头像
+    //1.1 初始化上方头像view 作为tableview的headview
+    tableViewHead = [[PHUserCenterHeadViewController alloc]initWithNibName:@"PHUserCenterHeadViewController" bundle:nil];
+    tableViewHead.delegate = self;
+    self.tableViewMain.tableHeaderView = tableViewHead.view;
+    
+    [self.view addSubview:self.tableViewMain];
+    [self.tableViewMain registerNib:[UINib nibWithNibName:@"PHUserCenterTableViewCell" bundle:nil] forCellReuseIdentifier:identifierUserCenterCell];
+    
+    // Do any additional setup after loading the view from its nib.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+}
+
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    if (section == 0) {
+        return 0;
+    }else{
+        return 2;
+    }
+}
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 3;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ((indexPath.section == 0) && (indexPath.row == 0) ) {
+        return 0.0f;
+    }else{
+        return 63.0f;
+    }
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    PHUserCenterTableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifierUserCenterCell];
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 1:
+            switch (indexPath.row) {
+                case 0:
+                    [cell.imgHeadView setImage:[UIImage imageNamed:@"usercenter-user-test"]];
+                    [cell.lblTitle setText:@"我的体检"];
+                    [cell.lblDetailTitle setText:@"导入体检单"];
+                    [cell.imgAccessaryType setHidden:NO];
+                    break;
+                case 1:
+                    [cell.imgHeadView setImage:[UIImage imageNamed:@"usercenter-appointment"]];
+                    [cell.lblTitle setText:@"体检预约"];
+                    [cell.lblDetailTitle setText:nil];
+                    [cell.imgAccessaryType setHidden:YES];
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 2:
+            switch (indexPath.row) {
+                case 0:
+                    [cell.imgHeadView setImage:[UIImage imageNamed:@"usercenter-questionnaire"]];
+                    [cell.lblTitle setText:@"体检问卷"];
+                    [cell.lblDetailTitle setText:@"未绑定机构"];
+                    [cell.imgAccessaryType setHidden:NO];
+                    break;
+                case 1:
+                    [cell.imgHeadView setImage:[UIImage imageNamed:@"usercenter-self-testing"]];
+                    [cell.lblTitle setText:@"体检自测"];
+                    [cell.lblDetailTitle setText:@"记录每天健康数据情况"];
+                    [cell.imgAccessaryType setHidden:NO];
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+    return cell;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    
+}
+
+//#pragma mark - headView点击代理事件
+//-(void)userCenterfriendBtnClick{
+//    //推入好友列表界面
+//    [self pushAttentionListViewControllerWithMemberType:MemberFriendTypeUser];
+//}
+//-(void)hospitalfriendBtnClick{
+//    //推入医院列表界面
+//    [self pushAttentionListViewControllerWithMemberType:MemberFriendTypeHospital];
+//}
+//-(void)pushAttentionListViewControllerWithMemberType:(MemberFriendType)memberType{
+//    [self.navigationController setNavigationBarHidden:NO];
+//    PHUserCenterAttentionListViewController * phFirendListVC  = [[PHUserCenterAttentionListViewController alloc]initWithAttentionType:memberType];
+//    [self.navigationController pushViewController:phFirendListVC animated:YES];
+//}
+@end

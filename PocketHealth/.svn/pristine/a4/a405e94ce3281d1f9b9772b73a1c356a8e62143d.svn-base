@@ -1,0 +1,150 @@
+//
+//  PHLoginViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-5.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHLoginViewController.h"
+#import "PHLoginManager.h"
+#import "PHAppStartManager.h"
+#import "CommonUtil.h"
+#import "OpenUDID.h"
+#import "PHVerificatePhoneViewController.h"
+#import "UINavigationController+PHNavigationController.h"
+
+@interface PHLoginViewController ()<UITextFieldDelegate>
+@property (strong, nonatomic) IBOutlet UITextField *txtLoginName;
+@property (strong, nonatomic) IBOutlet UITextField *txtPassword;
+@property (strong, nonatomic) IBOutlet UIImageView *imgMobileImage;
+@property (strong, nonatomic) IBOutlet UIImageView *imgPasswordImage;
+
+@end
+
+@implementation PHLoginViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    [self.view setBackgroundColor:ViewBackGroundColor];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(myTextFieldDidChange:) name:UITextFieldTextDidChangeNotification object:nil];
+    // 禁用 iOS7 返回手势
+    if ([self.navigationController respondsToSelector:@selector(interactivePopGestureRecognizer)]) {
+        self.navigationController.interactivePopGestureRecognizer.enabled = NO;
+    }
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationController setNavigationBarHidden:NO];
+    [self.navigationItem setTitle:@"登录"];
+    [self.navigationController setOtherViewNavigation];
+    
+    UIBarButtonItem *rightItem = [[UIBarButtonItem alloc] initWithTitle:@"跳过" style:UIBarButtonItemStylePlain target:self action:@selector(jumpLogin)];
+    [rightItem setTitleTextAttributes:@{NSForegroundColorAttributeName :[UIColor colorWithRed:1.0f green:1.0f blue:1.0f alpha:1.f],NSFontAttributeName : [UIFont systemFontOfSize:15.f]} forState:UIControlStateNormal];
+    [self.navigationItem setRightBarButtonItem:rightItem];
+}
+
+-(void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+//调整约束
+-(void)updateViewConstraints{
+    [super updateViewConstraints];
+}
+
+-(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    if ([_txtLoginName isFirstResponder]) {
+        [_txtLoginName resignFirstResponder];
+    }
+    
+    if ([_txtPassword isFirstResponder]) {
+        [_txtPassword resignFirstResponder];
+    }
+}
+- (void)jumpLogin {
+    [CommonUtil localUserDefaultsValue:[NSNumber numberWithBool:YES] forKey:KMY_AutoLogin];
+    [[PHAppStartManager defaultManager] doNecessaryPreparationsAfterAppStart];
+    [[PHAppStartManager defaultManager] pushHomeViewWithSelectIndex:0];
+}
+
+- (IBAction)clickFindPasswordBtn:(id)sender {
+    PHVerificatePhoneViewController *phVerificatePhoneVC = [[PHVerificatePhoneViewController alloc] init];
+    [self.navigationController pushViewController:phVerificatePhoneVC animated:YES];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    return [textField resignFirstResponder];
+}
+
+-(void)myTextFieldDidChange:(NSNotification *)notification
+{
+    UITextField *textField = [notification object];
+    if([textField isEqual:_txtLoginName]){
+        [self mobileImageViewChange];
+    }
+    
+    if ([textField isEqual:_txtPassword]) {
+        [self passwordImageViewChange];
+    }
+    
+}
+
+-(void)mobileImageViewChange
+{
+    if ((_txtLoginName.text == nil) || (_txtLoginName.text.length == 0)) {
+        [_imgMobileImage setImage:[UIImage imageNamed:@"phone-number2"]];
+    }else{
+        [_imgMobileImage setImage:[UIImage imageNamed:@"phone-number"]];
+    }
+}
+
+-(void)passwordImageViewChange
+{
+    if ((_txtPassword.text == nil) || (_txtPassword.text.length == 0)) {
+        [_imgPasswordImage setImage:[UIImage imageNamed:@"password-icon2"]];
+    }else{
+        [_imgPasswordImage setImage:[UIImage imageNamed:@"password-icon"]];
+    }
+}
+
+- (IBAction)clickLoginBtn:(id)sender {
+//    NSString *pushUserId = [CommonUtil localUserDefaultsForKey:KMY_PUSH_USERID];
+//    NSString *pushChannelId = [CommonUtil localUserDefaultsForKey:KMY_PUSH_CHANNELID];
+    NSString *pushUserId = @"aaa";
+    NSString *pushChannelId = @"bbb";
+    NSString *udid = [OpenUDID valueWithError:nil];
+    [[PHLoginManager defaultManager] loginWithLoginName:_txtLoginName.text WithPassword:_txtPassword.text WithUdid:udid  WithChanneid:pushChannelId WithBuserid:pushUserId WithDeviceType:Device_IOS CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSDictionary *resultDic = [dic objectForKey:@"Result"];
+            NSError *error = nil;
+            Member *host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+            if (!error) {
+                [[PHAppStartManager defaultManager] setHostMember:host];
+                [CommonUtil localUserDefaultsValue:[resultDic objectForKey:@"Token"] forKey:KMY_TOKEN];
+                [CommonUtil localUserDefaultsValue:[NSNumber numberWithBool:YES] forKey:KMY_AutoLogin];
+                [[PHAppStartManager defaultManager] doNecessaryPreparationsAfterAppStart];
+                [[PHAppStartManager defaultManager] pushHomeViewWithSelectIndex:0];
+            }
+        }else{
+            [CommonUtil HUDShowText:[dic objectForKey:@"Message"] InView:self.view];
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        [CommonUtil HUDShowText:@"网络错误!" InView:self.view];
+    }];
+}
+@end

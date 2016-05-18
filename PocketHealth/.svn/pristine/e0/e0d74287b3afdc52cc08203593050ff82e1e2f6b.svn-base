@@ -1,0 +1,203 @@
+//
+//  PHPNIInputTableViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/26.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHPNIInputTableViewController.h"
+
+#import "PHRNIHeadViewController.h"
+
+#import "PHRNITableViewCell.h"
+
+#import "PHPNIInsideTableViewController.h"
+#import "UINavigationController+PHNavigationController.h"
+
+//数据
+#import "PHMonitoringHttpRequest.h"
+#import "CommonUtil.h"
+#import "CalculateViewFrame.h"
+#import "PNIFoodCategory.h"
+#import "Member.h"
+#import "PHAppStartManager.h"
+
+
+@interface PHPNIInputTableViewController ()<PHPNIInsideTableViewControllerDelegate>
+{
+    NSMutableArray * pnicategoryArray;
+    PHPNIInsideTableViewController * phpniinsideVC;
+    
+}
+@end
+
+static NSString * indentifierPHRNITableViewCell = @"indentifierPHRNITableViewCell" ;
+@implementation PHPNIInputTableViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //请求网络或者本地缓存 获取食物热量list
+    [self requestFootCalorie];
+    [self.navigationController setOtherViewNavigation];
+
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:nil];
+    self.tableView.frame = frame;
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHRNITableViewCell" bundle:nil] forCellReuseIdentifier:indentifierPHRNITableViewCell];
+    PHRNIHeadViewController * phpniHeadVC = [[PHRNIHeadViewController alloc]init];
+
+    self.tableView.tableHeaderView = phpniHeadVC.view;
+    self.tableView.tableHeaderView.backgroundColor = [UIColor redColor];
+    
+    
+    UIBarButtonItem * rightBarBtn = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(saveToMemberCalorie)];
+    self.navigationItem.rightBarButtonItem = rightBarBtn;
+    
+    // Uncomment the following line to preserve selection between presentations.
+    // self.clearsSelectionOnViewWillAppear = NO;
+    
+    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
+    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    [self.tableView reloadData];
+    
+}
+-(void)saveToMemberCalorie{
+    Member * host = [[PHAppStartManager defaultManager] userHost];
+    NSInteger sumCalorie = 0;
+    for (PNIFoodCategory * category in pnicategoryArray) {
+        sumCalorie += category.sumCalories;
+    }
+    host.calorie = sumCalorie;
+    NSLog(@" 将 卡路里目标设置为 %ld ",(long)host.calorie);
+    [self.navigationController popViewControllerAnimated:YES];
+}
+#pragma mark - requestFootCalorie
+-(void)requestFootCalorie{
+    pnicategoryArray = [[NSMutableArray alloc]init];
+    [PHMonitoringHttpRequest requestCalorieListFromServerDone:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            NSDictionary * dic = (NSDictionary *)responseObject;
+            NSArray * dicResult = [dic objectForKey:@"Result"];
+
+            for (NSDictionary * pniDic in dicResult) {
+                NSError * error;
+                PNIFoodCategory * foodCategory = [MTLJSONAdapter modelOfClass:[PNIFoodCategory class] fromJSONDictionary:pniDic error:&error];
+                if (!error) {
+                    [pnicategoryArray addObject:foodCategory];
+                }
+            }
+            [self.tableView reloadData];
+        }
+        
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+}
+#pragma mark - Table view data source
+
+//- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+//#warning Potentially incomplete method implementation.
+//    // Return the number of sections.
+//    return 0;
+//}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+#warning Incomplete method implementation.
+    // Return the number of rows in the section.
+    return pnicategoryArray.count;
+}
+
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    PHRNITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:indentifierPHRNITableViewCell forIndexPath:indexPath];
+    
+    if (pnicategoryArray.count!=0) {
+        PNIFoodCategory * pniFoodcate = pnicategoryArray[indexPath.row];
+        cell.calorieLabel.text = [NSString stringWithFormat:@"%ld",(long)pniFoodcate.sumCalories];
+        cell.mainLabel.text = pniFoodcate.categroyName;
+        cell.gramLabel.text = [NSString stringWithFormat:@"%ld",(long)pniFoodcate.sumWeight];
+    }
+    // Configure the cell...
+    
+    return cell;
+}
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 75;
+}
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    PNIFoodCategory * pniFoodCate = pnicategoryArray[indexPath.row];
+    phpniinsideVC = nil;
+    phpniinsideVC = [[PHPNIInsideTableViewController alloc]initWithPNIFoodCategory:pniFoodCate];
+    phpniinsideVC.delegate = self;
+//    [self.navigationController presentViewController:phpniinsideVC animated:YES completion:nil];
+    [self.navigationController pushViewController:phpniinsideVC animated:YES];
+}
+#pragma mark - PHPNIInsideTableViewControllerDelegate
+-(void)changeCategroyInArray:(PNIFoodCategory *)category{
+    if ([pnicategoryArray containsObject:category]) {
+        //
+    }
+    for (PNIFoodCategory * cateThis in pnicategoryArray) {
+        if (cateThis.categroyId == category.categroyId) {
+            [pnicategoryArray removeObject:cateThis];
+            [pnicategoryArray insertObject:category atIndex:0];
+            break;
+        }
+    }
+    
+}
+/*
+// Override to support conditional editing of the table view.
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the specified item to be editable.
+    return YES;
+}
+*/
+
+/*
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        // Delete the row from the data source
+        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
+        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+    }   
+}
+*/
+
+/*
+// Override to support rearranging the table view.
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath {
+}
+*/
+
+/*
+// Override to support conditional rearranging of the table view.
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the item to be re-orderable.
+    return YES;
+}
+*/
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

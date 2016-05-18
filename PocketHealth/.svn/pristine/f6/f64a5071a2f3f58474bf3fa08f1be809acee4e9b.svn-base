@@ -1,0 +1,84 @@
+//
+//  CalculateIndex.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-30.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "CalculateIndex.h"
+#import <math.h>
+
+@implementation CalculateIndex
++(float)calculateMood:(float)pmValue
+{
+    float value;
+    @try {
+        value = 99 - 0.1582 * pmValue + 0.0001972 * pow(pmValue, 2) - 9.807 * pow(10, -8) * pow(pmValue, 3);
+        if (value < 58.f) {
+            value = 58.f;
+        }
+        
+        if (value > 99.0f) {
+            value = 99.0f;
+        }
+    }
+    @catch (NSException *exception) {
+        value = 58.0f;
+    }
+    @finally {
+        
+    }
+    return value;
+}
+
++(float)calculateActivity:(NSInteger)steps
+{
+    float value;
+    @try {
+        if (steps < 20000) {
+            value = 58 + 0.007575 * steps - 4.265 * pow(10, -7) * pow(steps, 2) + 6.985 *pow(10, -12) * steps;
+        }else{
+            value = 96.77 - 9.974 * pow(10, -5) * steps;
+        }
+        if (value < 58.f) {
+            value = 58.f;
+        }
+        
+        if (value > 99.0f) {
+            value = 99.0f;
+        }
+    }
+    @catch (NSException *exception) {
+        value = 58.0f;
+    }
+    @finally {
+        
+    }
+    return value;
+}
+
++(float)calculateSleep:(NSInteger)sleepMinites WithSleepHour:(NSInteger)hour
+{
+    float value;
+    @try {
+        float value1 = 20 + 7.054 * sleepMinites - 0.4882 * pow(sleepMinites, 2) + 0.007470 * pow(sleepMinites, 3);
+        float value2 = 40 - 4.800 * hour + 0.4726 * pow(hour, 2) - 0.01072 * pow(hour, 3);
+        value = value1 + value2;
+        if (value < 58.f) {
+            value = 58.f;
+        }
+        
+        if (value > 99.0f) {
+            value = 99.0f;
+        }
+    }
+    @catch (NSException *exception) {
+        value = 58.0f;
+    }
+    @finally {
+        
+    }
+    return value;
+}
+@end

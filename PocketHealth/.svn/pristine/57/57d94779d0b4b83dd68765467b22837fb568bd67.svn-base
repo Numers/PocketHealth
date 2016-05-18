@@ -1,0 +1,33 @@
+//
+//  SSleepingDB.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/13.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "SDBManager.h"
+#import "Sleeping.h"
+
+@interface SSleepingDB : NSObject
+{
+    FMDatabase *_db;
+}
+
+-(void)createDataBase;
+
+
+-(BOOL)saveSleeping:(Sleeping *)sleeping;
+
+
+-(BOOL)mergeSleeping : (Sleeping *)sleeping;
+
+-(BOOL)isExistSleepingData:(NSTimeInterval)startSleepTime WithBelongId:(long long)belongId;
+
+-(BOOL)mergeSleepingWakeupTimeTo:(NSTimeInterval)wakeupSleepTime WithBelongId:(long long)belongId WithStartSleepTime:(NSTimeInterval)startSleepTime;
+
+-(NSArray *)selectAllUnUploadDate:(long long)hostId;
+
+-(BOOL)mergeUnUploadSleepingToUploaded:(long long)hostId;
+@end

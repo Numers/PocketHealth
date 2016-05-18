@@ -1,0 +1,43 @@
+//
+//  PHCountManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-16.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHCountManager.h"
+static PHCountManager *phCountManager;
+static AFHTTPRequestOperationManager *requestManager;
+@implementation PHCountManager
++(id)defaultManager
+{
+    if (phCountManager == nil) {
+        phCountManager = [[PHCountManager alloc] init];
+        requestManager = [AFHTTPRequestOperationManager manager];
+        [requestManager.requestSerializer setTimeoutInterval:TimeOut];
+    }
+    return phCountManager;
+}
+
+-(void)requestFriendCountCallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_FriendCount_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:AFNetWorkKey,@"key",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+
+-(void)requestDoctorCountCallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_DoctorCount_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:AFNetWorkKey,@"key",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+
+-(void)requestOrganizationCountCallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_OrganizationCount_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:AFNetWorkKey,@"key",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+@end

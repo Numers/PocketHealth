@@ -1,0 +1,56 @@
+//
+//  PHCircleView.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-22.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHCircleView.h"
+#import "CircleView.h"
+#define DefaultStrokeColor [UIColor grayColor]
+
+@implementation PHCircleView
+-(id)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if(self){
+        backCircleView = [[CircleView alloc] initWithFrame:frame];
+        [backCircleView setBackgroundColor:[UIColor clearColor]];
+        [backCircleView setStrokeEnd:1.0f animated:NO];
+        [self addSubview:backCircleView];
+    }
+    return self;
+}
+
+-(void)setBackCircleViewStrokeColor:(UIColor *)color
+{
+    [backCircleView setStrokeColor:color];
+}
+
+-(void)setStrokeColor:(UIColor *)color
+{
+    strokeColor = color;
+}
+
+-(void)setProgress:(CGFloat)progress WithAnimate:(BOOL)animate
+{
+    frontCircleView = [[CircleView alloc] initWithFrame:self.frame];
+    [frontCircleView setBackgroundColor:[UIColor clearColor]];
+    if (strokeColor == nil) {
+        strokeColor = DefaultStrokeColor;
+    }
+    [frontCircleView setStrokeColor:strokeColor];
+    [self addSubview:frontCircleView];
+    [frontCircleView setStrokeEnd:progress/100.0f animated:animate];
+}
+
+/*
+// Only override drawRect: if you perform custom drawing.
+// An empty implementation adversely affects performance during animation.
+- (void)drawRect:(CGRect)rect {
+    // Drawing code
+}
+*/
+
+@end

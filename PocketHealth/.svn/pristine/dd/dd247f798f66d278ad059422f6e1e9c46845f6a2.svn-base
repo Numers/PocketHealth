@@ -1,0 +1,16 @@
+//
+//  PHFindDoctorsManager.h
+//  PocketHealth
+//
+//  Created by macmini on 15-3-10.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "PHAFHttpHelper.h"
+@interface PHFindDoctorsManager : NSObject
++(id)defaultManager;
+-(void)requestDoctorListCallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack;
+-(void)setDoctorOnCallState:(long)doctorId CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack;
+-(void)finishCallWithIid:(NSInteger)iid WithDoctorId:(long)doctorId WithStartTime:(NSTimeInterval)startTime WithEndTime:(NSTimeInterval)endTime WithCommentScore:(NSInteger)score CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack;
+@end

@@ -1,0 +1,36 @@
+//
+//  Organization.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Mantle.h"
+@class Member;
+@interface Organization : MTLModel<MTLJSONSerializing>
+@property(nonatomic) long long organizationId;
+@property(nonatomic) long long userId; //机构id
+@property(nonatomic) NSInteger organizationAreaId;
+@property(nonatomic) NSInteger orderId;
+@property(nonatomic) NSInteger oiId;
+@property(nonatomic) NSInteger isUse;
+@property(nonatomic) float latitude;
+@property(nonatomic) float longitude;
+@property(nonatomic, copy) NSString *organizationName;
+@property(nonatomic, copy) NSString *organizationHeadImage;
+@property(nonatomic, copy) NSString *organizationLevel;
+@property(nonatomic, copy) NSString *organizationAddress;
+@property(nonatomic, copy) NSString *organizationTel;
+@property(nonatomic, copy) NSString *organizationIntroduction;
+@property(nonatomic) NSInteger questionNum;
+@property(nonatomic) NSTimeInterval startDate;
+@property(nonatomic) NSTimeInterval endDate;
+@property(nonatomic) float distance;
+@property(nonatomic, copy) NSString *healthPadVideo;
+@property(nonatomic, copy) NSString *healthPadWebService;
+@property(nonatomic ) NSInteger utuid;//add by yangfan 关注是否 大于0 是已关注
+
++(Organization *)allocWithMember:(Member *)member;
+@end

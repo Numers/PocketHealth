@@ -1,0 +1,159 @@
+//
+//  PHInputPhysicalExamViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHInputPhysicalExamViewController.h"
+#import "PHAppStartManager.h"
+#import "PHLocationOrganizationHelper.h"
+#import "GlobalVar.h"
+#import <CoreLocation/CoreLocation.h>
+#import <MapKit/MapKit.h>
+#import "Organization.h"
+#import "PHCityViewController.h"
+
+@interface PHInputPhysicalExamViewController ()<CLLocationManagerDelegate,UITextFieldDelegate,MKMapViewDelegate,InputPhysicalExamDelegate,PHLocationOrganizationDelegate>
+{
+    Organization *organization; //gps定位的最近机构
+    Organization *selectOrganization; //选择的机构
+    PHLocationOrganizationHelper *locationHelper;
+}
+@property (strong, nonatomic) IBOutlet UIButton *btnOrganization;
+@property (strong, nonatomic) IBOutlet UIActivityIndicatorView *indicatorView;
+@property (strong, nonatomic) IBOutlet UITextField *txtPhysicalCode;
+@property (strong, nonatomic) IBOutlet UITextField *txtPassword;
+@property (strong, nonatomic) IBOutlet UIImageView *imgPhysicalCode;
+@property (strong, nonatomic) IBOutlet UIImageView *imgPassword;
+
+@end
+
+@implementation PHInputPhysicalExamViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    
+    if (YES) {
+        [_indicatorView startAnimating];
+        locationHelper = [[PHLocationOrganizationHelper alloc] init];
+        locationHelper.delegate = self;
+        [locationHelper startLocationOrganization];
+    }
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self navigationControllerSetting];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(myTextFieldDidChange:) name:UITextFieldTextDidChangeNotification object:nil];
+}
+
+-(void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+-(void)navigationControllerSetting
+{
+    [self.navigationItem setHidesBackButton:YES];
+    [self.navigationController.navigationBar setTranslucent:NO];
+    [self.navigationController setNavigationBarHidden:NO];
+    [self.navigationItem setTitle:@"获取体检报告"];
+    UIBarButtonItem *backItem = [[UIBarButtonItem alloc] init];
+    [backItem setTitle:@""];
+    [self.navigationItem setBackBarButtonItem:backItem];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)selectOrganizaiton:(Organization *)org
+{
+    [_btnOrganization setTitle:org.organizationName forState:UIControlStateNormal];
+    selectOrganization = org;
+}
+
+- (IBAction)clickConfirmBtn:(id)sender {
+    [[PHAppStartManager defaultManager] pushHomeViewWithSelectIndex:2];
+}
+
+- (IBAction)clickJumpBtn:(id)sender {
+    [[PHAppStartManager defaultManager] pushHomeViewWithSelectIndex:1];
+}
+
+- (IBAction)clickHospitalBtn:(id)sender {
+    PHCityViewController *phCityVC = [[PHCityViewController alloc] initWithGpsOrganization:organization];
+    phCityVC.delegate = self;
+    [self.navigationController pushViewController:phCityVC animated:YES];
+}
+
+-(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    if ([_txtPhysicalCode becomeFirstResponder]) {
+        [_txtPhysicalCode resignFirstResponder];
+    }
+    
+    if ([_txtPassword becomeFirstResponder]) {
+        [_txtPassword resignFirstResponder];
+    }
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    return [textField resignFirstResponder];
+}
+
+-(void)myTextFieldDidChange:(NSNotification *)notification
+{
+    UITextField *textField = [notification object];
+    if([textField isEqual:_txtPhysicalCode]){
+        [self physicalCodeImageViewChange];
+    }
+    
+    if ([textField isEqual:_txtPassword]) {
+        [self passwordImageViewChange];
+    }
+    
+}
+
+-(void)physicalCodeImageViewChange
+{
+    if ((_txtPhysicalCode.text == nil) || (_txtPhysicalCode.text.length == 0)) {
+        [_imgPhysicalCode setImage:[UIImage imageNamed:@"phone-number2"]];
+    }else{
+        [_imgPhysicalCode setImage:[UIImage imageNamed:@"phone-number"]];
+    }
+}
+
+-(void)passwordImageViewChange
+{
+    if ((_txtPassword.text == nil) || (_txtPassword.text.length == 0)) {
+        [_imgPassword setImage:[UIImage imageNamed:@"password-icon2"]];
+    }else{
+        [_imgPassword setImage:[UIImage imageNamed:@"password-icon"]];
+    }
+}
+
+#pragma -mark InputPhysicalExamDelegate
+-(void)popViewWithOrganization:(Organization *)org
+{
+    if (org != nil) {
+        [self selectOrganizaiton:org];
+    }
+}
+
+#pragma -mark PHLocationOrganizationDelegate
+-(void)returnNearestOrganization:(Organization *)org
+{
+    [_indicatorView stopAnimating];
+    if (org != nil) {
+        [self selectOrganizaiton:org];
+    }
+}
+@end

@@ -1,0 +1,45 @@
+//
+//  Group.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Mantle.h"
+#import "GroupMember.h"
+
+@interface Group : MTLModel<MTLJSONSerializing>
+
+//服务器实体参数
+@property(nonatomic) unsigned groupId;//
+@property(nonatomic) long long groupOwner;//
+@property(nonatomic,copy) NSString *groupName;//
+@property(nonatomic,copy) NSString *groupHeadImage;//
+@property (nonatomic,copy) NSString *groupBriefIntroduction; //群简介
+@property (nonatomic , copy) NSString * groupTag;//群分类
+@property (nonatomic) NSTimeInterval groupCreateTime;//
+@property (nonatomic) NSInteger groupState;//
+
+
+
+#pragma mark - 本地需求
+@property(nonatomic) long long belongMemberId;
+@property(nonatomic) NSInteger messageNotReadCount;
+@property(nonatomic) NSInteger isSession;
+@property(nonatomic) NSTimeInterval sessionDate;
+
+//以上12项目为数据库存的
+
+//@property (nonatomic) unsigned groupMemberCount;
+@property(nonatomic,strong) NSMutableArray *groupMember;
+@property(nonatomic,strong) NSMutableArray *groupMessage;
+
+
+
+
+
+
+//-(GroupMemberType)memberTypeWithUid:(unsigned)uid;
+@end

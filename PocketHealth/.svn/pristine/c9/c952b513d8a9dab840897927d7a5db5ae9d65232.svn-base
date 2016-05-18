@@ -1,0 +1,185 @@
+//
+//  SGroupDB.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "SGroupDB.h"
+#import "SGroupMessageDB.h"
+#import "SGroupMemberDB.h"
+
+#define kGroupTableName @"SGroup"
+
+@implementation SGroupDB
+- (id) init {
+    self = [super init];
+    if (self) {
+        //========== 首先查看有没有建立message的数据库，如果未建立，则建立数据库=========
+        _db = [SDBManager defaultDBManager].dataBase;
+        
+    }
+    return self;
+}
+- (void) createDataBase
+{
+    FMResultSet * set = [_db executeQuery:[NSString stringWithFormat:@"select count(*) from sqlite_master where type ='table' and name = '%@'",kGroupTableName]];
+    
+    [set next];
+    
+    NSInteger count = [set intForColumnIndex:0];
+    
+    BOOL existTable = !!count;
+    
+    if (existTable) {
+        // TODO:是否更新数据库
+        NSLog(@"%@数据库已经存在",kGroupTableName);
+    } else {
+        // TODO: 插入新的数据库
+        NSString * sql = @"CREATE TABLE SGroup (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, groupid INTEGER,belongmemberid BIGINT, groupname VARCHAR(50),groupheadimage VARCHAR(50),isSession INTEGER,sessiondate TIMESTAMP, groupowner INTEGER,groupbriefintroduction VARCHAR(50) ,messageNotReadCount INTEGER , grouptag VARCHAR(50), groupstate INTEGER,groupcreatetime TIMESTAMP)";
+        BOOL res = [_db executeUpdate:sql];
+        if (!res) {
+            NSLog(@"%@数据库创建失败",kGroupTableName);
+        } else {
+            NSLog(@"%@数据库创建成功",kGroupTableName);
+        }
+    }
+}
+-(BOOL)isExistGroupWithGid:(unsigned)gid WithBelongUid:(long long)belongUid{
+    NSString * query =[NSString stringWithFormat:@"SELECT * FROM SGroup WHERE groupid = '%u' and belongmemberid = '%lld'",gid,belongUid];
+    FMResultSet * rs = [_db executeQuery:query];
+    BOOL isExist =  rs.next;
+    [rs close];
+    return isExist;
+}
+- (void) saveGroup:(Group *) group
+{
+    NSMutableString * query = [NSMutableString stringWithFormat:@"INSERT INTO SGroup"];
+    NSMutableString * keys = [NSMutableString stringWithFormat:@" ("];
+    NSMutableString * values = [NSMutableString stringWithFormat:@" ( "];
+    NSMutableArray * arguments = [NSMutableArray arrayWithCapacity:3];
+    
+    if (group.groupId) {
+        [keys appendString:@"groupid,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%u",group.groupId]];
+    }
+    
+    if (group.belongMemberId) {
+        [keys appendString:@"belongmemberid,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lld",group.belongMemberId]];
+    }
+    
+    if (group.groupName) {
+        [keys appendString:@"groupname,"];
+        [values appendString:@"?,"];
+        [arguments addObject:group.groupName];
+    }
+    
+    if (group.groupBriefIntroduction) {
+        [keys appendString:@"groupbriefintroduction,"];
+        [values appendString:@"?,"];
+        [arguments addObject:group.groupBriefIntroduction];
+    }
+    
+    if (group.sessionDate) {
+        [keys appendString:@"sessiondate,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lf",group.sessionDate]];
+    }
+    
+    if (group.groupHeadImage) {
+        [keys appendString:@"groupheadimage,"];
+        [values appendString:@"?,"];
+        [arguments addObject:group.groupHeadImage];
+    }
+    
+    if (group.groupOwner) {
+        [keys appendString:@"groupowner,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lld",group.groupOwner]];
+    }
+    
+  
+    if (group.groupState) {
+        [keys appendString:@"groupstate,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%u",group.groupState]];
+    }
+    if (group.groupCreateTime) {
+        [keys appendString:@"groupcreatetime,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lf",group.groupCreateTime]];
+    }
+    //0---------------
+    [keys appendString:@"isSession,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%u",group.isSession]];
+    
+    [keys appendString:@")"];
+    [values appendString:@")"];
+    [query appendFormat:@" %@ VALUES%@",
+     [keys stringByReplacingOccurrencesOfString:@",)" withString:@")"],
+     [values stringByReplacingOccurrencesOfString:@",)" withString:@")"]];
+    NSLog(@"%@",query);
+    
+    bool isSaveOk = [_db executeUpdate:query withArgumentsInArray:arguments];
+    isSaveOk?NSLog(@"groupdb 插入数据OK"):NSLog(@"groupdb save error");
+    
+//    if (group.groupMember.count > 0) {
+//        SGroupMemberDB *groupMemberdb = [[SGroupMemberDB alloc] init];
+//        for(GroupMember *gm in group.groupMember){
+//            if(![groupMemberdb isExistGroupMemberWithUid:gm.memberId WithGid:gm.groupId]){
+//                [groupMemberdb saveGroupMember:gm];
+//            }
+//        }
+//    }
+//    
+//    if (group.groupMessage.count > 0) {
+//        SGroupMessageDB *groupMessagedb = [[SGroupMessageDB alloc] init];
+//        for(GroupMessage *gmsg in group.groupMessage){
+//            [groupMessagedb saveGroupMessage:gmsg WithContactUid:group.belongMemberId];
+//        }
+//    }
+}
+- (void) mergeGroup:(Group *)group
+{
+    NSString * query = @"UPDATE SGroup SET";
+    NSMutableString * temp = [NSMutableString stringWithCapacity:100];
+    // xxx = xxx;
+    if (group.groupName) {
+        [temp appendFormat:@" groupname = '%@',",group.groupName];
+    }
+    
+    if (group.sessionDate) {
+        [temp appendFormat:@" sessiondate = '%lf',",group.sessionDate];
+    }
+    
+    if (group.groupHeadImage) {
+        [temp appendFormat:@" groupheadimage = '%@',",group.groupHeadImage];
+    }
+    if (group.groupOwner) {
+        [temp appendFormat:@" groupowner = '%lld',",group.groupOwner];
+    }
+    
+    if (group.groupBriefIntroduction) {
+        [temp appendFormat:@" groupbriefintroduction = '%@',",group.groupBriefIntroduction];
+    }
+    if (group.groupState) {
+        [temp appendFormat:@" groupstate = '%u',",group.groupState];
+    }
+    //createtime不需要修改 到此为止
+    //=========-=-==-=-=-=-=-=-=-=--=-=-=-==-=-==-
+    
+    
+    [temp appendFormat:@" isSession = '%@',",[NSString stringWithFormat:@"%u",group.isSession]];
+    
+    [temp appendString:@")"];
+    query = [query stringByAppendingFormat:@"%@ WHERE groupid = '%u' and belongmemberid = '%lld'",[temp stringByReplacingOccurrencesOfString:@",)" withString:@""],group.groupId,group.belongMemberId];
+    NSLog(@"%@",query);
+    BOOL flag = [_db executeUpdate:query];
+    flag ?NSLog(@"group修改一条数据 成功"): NSLog(@"group 修改一条数据 失败");
+}
+@end

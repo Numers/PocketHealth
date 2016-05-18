@@ -1,0 +1,63 @@
+//
+//  PHUpdateUserInfoManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-12.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHUpdateUserInfoManager.h"
+static PHUpdateUserInfoManager *phUpdateUserInfoManager;
+static AFHTTPRequestOperationManager *requestManager;
+@implementation PHUpdateUserInfoManager
++(id)defaultManager
+{
+    if (phUpdateUserInfoManager == nil) {
+        phUpdateUserInfoManager = [[PHUpdateUserInfoManager alloc] init];
+        requestManager = [AFHTTPRequestOperationManager manager];
+        [requestManager.requestSerializer setTimeoutInterval:TimeOut];
+    }
+    return phUpdateUserInfoManager;
+}
+
+-(void)updateUserInfoWithParameter:(NSString *)parameter WithProperty:(NSString *)property CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_UpdateUserInfo_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:parameter,property,AFNetWorkKey,@"key",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+
+-(void)updateUserInfoWithDictionary:(NSDictionary *)dic CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_UpdateUserInfo_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSMutableDictionary *parameters = [NSMutableDictionary dictionaryWithDictionary:dic];
+    [parameters setObject:AFNetWorkKey forKey:@"key"];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+
+-(void)updateUserHeadWithImageData:(NSData *)fileData Completion:(ApiCompletionHandler)completion
+{
+    NSString *url = [NSString stringWithFormat:@"%@?type=1&ext=.png&key=%@",PH_UpdateUserHead_API,AFNetWorkKey];
+    NSString *postUrl = [url stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:postUrl] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:TimeOut];
+    [request setHTTPMethod:@"POST"];
+    [request setValue:[NSString stringWithFormat:@"%ld",fileData.length] forHTTPHeaderField:@"content-length"];
+    [request setValue:@"image/png" forHTTPHeaderField:@"Content-Type"];
+    [request setHTTPBody:fileData];
+    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue currentQueue] completionHandler:completion];
+}
+
+-(void)sendPhoneCodeWithTel:(NSString *)tel WithType:(OperationCode)type CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_SendPhoneCode_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:tel,@"tel",[NSString stringWithFormat:@"%d",type],@"type",AFNetWorkKey,@"key",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+
+-(void)verificateUserWithPhone:(NSString *)phone WithVerificateCode:(NSString *)verificateCode WithUserId:(long long)userId CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_VerificationCode_API stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = [NSDictionary dictionaryWithObjectsAndKeys:phone,@"tel",verificateCode,@"code",[NSString stringWithFormat:@"%lld",userId],@"userid",nil];
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+@end

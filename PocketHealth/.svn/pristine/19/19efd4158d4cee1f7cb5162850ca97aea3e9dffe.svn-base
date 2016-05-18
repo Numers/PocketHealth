@@ -1,0 +1,17 @@
+//
+//  CustomWithSwitchTableViewCell.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/20.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface CustomWithSwitchTableViewCell : UITableViewCell
+//@property (strong, nonatomic) IBOutlet UISwitch *switchBtn;
+@property (strong, nonatomic) IBOutlet UILabel *textLabel;
+@property (strong, nonatomic) IBOutlet UISwitch *switchBTTTTT;
+
+
+@end

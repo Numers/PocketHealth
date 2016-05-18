@@ -1,0 +1,255 @@
+//
+//  PHOneKeyFindDocShowViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/3/9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOneKeyFindDocShowViewController.h"
+#include "YUV420Phelper.h"
+#import "IAVModuleIOS.h"
+
+
+#import "ClientHelper.h"
+#import "CommonUtil.h"
+IAVModuleIOS    *g_pAVModule = NULL;
+
+//#define iphone6
+
+#ifdef iphone6
+int g_nAnchorUserid=118;
+#define userid 3
+
+#else
+int g_nAnchorUserid=3;
+#define userid 118
+#endif
+#define servierIP "60.191.239.14"
+#define servierPort 60299
+#define roomid 910099
+#define bufferTime 1000
+#define AVwidth 320
+#define AVheight 240
+
+@interface PHOneKeyFindDocShowViewController ()
+{
+    AVCaptureSession *session;
+
+}
+@property (strong, nonatomic) IBOutlet UIView *avOutPutView;
+
+@end
+
+@implementation PHOneKeyFindDocShowViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self registerSession];
+    
+    [self initFirstVideoShow];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+-(void)registerSession{
+    
+    [ClientHelper regiseterSession:1 Token:[CommonUtil MyToken] RoomIP:@servierIP RoomID:roomid RoomPort:servierPort];
+    
+}
+-(void)initFirstVideoShow
+{
+    NSLog(@"initFirstVideoShow");
+    
+    
+    
+    if (g_pAVModule == NULL) {
+        g_pAVModule = CreateAVModuleIOSObject();
+        if(!g_pAVModule)
+        {
+            NSLog(@"initFirstVideoShow:: CreateAVModuleIOSObject fail!!!!");
+            return;
+        }
+    }
+    if (!g_pAVModule->InitAVModule((char *)servierIP,
+                                   servierPort, (int)roomid, userid,bufferTime,
+                                   //video info
+                                   0, AVwidth,AVheight,10,20,TRUE,
+                                   //audio info
+                                   7,16000,1,32000,16,1)
+        )
+    {
+        g_pAVModule->Release();
+        g_pAVModule = NULL;
+        NSLog(@"InitAVModule Failed! ");
+        return ;
+    }
+    
+    NSLog(@"InitAVModule Success! ");
+    
+    //        g_nAnchorUserid = 1;
+    g_pAVModule->InsertOutput(g_nAnchorUserid, (__bridge void *)_avOutPutView, 0, 0, AVwidth, AVheight);
+    
+    g_pAVModule->SetAudioStatus(1, YES);
+    g_pAVModule->SetVideoStatus(1, YES);
+    g_pAVModule->InsertInput(0);
+    [self setupCaptureSession];
+    
+}
+
+- (void)setupCaptureSession
+{
+    NSError *error = nil;
+    
+    // Create the session
+    session = [[AVCaptureSession alloc] init] ;
+    
+    // Configure the session to produce lower resolution video frames, if your
+    // processing algorithm can cope. We'll specify medium quality for the
+    // chosen device.
+    session.sessionPreset = AVCaptureSessionPresetMedium;
+    
+    // Find a suitable AVCaptureDevice
+    AVCaptureDevice *device = [AVCaptureDevice
+                               defaultDeviceWithMediaType:AVMediaTypeVideo];//这里默认是使用后置摄像头，你可以改成前置摄像头
+    
+    // Create a device input with the device and add it to the session.
+    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:device
+                                                                        error:&error];
+    if (!input) {
+        // Handling the error appropriately.
+    }
+    [session addInput:input];
+    
+    // Create a VideoDataOutput and add it to the session
+    AVCaptureVideoDataOutput *output = [[AVCaptureVideoDataOutput alloc] init];
+    [session addOutput:output];
+    
+    // Configure your output.
+    dispatch_queue_t queue = dispatch_queue_create("myQueue", NULL);
+    [output setSampleBufferDelegate:self queue:queue];
+    
+    // Specify the pixel format
+    output.videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
+                            [NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange], kCVPixelBufferPixelFormatTypeKey,
+                            [NSNumber numberWithInt: 480], (id)kCVPixelBufferWidthKey,
+                            [NSNumber numberWithInt: 320], (id)kCVPixelBufferHeightKey,
+                            nil];
+    
+    AVCaptureVideoPreviewLayer* preLayer = [AVCaptureVideoPreviewLayer layerWithSession: session];
+    //preLayer = [AVCaptureVideoPreviewLayer layerWithSession:session];
+    preLayer.frame = CGRectMake(0, 300, 480, 320);
+    preLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    [self.view.layer addSublayer:preLayer];
+    // If you wish to cap the frame rate to a known value, such as 15 fps, set
+    // minFrameDuration.
+    output.minFrameDuration = CMTimeMake(1, 15);
+    
+    // Start the session running to start the flow of data
+    [session startRunning];
+    
+    // Assign session to an ivar.
+    //[self setSession:session];
+}
+
+- (void)captureOutput:(AVCaptureOutput *)captureOutput
+didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
+       fromConnection:(AVCaptureConnection *)connection
+{
+    // Create a UIImage from the sample buffer data
+    //    UIImage *image = [self imageFromSampleBuffer:sampleBuffer];
+    //    NSData *mData = UIImageJPEGRepresentation(image, 0.5);//这里的mData是NSData对象，后面的0.5代表生成的图片质量
+    
+    
+    NSData *mData = imageToBuffer(sampleBuffer);
+    BYTE * orgBuff =(BYTE *) [mData bytes];
+    
+    
+    YUV420PHelper::uvuv2uuvv(orgBuff, 480, 360);
+    
+    BYTE * newbuff = (BYTE*)malloc(mData.length);
+    YUV420PHelper::rotate_90(newbuff, orgBuff, 480, 360);
+    
+    NSLog(@" vmData.length %u",mData.length);
+    BYTE * newbuff2 = (BYTE *)malloc(AVwidth*AVheight*1.5);
+    
+    YUV420PHelper::resize(newbuff2, AVwidth, AVheight, newbuff, 360, 480);
+    
+    g_pAVModule->AddVideoData(newbuff2, AVwidth*AVheight*1.5);
+    
+    free(newbuff);
+    free(newbuff2);
+}
+
+// Create a UIImage from sample buffer data
+- (UIImage *) imageFromSampleBuffer:(CMSampleBufferRef) sampleBuffer
+{
+    // Get a CMSampleBuffer's Core Video image buffer for the media data
+    CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+    // Lock the base address of the pixel buffer
+    CVPixelBufferLockBaseAddress(imageBuffer, 0);
+    
+    // Get the number of bytes per row for the pixel buffer
+    void *baseAddress = CVPixelBufferGetBaseAddress(imageBuffer);
+    
+    // Get the number of bytes per row for the pixel buffer
+    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
+    // Get the pixel buffer width and height
+    size_t width = CVPixelBufferGetWidth(imageBuffer);
+    size_t height = CVPixelBufferGetHeight(imageBuffer);
+    
+    // Create a device-dependent RGB color space
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    
+    // Create a bitmap graphics context with the sample buffer data
+    CGContextRef context = CGBitmapContextCreate(baseAddress, width, height, 8,
+                                                 bytesPerRow, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
+    // Create a Quartz image from the pixel data in the bitmap graphics context
+    CGImageRef quartzImage = CGBitmapContextCreateImage(context);
+    // Unlock the pixel buffer
+    CVPixelBufferUnlockBaseAddress(imageBuffer,0);
+    
+    // Free up the context and color space
+    CGContextRelease(context);
+    CGColorSpaceRelease(colorSpace);
+    
+    // Create an image object from the Quartz image
+    //UIImage *image = [UIImage imageWithCGImage:quartzImage];
+    UIImage *image = [UIImage imageWithCGImage:quartzImage scale:1.0f orientation:UIImageOrientationRight];
+    
+    // Release the Quartz image
+    CGImageRelease(quartzImage);
+    
+    return (image);
+}
+NSData* imageToBuffer( CMSampleBufferRef source) {
+    CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(source);
+    OSType type = CVPixelBufferGetPixelFormatType( imageBuffer );
+    
+    
+    CVPixelBufferLockBaseAddress(imageBuffer,0);
+    
+    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
+    size_t width = CVPixelBufferGetWidth(imageBuffer);
+    size_t height = CVPixelBufferGetHeight(imageBuffer);
+    void *src_buff = CVPixelBufferGetBaseAddress(imageBuffer);
+    
+    NSData *data = [NSData dataWithBytes:src_buff length:bytesPerRow * height];
+    //    NSData *data = [NSData dataWithBytes:src_buff length:width * height *1.5];
+    CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+    NSLog(@" data length %i",[data length]);
+    return data;
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

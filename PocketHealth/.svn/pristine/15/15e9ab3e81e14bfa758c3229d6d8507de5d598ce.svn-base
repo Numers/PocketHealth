@@ -1,0 +1,229 @@
+//
+//  PHNotificaionViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/11.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHNotificaionViewController.h"
+
+#import "CalculateViewFrame.h"
+//数据
+#import "NotificationMessage.h"
+#import "SNotificationMessage.h"
+#import "Member.h"
+#import "ClientHelper.h"
+#import "CommonUtil.h"
+
+#import "PHAppStartManager.h"
+#import "PHGroupHttpRequest.h"
+#import "PHChatDatabaseHelper.h"
+//界面
+#import "CustomSubtitleHasRightBtnTableViewCell.h"
+#import "UIImageView+WebCache.h"
+//#import "PHNotificationInsideUserInfoTableViewController.h"
+
+#import "PHNotificationUserInfoViewController.h"
+
+static NSString *identifierNotificaion = @"NotificaionFriendTypeTableViewCell";
+@interface PHNotificaionViewController ()<UITableViewDataSource,UITableViewDelegate,PHNotificationUserInfoViewControllerDelegate>
+{
+    UITableView * notificationFriendTypeTableView; //个人消息列表
+    UITableView * notificationGroupTypeTableView;//群列表
+    NSArray * notifiMsgArray;//用一个数组 个人以及群
+    Member *host;
+    
+    PHNotificationUserInfoViewController * phNotificaionVC;//子页面
+}
+@end
+
+@implementation PHNotificaionViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = @"通知";
+    host = [[PHAppStartManager defaultManager] userHost];
+    //添加右上角清空消息按钮
+    [self createTopRightClearNotificaionBtn];
+    //上方SegmentControl初始化
+    [self createSegmentControl];
+    
+    
+    //friend tablview初始化
+    [self createFriendNotificationTableView];
+    
+    
+    // Do any additional setup after loading the view from its nib.
+}
+#pragma mark -
+#pragma mark - 初始化界面
+#pragma mark -
+#pragma mark - 右上角按钮
+-(void)createTopRightClearNotificaionBtn{
+    UIButton * clearNotifciaonBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    clearNotifciaonBtn.frame = CGRectMake(0, 0, 60, 40);
+    [clearNotifciaonBtn setTitle:@"清空" forState:UIControlStateNormal];
+    [clearNotifciaonBtn addTarget:self action:@selector(clearNotifciaonBtnClick) forControlEvents:UIControlEventTouchUpInside];
+    UIBarButtonItem * clearNotifciaonBarBtn = [[UIBarButtonItem alloc]initWithCustomView:clearNotifciaonBtn];
+    self.navigationItem.rightBarButtonItem = clearNotifciaonBarBtn;
+}
+-(void)clearNotifciaonBtnClick{
+    //数据库清空当前用户消息
+    if (self.notificaionMessageTypeSwitchSegmentControl.selectedSegmentIndex == 0) {
+        //如果在好友消息界面 清空好友消息
+        [PHChatDatabaseHelper deleteFriendNotification];
+        notifiMsgArray = [self loadNotificaionFriendTypeMsgFromDB];
+        [notificationFriendTypeTableView reloadData];
+    }else{
+        //在群消息界面 清空群消息
+    }
+}
+-(void)createFriendNotificationTableView{
+    notificationFriendTypeTableView = [[UITableView alloc]init];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    frame.origin.y = self.notificaionMessageTypeSwitchSegmentControl.frame.size.height + 8;
+    frame.size.height -= frame.origin.y ;
+    notificationFriendTypeTableView.delegate = self;
+    notificationFriendTypeTableView.dataSource = self;
+    [notificationFriendTypeTableView registerNib:[UINib nibWithNibName:@"CustomSubtitleHasRightBtnTableViewCell" bundle:nil] forCellReuseIdentifier:identifierNotificaion];
+    notificationFriendTypeTableView.frame = frame;
+    [self.view addSubview:notificationFriendTypeTableView];
+    //从数据库读取所有的好友消息
+    if (notifiMsgArray)notifiMsgArray = [[NSArray alloc]init];
+    notifiMsgArray = [self loadNotificaionFriendTypeMsgFromDB];
+}
+#pragma mark - segemt初始化
+-(void)createSegmentControl{
+    self.notificaionMessageTypeSwitchSegmentControl = [[HMSegmentedControl alloc]initWithSectionTitles:@[@"好友消息", @"群消息"]];
+    self.notificaionMessageTypeSwitchSegmentControl.frame = CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 40);
+    self.notificaionMessageTypeSwitchSegmentControl.backgroundColor = [UIColor clearColor];
+    self.notificaionMessageTypeSwitchSegmentControl.selectionIndicatorLocation = HMSegmentedControlSelectionIndicatorLocationDown;
+    self.notificaionMessageTypeSwitchSegmentControl.selectionStyle = HMSegmentedControlSelectionStyleFullWidthStripe;
+    [self.notificaionMessageTypeSwitchSegmentControl addTarget:self action:@selector(segmentedControlChangedValue:) forControlEvents:UIControlEventValueChanged];
+    [self.view addSubview:self.notificaionMessageTypeSwitchSegmentControl];
+}
+#pragma mark - 从数据库拿出加群消息
+-(NSArray *)loadNotificaionFriendTypeMsgFromDB{
+    SNotificationMessage * sNotifiMsgDB = [[SNotificationMessage alloc]init];
+    return [sNotifiMsgDB selectAllNoticationMessageWithHostId:host.memberId MessageCode:MessageCodeAddFriend ResultCount:10];
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark - tableView datasourse & delegate
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return notifiMsgArray.count;
+}
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return 75;
+}
+// Row display. Implementers should *always* try to reuse cells by setting each cell's reuseIdentifier and querying for available reusable cells with dequeueReusableCellWithIdentifier:
+// Cell gets various attributes set automatically based on table (separators) and data source (accessory views, editing controls)
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    
+    
+    NotificationMessage *notifiMsg =  [notifiMsgArray objectAtIndex:indexPath.row];
+    CustomSubtitleHasRightBtnTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifierNotificaion];
+    if (cell == nil) {
+        cell = [[CustomSubtitleHasRightBtnTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierNotificaion];
+        
+    }
+    cell.customLabel.text= [NSString stringWithFormat:@"%lld",notifiMsg.memberId];
+    cell.customDetailLabel.text = notifiMsg.content;
+    NSString *imageStr = notifiMsg.member.headImage;
+    [cell.customImageView sd_setImageWithURL:[NSURL URLWithString:imageStr] placeholderImage:[UIImage imageNamed:@"defult_people_icons"]];
+    if (notifiMsg.state == NotificationMessageStateAgree) {
+        [cell.customRightBtn setTitle:@"已同意" forState:UIControlStateDisabled];
+        [cell.customRightBtn setEnabled:NO];
+    }else{
+        [cell.customRightBtn setTitle:@"同意" forState:UIControlStateNormal];
+    }
+    [cell.customRightBtn addTarget:self action:@selector(agreeBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    //        cell.accessoryView = loginButton;
+    
+    return cell;
+    
+}
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+//   推入 PHNotificationInsideUserInfoTableViewController
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    NotificationMessage *notifiMsg =  [notifiMsgArray objectAtIndex:indexPath.row];
+    phNotificaionVC = nil;
+    phNotificaionVC = [[PHNotificationUserInfoViewController alloc]init];
+    phNotificaionVC.notifiMessage = notifiMsg;
+    phNotificaionVC.delegate  = self;
+    [self.navigationController pushViewController:phNotificaionVC animated:YES];
+}
+#pragma mark - 子页面同意委托
+-(void)agreeBtnClickReback:(NotificationMessage *)notificationMessage{
+    NSLog(@"%@",notificationMessage);
+    [self requestAddAnFriend:notificationMessage];
+}
+#pragma  mark - 点击同意之后
+-(void)agreeBtnClick:(UIButton *)sender{
+    
+    NSLog(@"%ld",(long)sender.tag);
+    NotificationMessage *notifiMsg =  [notifiMsgArray objectAtIndex:sender.tag];
+    [self requestAddAnFriend:notifiMsg];
+    
+
+    //一个允许通过
+//    [XJDChangeUserInfoHelp agreeInGroupByGroupId:sender.tag done:^(AFHTTPRequestOperation *operation, id responseObject) {
+//        //
+//        NSLog(@"agree is ? : %@",responseObject);
+//        //如果现在数据库中没有这个群 后台重新获取数据 发送通知 调用[self performSelectorInBackground:@selector(selectMyGroupWithServer) withObject:nil];
+//        [[NSNotificationCenter defaultCenter] postNotificationName:@"REFRESHMYGROUPLSITFROMSERVER" object:nil];
+//        
+//        
+//    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+//        //
+//        NSLog(@"agree grou error");
+//    }];
+}
+#pragma mark - 加好友方法
+-(void)requestAddAnFriend:(NotificationMessage *)nofitcaionMessage{
+    [PHGroupHttpRequest requestAddAnFriend:nofitcaionMessage.memberId WithMemberType:(MemberUserType)MemberUserTypeNil done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        bool isValidate =[CommonUtil isValidateHttpResponseObject:responseObject];
+        //        if (isValidate) {
+        if (isValidate) {
+            nofitcaionMessage.state = NotificationMessageStateAgree;
+            SNotificationMessage * notificaionMsgDB = [[SNotificationMessage alloc]init];
+            [notificaionMsgDB mergeNotificaionState:nofitcaionMessage HostId:host.memberId];
+            [notificationFriendTypeTableView reloadData];
+            
+            NSDictionary *dic = (NSDictionary *)responseObject;
+            NSLog(@"requestAddAnFriend message is  %@",[dic objectForKey:@"message"]);
+            //一个允许通过
+            [ClientHelper acceptFriend:host.memberId Token:[CommonUtil MyToken] ToUid:nofitcaionMessage.memberId Msgsn:88888];
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+}
+
+#pragma mark - 改变消息类型
+-(void)segmentedControlChangedValue:(HMSegmentedControl *)segmentedControl{
+    NSLog(@"Selected index %ld (via UIControlEventValueChanged)", (long)segmentedControl.selectedSegmentIndex);
+    if (segmentedControl.selectedSegmentIndex == 0) {
+        //
+        
+        notificationFriendTypeTableView.hidden = NO;
+    }else{
+        notificationFriendTypeTableView.hidden = YES;
+    }
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

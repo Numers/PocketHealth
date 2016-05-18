@@ -1,0 +1,19 @@
+//
+//  PHDetailsHeadViewController.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-18.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@class Organization;
+@interface PHDetailsHeadViewController : UIViewController
+@property (strong, nonatomic) IBOutlet UIImageView *imgBackGroundImage;
+@property (strong, nonatomic) IBOutlet UIImageView *imgHeadImage;
+@property (strong, nonatomic) IBOutlet UILabel *lblOrganizationName;
+@property (strong, nonatomic) IBOutlet UILabel *lblLevel;
+@property (strong, nonatomic) IBOutlet UIImageView *imgDotLine;
+
+-(void)setupWithOrganization:(Organization *)org;
+@end

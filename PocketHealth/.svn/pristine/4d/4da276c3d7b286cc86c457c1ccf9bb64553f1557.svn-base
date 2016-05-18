@@ -1,0 +1,111 @@
+//
+//  PHVideoChatViewController.m
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHVideoChatViewController.h"
+#import "PHVideoChatManager.h"
+#import "PHFrontView.h"
+#import "PHBackView.h"
+
+@interface PHVideoChatViewController ()<PHFrontViewDelegate,PHBackViewDelegate>
+{
+    PHFrontView *frontView;
+    PHBackView *backView;
+    
+    BOOL commingCall;
+    NSDictionary *videoInfoDic;
+}
+@end
+
+@implementation PHVideoChatViewController
+-(id)initWithDictionary:(NSDictionary *)dic CallState:(BOOL)isCommingCall
+{
+    self = [super init];
+    if (self) {
+        commingCall = isCommingCall;
+        videoInfoDic = [NSDictionary dictionaryWithDictionary:dic];
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    backView = [[PHBackView alloc] initWithFrame:self.view.frame];
+    backView.delegate = self;
+    [self.view addSubview:backView];
+    
+    frontView = [[PHFrontView alloc] initWithFrame:self.view.frame];
+    [frontView setState:commingCall];
+    [frontView setDelegate:self];
+    [self.view addSubview:frontView];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)flipFrontViewToBackView
+{
+    [UIView transitionFromView:frontView toView:backView duration:1.0f options:UIViewAnimationOptionTransitionFlipFromLeft completion:^(BOOL finished) {
+        if (finished) {
+            [backView createAVModuleWithServerIP:@"60.191.239.14" WithPort:60299 WithRoomId:910099 WithUserId:3 WithAnchorUserId:118 WithFrameSize:CGSizeMake(320.f, 240.f)];
+        }
+    }];
+}
+
+-(void)didConnected
+{
+    [self flipFrontViewToBackView];
+}
+
+-(void)sendAcceptCallRequest
+{
+    [self flipFrontViewToBackView];
+}
+
+#pragma -mark PHFrontViewDelegate
+-(void)acceptCall
+{
+    [self sendAcceptCallRequest];
+}
+
+-(void)rejectCall
+{
+    [self dismissViewControllerAnimated:YES completion:^{
+        [frontView removeFromSuperview];
+        frontView = nil;
+        [backView removeFromSuperview];
+        backView = nil;
+        [[PHVideoChatManager defaultManager] didDisConnected];
+    }];
+}
+
+-(void)cancelCall
+{
+    [self dismissViewControllerAnimated:YES completion:^{
+        [frontView removeFromSuperview];
+        frontView = nil;
+        [backView removeFromSuperview];
+        backView = nil;
+        [[PHVideoChatManager defaultManager] didDisConnected];
+    }];
+}
+
+#pragma -mark PHBackViewDelegate
+-(void)shutUpVideoCall
+{
+    [self dismissViewControllerAnimated:YES completion:^{
+        [frontView removeFromSuperview];
+        frontView = nil;
+        [backView removeFromSuperview];
+        backView = nil;
+        [[PHVideoChatManager defaultManager] didDisConnected];
+    }];
+}
+@end

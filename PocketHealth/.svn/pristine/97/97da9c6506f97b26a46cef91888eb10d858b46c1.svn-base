@@ -1,0 +1,48 @@
+//
+//  PHCheckViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHCheckViewController.h"
+#import "PHProgressView.h"
+#define  ViewWidth [[UIScreen mainScreen] bounds].size.width
+#define ProgressViewLeftMargin 50.0f
+
+@interface PHCheckViewController ()
+{
+    PHProgressView *progressView;
+}
+
+@end
+
+@implementation PHCheckViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    progressView = [[PHProgressView alloc] initWithFrame:CGRectMake(ProgressViewLeftMargin,20, ViewWidth-ProgressViewLeftMargin*2,ViewWidth-ProgressViewLeftMargin*2)];
+    [self.view addSubview:progressView];
+    [progressView setProgress:52.0f animated:YES];
+}
+-(void)updateViewConstraints{
+    [super updateViewConstraints];
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

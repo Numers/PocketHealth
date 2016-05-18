@@ -1,0 +1,136 @@
+//
+//  SFirendDB.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "SFirendDB.h"
+
+#define kFriendTableName @"SFriendDB"
+
+@implementation SFirendDB
+
+#pragma mark - 初始化
+- (id) init {
+    self = [super init];
+    if (self) {
+        //========== 首先查看有没有建立message的数据库，如果未建立，则建立数据库=========
+        _db = [SDBManager defaultDBManager].dataBase;
+    }
+    return self;
+}
+- (void) createDataBase {
+    FMResultSet * set = [_db executeQuery:[NSString stringWithFormat:@"select count(*) from sqlite_master where type ='table' and name = '%@'",kFriendTableName]];
+    
+    [set next];
+    
+    NSInteger count = [set intForColumnIndex:0];
+    
+    BOOL existTable = !!count;
+    
+    if (existTable) {
+        // TODO:是否更新数据库
+        NSLog(@"数据库已经存在");
+    } else {
+        // TODO: 插入新的数据库
+        NSString * sql = @"CREATE TABLE SFriend (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, memberid BIGINT,belongmemberid BIGINT,nickname VARCHAR(50),loginname VARCHAR(50), headimage VARCHAR(100), isSession INTEGER,sessiondate TIMESTAMP,userheight INTEGER,userweight INTEGER,usersex INTEGER,userstate INTEGER,userregister TIMESTAMP)";
+        BOOL res = [_db executeUpdate:sql];
+        if (!res) {
+            NSLog(@"%@数据库创建失败",kFriendTableName);
+        } else {
+            NSLog(@"%@数据库创建成功",kFriendTableName);
+        }
+    }
+}
+#pragma mark -  保存用户
+- (void) saveUser:(Member *) user WithBelongUid:(long long)belongUid{
+    NSMutableString * query = [NSMutableString stringWithFormat:@"INSERT INTO SFriend"];
+    NSMutableString * keys = [NSMutableString stringWithFormat:@" ("];
+    NSMutableString * values = [NSMutableString stringWithFormat:@" ( "];
+    NSMutableArray * arguments = [NSMutableArray arrayWithCapacity:7];
+    
+    [keys appendString:@"belongmemberid,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%lld",belongUid]];
+    
+    [keys appendString:@"isSession,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%ld",(long)user.isSession]];
+    
+    if (user.sessionDate) {
+        [keys appendString:@"sessiondate,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lf",user.sessionDate]];
+    }
+    //userregister
+    if (user.userRegister) {
+        [keys appendString:@"userregister,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lf",user.userRegister]];
+    }
+    
+    if (user.memberId) {
+        [keys appendString:@"memberid,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lld",user.memberId]];
+    }
+    
+    if (user.nickName) {
+        [keys appendString:@"nickname,"];
+        [values appendString:@"?,"];
+        [arguments addObject:user.nickName];
+    }
+    
+    if (user.loginName) {
+        [keys appendString:@"loginname,"];
+        [values appendString:@"?,"];
+        [arguments addObject:user.loginName];
+    }
+    
+    
+    if (user.headImage) {
+        [keys appendString:@"headimage,"];
+        [values appendString:@"?,"];
+        [arguments addObject:user.headImage];
+    }
+    //userheight INTEGER,
+//    userweight INTEGER,
+//    usersex INTEGER,
+//    userstate INTEGER,
+
+    if (user.userHeight) {
+        [keys appendString:@"userheight,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%ld",(long)user.userHeight]];
+    }
+    if (user.userWeight) {
+        [keys appendString:@"userweight,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%ld",(long)user.userWeight]];
+    }
+    if (user.userSex) {
+        [keys appendString:@"usersex,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%ld",(long)user.userSex]];
+    }
+    if (user.userState) {
+        [keys appendString:@"userstate,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%ld",(long)user.userState]];
+    }
+    
+    [keys appendString:@")"];
+    [values appendString:@")"];
+    [query appendFormat:@" %@ VALUES%@",
+     [keys stringByReplacingOccurrencesOfString:@",)" withString:@")"],
+     [values stringByReplacingOccurrencesOfString:@",)" withString:@")"]];
+    NSLog(@"%@",query);
+    
+    BOOL flag = [_db executeUpdate:query withArgumentsInArray:arguments];
+    flag?NSLog(@" SFriendDB 插入一条数据 成功"):NSLog(@"SFriendDB 插入一条数据 失败");
+}
+
+
+@end

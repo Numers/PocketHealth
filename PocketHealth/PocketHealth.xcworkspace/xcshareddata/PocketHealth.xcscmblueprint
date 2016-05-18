@@ -1,0 +1,25 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "b4c38097-9b31-414a-8794-e42160bda8bc++9382",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "b4c38097-9b31-414a-8794-e42160bda8bc++9382" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "b4c38097-9b31-414a-8794-e42160bda8bc++9382" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "2C36A142-A1AE-459F-A102-CAC23A606191",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "b4c38097-9b31-414a-8794-e42160bda8bc++9382" : "PocketHealth"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "PocketHealth",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "PocketHealth.xcworkspace",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/svn.xugp.com:8443\/svn\/pockethealth",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "b4c38097-9b31-414a-8794-e42160bda8bc++9382"
+    }
+  ]
+}

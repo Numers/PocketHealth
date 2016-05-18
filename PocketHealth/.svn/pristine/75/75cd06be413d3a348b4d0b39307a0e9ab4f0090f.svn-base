@@ -1,0 +1,208 @@
+//
+//  GroupIndexTableViewCell.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "GroupIndexTableViewCell.h"
+
+#import "Member.h"
+#import "OneForOneMessage.h"
+
+#import "NotificationMessage.h"
+#import "HospitalAggregation.h"
+#import "GroupHelpAggregation.h"
+
+#import "Group.h"
+#import "GroupMessage.h"
+
+#import "CommonUtil.h"
+#import "UIImageView+WebCache.h"
+#import "RKNotificationHub.h"
+
+
+@implementation GroupIndexTableViewCell
+
+- (void)awakeFromNib {
+    // Initialization code
+}
+
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
+    [super setSelected:selected animated:animated];
+
+    // Configure the view for the selected state
+}
+
+-(void)setUpCellWithMember:(Member *)member
+{
+    if (self.headImageView == nil) {
+        self.headImageView = [[UIImageView alloc] init];
+    }
+    [self.headImageView setImageWithURL:[NSURL URLWithString:member.headImage] placeholderImage:[UIImage imageNamed:@"defult_head.png"]];
+    if (self.nickNameLabel == nil) {
+        self.nickNameLabel = [[UILabel alloc] init];
+    }
+    self.nickNameLabel.text = member.nickName;
+    if (self.messageLabel == nil) {
+        self.messageLabel = [[UILabel alloc] init];
+    }
+    
+    if (self.timeLabel == nil) {
+        self.timeLabel = [[UILabel alloc ] init];
+    }
+    
+    self.timeLabel.text = [CommonUtil TimeStrWithInterval:member.sessionDate];
+    
+    if (member.messageArr.count > 0) {
+        OneForOneMessage *message = (OneForOneMessage *)[member.messageArr objectAtIndex:member.messageArr.count-1];
+        MessageContentType contentType = [message messageContentType];
+        if (contentType == MessageContentText) {
+            self.messageLabel.text = message.content;
+        }else if (contentType == MessageContentVoice)
+        {
+            self.messageLabel.text = @"[语音]";
+        }else if (contentType == MessageContentImage)
+        {
+            self.messageLabel.text = @"[图片]";
+        }
+        
+    }else{
+        self.messageLabel.text = nil;
+    }
+    if (self.countHub == nil) {
+        self.countHub = [[RKNotificationHub alloc]initWithView:self.headImageView];
+        [self.countHub setCircleAtFrame:CGRectMake(0, 0, 25, 25)];
+    }
+    if (member.messageNotReadCount > 0) {
+        if (member.messageNotReadCount<100) {
+            [self.countHub setCount:(int)member.messageNotReadCount];
+        }
+        else{
+            [self.countHub setCount:99];
+        }
+    }else{
+        [self.countHub setCount:0];
+    }
+    [self.countHub pop];
+}
+-(void)setUpCellWithGroup:(Group *)group
+{
+    if (self.headImageView == nil) {
+        self.headImageView = [[UIImageView alloc] init];
+    }
+    [self.headImageView setImageWithURL:[NSURL URLWithString:group.groupHeadImage] placeholderImage:[UIImage imageNamed:@"defult_head.png"]];
+    if (self.nickNameLabel == nil) {
+        self.nickNameLabel = [[UILabel alloc] init];
+    }
+    self.nickNameLabel.text = group.groupName;
+    if (self.messageLabel == nil) {
+        self.messageLabel = [[UILabel alloc] init];
+    }
+    
+    if (self.timeLabel == nil) {
+        self.timeLabel = [[UILabel alloc ] init];
+    }
+    self.timeLabel.text = [CommonUtil TimeStrWithInterval:group.sessionDate];
+    
+    if (group.groupMessage.count > 0) {
+        GroupMessage *message = (GroupMessage *)[group.groupMessage objectAtIndex:group.groupMessage.count-1];
+        MessageContentType contentType = [message messageContentType];
+        if (contentType == MessageContentText) {
+            self.messageLabel.text = message.content;
+        }else if (contentType == MessageContentVoice)
+        {
+            self.messageLabel.text = @"[语音]";
+        }else if (contentType == MessageContentImage)
+        {
+            self.messageLabel.text = @"[图片]";
+        }else if (contentType == MessageContentRedPacket){
+            
+            self.messageLabel.text=@"[链接]抢红包啦！";
+        }
+    }else{
+        self.messageLabel.text = nil;
+    }
+    
+    if (self.countHub == nil) {
+        self.countHub = [[RKNotificationHub alloc]initWithView:self.headImageView];
+        [self.countHub setCircleAtFrame:CGRectMake(0, 0, 25, 25)];
+    }
+    if (group.messageNotReadCount > 0) {
+        if (group.messageNotReadCount<100) {
+            [self.countHub setCount:(int)group.messageNotReadCount];
+        }
+        else{
+            [self.countHub setCount:99];
+        }
+    }else{
+        [self.countHub setCount:0];
+    }
+    [self.countHub pop];
+}
+
+-(void)setUpCellWithNotificaion:(NotificationMessage *)notificaionMsg{
+    if (self.headImageView == nil) {
+        self.headImageView = [[UIImageView alloc] init];
+    }
+     [self.headImageView setImage:[UIImage imageNamed:@"groupHomeNotificaionCellIcon"]];
+    if (self.nickNameLabel == nil) {
+        self.nickNameLabel = [[UILabel alloc] init];
+    }
+    self.nickNameLabel.text = @"notificaion";
+    self.messageLabel.text = notificaionMsg.content;
+    self.timeLabel.text = [CommonUtil TimeStrWithInterval:notificaionMsg.sessionDate];
+}
+-(void)setUpCellWithHospitalsAggregation:(HospitalAggregation *)hospitalAggregation{
+    if (self.headImageView == nil) {
+        self.headImageView = [[UIImageView alloc] init];
+    }
+    [self.headImageView setImage:[UIImage imageNamed:@"groupHomeHospitailCellIcon"]];
+    if (self.nickNameLabel == nil) {
+        self.nickNameLabel = [[UILabel alloc] init];
+    }
+    self.nickNameLabel.text = @"hospitalAggregation";
+    self.messageLabel.text = hospitalAggregation.content;
+    self.timeLabel.text = [CommonUtil TimeStrWithInterval:hospitalAggregation.sessionDate];
+    
+    if (self.countHub == nil) {
+        self.countHub = [[RKNotificationHub alloc]initWithView:self.headImageView];
+        [self.countHub setCircleAtFrame:CGRectMake(0, 0, 25, 25)];
+    }
+    if (hospitalAggregation.noReadCount > 0) {
+        if (hospitalAggregation.noReadCount<100) {
+            [self.countHub setCount:(int)hospitalAggregation.noReadCount];
+        }
+        else{
+            [self.countHub setCount:99];
+        }
+    }else{
+        [self.countHub setCount:0];
+    }
+    [self.countHub pop];
+    
+}
+-(void)setUpCellWithGroupsAggregation:(GroupHelpAggregation *)groupHelpAggregation{
+    if (self.headImageView == nil) {
+        self.headImageView = [[UIImageView alloc] init];
+    }
+    [self.headImageView setImage:[UIImage imageNamed:@"groupHomeGroupAttentionCellIcon"]];
+    if (self.nickNameLabel == nil) {
+        self.nickNameLabel = [[UILabel alloc] init];
+    }
+    if ( groupHelpAggregation.isHasNewMessage) {
+        self.messageLabel.tintColor = [UIColor colorWithRed:253 green:131 blue:8 alpha:1];
+    }
+   
+    self.nickNameLabel.text = @"groupHelpAggregation";
+    self.messageLabel.text = groupHelpAggregation.content;
+    self.timeLabel.text = [CommonUtil TimeStrWithInterval:groupHelpAggregation.sessionDate];
+    
+   
+    
+}
+
+
+
+@end

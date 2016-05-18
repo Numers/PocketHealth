@@ -1,0 +1,86 @@
+//
+//  Member.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "Member.h"
+#import "CommonUtil.h"
+
+
+@implementation Member
+
++ (NSDictionary *)JSONKeyPathsByPropertyKey {
+    
+    // properties defined in header < : > key in JSON Dictionary
+    return @{
+             @"loginName":@"Loginname",
+             @"nickName":@"Nickname",
+             @"passWord":@"Password",
+             @"memberId" : @"Userid",
+             @"headImage" : @"Headimg" ,
+             
+             @"userHeight" : @"Userheight",
+             @"userWeight" : @"Userweight",
+             @"userSex" : @"Usersex",
+             @"userState" : @"Userstate"
+             };
+}
+
+-(NSString *)getHttpKey
+{
+    return [CommonUtil createSendKeyWithUserName:_loginName Userid:[NSString stringWithFormat:@"%lld",_memberId]];
+}
+
+-(NSDictionary *)dictionaryInfo
+{
+    NSMutableDictionary *dic = [[NSMutableDictionary alloc] init];
+    [dic setObject:[NSNumber numberWithLongLong:_memberId] forKey:@"memberId"];
+    if (_loginName != nil) {
+        [dic setObject:_loginName forKey:@"loginName"];
+    }
+    
+    if (_passWord != nil) {
+        [dic setObject:_passWord forKey:@"password"];
+    }
+    
+    if (_nickName != nil) {
+        [dic setObject:_nickName forKey:@"nickName"];
+    }
+    
+    if (_headImage != nil) {
+        [dic setObject:_headImage forKey:@"headImage"];
+    }
+    
+    [dic setObject:[NSNumber numberWithInteger:_userHeight] forKey:@"userHeight"];
+    [dic setObject:[NSNumber numberWithInteger:_userWeight] forKey:@"userWeight"];
+    [dic setObject:[NSNumber numberWithInteger:_userSex] forKey:@"userSex"];
+    [dic setObject:[NSNumber numberWithInteger:_userState] forKey:@"userState"];
+    [dic setObject:[NSNumber numberWithDouble:_userRegister] forKey:@"userRegister"];
+    return dic;
+}
+
+-(id)initWithDictionary:(NSDictionary *)dic
+{
+    self = [super init];
+    if (self) {
+        if (dic != nil) {
+            @try {
+                _memberId = [[dic objectForKey:@"memberId"] longLongValue];
+                _loginName = [dic objectForKey:@"loginName"];
+                _passWord = [dic objectForKey:@"password"];
+            }
+            @catch (NSException *exception) {
+                
+            }
+            @finally {
+                
+            }
+        }
+
+    }
+    return self;
+}
+@end

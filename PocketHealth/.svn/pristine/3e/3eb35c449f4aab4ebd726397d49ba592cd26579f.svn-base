@@ -1,0 +1,24 @@
+//
+//  PHLoginManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHLoginManager.h"
+static PHLoginManager *loginManager;
+@implementation PHLoginManager
++(id)defaultManager
+{
+    if (loginManager == nil) {
+        loginManager = [[PHLoginManager alloc] init];
+    }
+    return loginManager;
+}
+
++(void)login
+{
+    
+}
+@end

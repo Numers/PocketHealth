@@ -1,0 +1,181 @@
+//
+//  PHGroupPersonalInfoViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/15.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupPersonalInfoViewController.h"
+//界面类
+#import "CalculateViewFrame.h"
+#import "PHGroupPersonalInfoCellHeaderViewController.h"
+
+
+static NSString *identifierPersonalInfoCell = @"PHPersonalInfoCellTableViewCell";
+
+@interface PHGroupPersonalInfoViewController ()<UITableViewDataSource,UITableViewDelegate,UIGestureRecognizerDelegate>
+@property (strong, nonatomic) IBOutlet UITableView *personalMainTableView;
+
+@end
+
+@implementation PHGroupPersonalInfoViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //界面构造简介
+    self.navigationController.navigationBar.hidden = YES;
+    [self.navigationController.navigationBar setTranslucent:YES];
+
+    //0.初始化tableview
+    CGRect frame = [CalculateViewFrame viewFrame:nil withTabBarController:self.tabBarController];
+    self.personalMainTableView = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+    self.personalMainTableView.delegate = self;
+    self.personalMainTableView.dataSource = self;
+    self.personalMainTableView.sectionHeaderHeight = 0;
+//    [self.personalMainTableView registerNib:[UINib nibWithNibName:@"PHUserCenterTableViewCell" bundle:nil] forCellReuseIdentifier:identifierPersonalInfoCell];
+    // Do any additional setup after loading the view from its nib.
+    PHGroupPersonalInfoCellHeaderViewController * phGPHeadViewVC =[[PHGroupPersonalInfoCellHeaderViewController alloc]init];
+    self.personalMainTableView.tableHeaderView = phGPHeadViewVC.view;
+    UIButton *addFriendBtn=  [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    addFriendBtn.frame = CGRectMake( 5 ,5, 300, 40);
+    [addFriendBtn setBackgroundImage:[UIImage imageNamed:@"naviTopBarColor"] forState:UIControlStateNormal];
+    addFriendBtn.tintColor = [UIColor colorWithRed:255 green:254 blue:254 alpha:1];
+    [addFriendBtn setTitle:@"加为好友" forState:UIControlStateNormal];
+    self.personalMainTableView.tableFooterView = addFriendBtn;
+    [self.view addSubview:self.personalMainTableView];
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+-(void)viewWillDisappear:(BOOL)animated{
+    [super viewWillDisappear:animated];
+    self.navigationController.navigationBar.hidden = NO;
+    [self.navigationController.navigationBar setTranslucent:NO];
+}
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    if (section == 0) {
+        return 0;
+    }else if(section == 1){
+        return 2;
+    }else if (section == 2){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 2;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ((indexPath.section == 0) && (indexPath.row == 0) ) {
+        return 0.0f;
+    }else{
+        return 48.0f;
+    }
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifierPersonalInfoCell];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierPersonalInfoCell];
+    }
+    switch (indexPath.section) {
+        case 0:{
+            
+        }
+            break;
+        case 1:{
+            switch (indexPath.row) {
+                case 0:
+                {
+                   cell.textLabel.text= @"二维码名片";
+                }
+                    break;
+                case 1:{
+                    cell.textLabel.text= @"上次发言时间";
+                }
+                    break;
+                default:
+                    break;
+            }
+        }
+            break;
+        case 2:{
+        }
+            break;
+        default:
+            break;
+    }
+    
+    
+    return cell;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 1:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    
+                }
+                    break;
+                case 1:
+                {
+                }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 2:
+            switch (indexPath.row) {
+                case 0:
+                    
+                    break;
+                case 1:
+                    
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+//-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
+//    return 350;
+//}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

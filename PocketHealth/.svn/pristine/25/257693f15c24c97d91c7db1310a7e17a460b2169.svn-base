@@ -1,0 +1,33 @@
+//
+//  PhysicalExamTable.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-21.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PhysicalExamTable.h"
+
+@implementation PhysicalExamTable
++ (NSDictionary *)JSONKeyPathsByPropertyKey
+{
+    return @{
+             @"ebId":@"Ebid",
+             @"ebNumber":@"Ebnumber",
+             @"ebPassword":@"Ebpassword",
+             @"userId":@"Userid",
+             @"loginName":@"Loginname",
+             @"ebFirstLogin":@"Ebfirstlogin",
+             @"ebLastLogin":@"Eblastlogin",
+             @"examinTime":@"Edexamintime"
+             };
+}
+
+-(void)setNilValueForKey:(NSString *)key
+{
+    NSMutableDictionary *dic = [[super dictionaryValue] mutableCopy];
+    [dic removeObjectForKey:key];
+    [self setValuesForKeysWithDictionary:dic];
+}
+
+@end

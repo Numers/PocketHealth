@@ -1,0 +1,58 @@
+//
+//  PHGetMemberInfoManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-17.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGetMemberInfoManager.h"
+static PHGetMemberInfoManager *phGetMemberInfoManager;
+static AFHTTPRequestOperationManager *requestManager;
+@implementation PHGetMemberInfoManager
++(id)defaultManager
+{
+    if (phGetMemberInfoManager == nil) {
+        phGetMemberInfoManager = [[PHGetMemberInfoManager alloc] init];
+        requestManager = [AFHTTPRequestOperationManager manager];
+        [requestManager.requestSerializer setTimeoutInterval:TimeOut];
+    }
+    return phGetMemberInfoManager;
+}
+
+-(void)requestMemberInfo:(long long)hostId done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback
+{
+    NSString *urlStr=[NSString stringWithFormat:PH_SearchUserInfo];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:[NSString stringWithFormat:@"%lld",hostId],@"uid",AFNetWorkKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+
+-(void)requestGroupByUserId:(long long)userId done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback
+{
+    NSString *urlStr=[NSString stringWithFormat:PH_GetGroupByUserId];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:[NSString stringWithFormat:@"%lld",userId],@"uid",AFNetWorkKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+
+-(void)requestFriendListWithMemberType:(MemberUserType)userType CallDoneBack:(ApiDoneCallback)calldoneBack CallErrorBack:(ApiErrorCallback)callErrorBack
+{
+    NSString *url = [PH_MyFirendList stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSMutableDictionary *parameters = [NSMutableDictionary dictionaryWithObjectsAndKeys:AFNetWorkKey,@"key",nil];
+    switch (userType) {
+        case MemberUserTypeUser:
+            [parameters setObject:@"1" forKey:@"t"];
+            break;
+        case MemberUserTypeDoctor:
+            [parameters setObject:@"2" forKey:@"t"];
+            break;
+        case MemberUserTypeAdmin:
+            [parameters setObject:@"3" forKey:@"t"];
+            break;
+        default:
+            break;
+    }
+    [requestManager POST:url parameters:parameters success:calldoneBack failure:callErrorBack];
+}
+@end

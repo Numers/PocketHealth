@@ -1,0 +1,44 @@
+//
+//  PHQRCodeViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-15.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHQRCodeViewController.h"
+#import "QRCodeGenerator.h"
+#import "PHAppStartManager.h"
+
+@interface PHQRCodeViewController ()
+@property (strong, nonatomic) IBOutlet UIImageView *imgQRCodeImage;
+@property (strong, nonatomic) IBOutlet UILabel *lblName;
+@property (strong, nonatomic) IBOutlet UILabel *lblRole;
+@property (strong, nonatomic) IBOutlet UILabel *lblOrganization;
+
+@end
+
+@implementation PHQRCodeViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    Member *host = [[PHAppStartManager defaultManager] userHost];
+    NSString *codeStr = [NSString stringWithFormat:@"userid:%lld",host.memberId];
+    [_imgQRCodeImage setImage:[QRCodeGenerator qrImageForString:codeStr imageSize:_imgQRCodeImage.bounds.size.width]];
+    _lblName.text = host.realName;
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    self.navigationItem.title = @"我的二维码";
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+- (IBAction)clickAddFriendByMobileBtn:(id)sender {
+}
+@end

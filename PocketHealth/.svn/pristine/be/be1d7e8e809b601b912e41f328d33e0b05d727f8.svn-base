@@ -1,0 +1,44 @@
+//
+//  SMonitorExerciseDB.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/13.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "SDBManager.h"
+#import "Exercise.h"
+
+
+@interface SMonitorExerciseDB : NSObject
+{
+    FMDatabase * _db;
+}
+/**
+ *  创建数据库
+ */
+- (void) createDataBase;
+/**
+ * @brief 保存一条锻炼记录
+ *
+ * @param exercies 需要锻炼数据
+ */
+- (BOOL) saveMonitorExercise:(Exercise *) exercise;
+
+-(BOOL)mergeMonitorExercise : (Exercise *)exercise;
+    /**
+ * @brief 查询一条锻炼记录
+ *
+ * @param belongid 查询锻炼数据
+ */
+-(NSArray *) selectMointorExerciseWithBelongId:(long long)hostId;
+
+-(NSArray *) selectUnUploadExerciseWithBelongId:(long long)hostId;
+
+-(BOOL)mergeUnUploadExerciseToUploaded:(long long)hostId;
+
+-(BOOL)isExistTheSameBelongDate:(NSString *)belongDateTime WithMemberId:(long long)hostId;
+
+-(BOOL)mergeStepsWithBelongId:(long long )hostId WithSteps:(NSInteger )steps WithBelongDateTime:(NSString *)belongDateTime;
+@end

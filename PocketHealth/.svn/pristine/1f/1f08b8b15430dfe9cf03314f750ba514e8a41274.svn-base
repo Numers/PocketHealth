@@ -1,0 +1,80 @@
+//
+//  PHLoginViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-5.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHLoginViewController.h"
+#import "TPKeyboardAvoidingScrollView.h"
+#import "PHLoginManager.h"
+#import "PHAppStartManager.h"
+#import "CommonUtil.h"
+
+@interface PHLoginViewController ()
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *scrollViewHeightConstraint;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *userNameTextFieldWidthConstraint;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *passwordTextFieldWidthConstraint;
+
+
+@end
+
+@implementation PHLoginViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    
+    // 禁用 iOS7 返回手势
+    if ([self.navigationController respondsToSelector:@selector(interactivePopGestureRecognizer)]) {
+        self.navigationController.interactivePopGestureRecognizer.enabled = NO;
+    }
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationController setNavigationBarHidden:YES];
+    [self.navigationController.navigationBar setTranslucent:YES];
+}
+//调整约束
+-(void)updateViewConstraints{
+    [super updateViewConstraints];
+    self.scrollViewHeightConstraint.constant = CGRectGetWidth([UIScreen mainScreen].bounds)*2;
+    self.userNameTextFieldWidthConstraint.constant = CGRectGetWidth([UIScreen mainScreen].bounds)-44;
+    self.passwordTextFieldWidthConstraint.constant= CGRectGetWidth([UIScreen mainScreen].bounds)-44;
+    
+}
+- (IBAction)clickLoginBtn:(id)sender {
+//    NSString *pushUserId = [CommonUtil localUserDefaultsForKey:KMY_PUSH_USERID];
+//    NSString *pushChannelId = [CommonUtil localUserDefaultsForKey:KMY_PUSH_CHANNELID];
+    NSString *pushUserId = @"aaa";
+    NSString *pushChannelId = @"bbb";
+
+    [[PHLoginManager defaultManager] loginWithLoginName:@"13890909090" WithPassword:@"123456" WithChanneid:pushChannelId WithBuserid:pushUserId WithDeviceType:Device_IOS CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSLog(@"%@",responseObject);
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSError *error = nil;
+            Member *host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:[dic objectForKey:@"Result"] error:&error];
+            if (!error) {
+                [CommonUtil localUserDefaultsValue:host.loginName forKey:kMY_USER_LoginName];
+                [CommonUtil localUserDefaultsValue:host.passWord forKey:kMY_USER_PASSWORD];
+                [[PHAppStartManager defaultManager] setHostMember:host];
+                [[PHAppStartManager defaultManager] pushHomeView];
+            }
+        }else{
+            
+        }
+    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+@end

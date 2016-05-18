@@ -1,0 +1,30 @@
+//
+//  PHGetMemberInfoManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-17.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGetMemberInfoManager.h"
+static PHGetMemberInfoManager *phGetMemberInfoManager;
+static AFHTTPRequestOperationManager *requestManager;
+@implementation PHGetMemberInfoManager
++(id)defaultManager
+{
+    if (phGetMemberInfoManager == nil) {
+        phGetMemberInfoManager = [[PHGetMemberInfoManager alloc] init];
+        requestManager = [AFHTTPRequestOperationManager manager];
+        [requestManager.requestSerializer setTimeoutInterval:TimeOut];
+    }
+    return phGetMemberInfoManager;
+}
+
+-(void)requestMemberInfo:(long long)hostId done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback
+{
+    NSString *urlStr=[NSString stringWithFormat:PH_SearchUserInfo];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:[NSString stringWithFormat:@"%lld",hostId],@"uid",AFNetWorkKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+@end

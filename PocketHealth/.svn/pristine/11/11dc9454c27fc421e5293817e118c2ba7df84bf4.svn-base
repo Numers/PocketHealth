@@ -1,0 +1,13 @@
+//
+//  PHOrganizationSelectViewController.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@class Organization;
+@interface PHOrganizationSelectViewController : UIViewController
+-(id)initWithGpsOrganization:(Organization *)gOrganization;
+@end

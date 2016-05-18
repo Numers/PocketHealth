@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="6254" systemVersion="14A389" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6247"/>
+        <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="PHActivityInsideViewController">
+            <connections>
+                <outlet property="phActivityCircleView" destination="gxd-Yn-0aH" id="Fb0-xl-hrb"/>
+                <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="i5M-Pr-FkT">
+            <rect key="frame" x="0.0" y="0.0" width="358" height="260"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gxd-Yn-0aH" customClass="PHCircleWithLabel">
+                    <rect key="frame" x="99" y="8" width="160" height="160"/>
+                    <color key="backgroundColor" red="1" green="0.0" blue="0.50196081400000003" alpha="1" colorSpace="calibratedRGB"/>
+                    <constraints>
+                        <constraint firstAttribute="width" secondItem="gxd-Yn-0aH" secondAttribute="height" multiplier="1:1" id="Lej-g7-jze"/>
+                        <constraint firstAttribute="height" constant="200" id="Sg4-Pk-emk"/>
+                        <constraint firstAttribute="height" constant="160" id="VUt-Rm-des"/>
+                    </constraints>
+                    <variation key="default">
+                        <mask key="constraints">
+                            <exclude reference="Sg4-Pk-emk"/>
+                        </mask>
+                    </variation>
+                </view>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="MO0-kd-LLE">
+                    <rect key="frame" x="25" y="230" width="142" height="30"/>
+                    <state key="normal" title="Button">
+                        <color key="titleColor" name="alternateSelectedControlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                </button>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="日热量结余 2000大卡" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2WA-WL-nL1">
+                    <rect key="frame" x="117" y="176" width="125" height="16"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                    <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="(日热量结余=日摄入量-日基础代谢量)" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1Pn-nx-Cph">
+                    <rect key="frame" x="97" y="200" width="166" height="12"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="10"/>
+                    <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="stp-gt-xfv">
+                    <rect key="frame" x="192" y="230" width="141" height="30"/>
+                    <state key="normal" title="Button">
+                        <color key="titleColor" name="alternateSelectedControlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                </button>
+            </subviews>
+            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+            <constraints>
+                <constraint firstAttribute="bottom" secondItem="stp-gt-xfv" secondAttribute="bottom" id="6Yr-dI-dIr"/>
+                <constraint firstItem="MO0-kd-LLE" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" constant="25" id="E7s-Ae-4ei"/>
+                <constraint firstAttribute="centerX" secondItem="2WA-WL-nL1" secondAttribute="centerX" id="JTN-St-Pzz"/>
+                <constraint firstAttribute="centerX" secondItem="gxd-Yn-0aH" secondAttribute="centerX" id="JmE-Pf-d6c"/>
+                <constraint firstItem="2WA-WL-nL1" firstAttribute="top" secondItem="gxd-Yn-0aH" secondAttribute="bottom" constant="8" id="Ll3-YH-tfO"/>
+                <constraint firstAttribute="bottom" secondItem="MO0-kd-LLE" secondAttribute="bottom" id="MZs-1x-4aq"/>
+                <constraint firstItem="stp-gt-xfv" firstAttribute="leading" secondItem="MO0-kd-LLE" secondAttribute="trailing" constant="25" id="WcD-T8-Hl5"/>
+                <constraint firstAttribute="centerX" secondItem="1Pn-nx-Cph" secondAttribute="centerX" id="XQt-R2-W5z"/>
+                <constraint firstItem="gxd-Yn-0aH" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="8" id="lsl-Qz-bYu"/>
+                <constraint firstItem="MO0-kd-LLE" firstAttribute="width" secondItem="stp-gt-xfv" secondAttribute="width" id="rWX-fa-YSn"/>
+                <constraint firstAttribute="trailing" secondItem="stp-gt-xfv" secondAttribute="trailing" constant="25" id="tXd-yR-I3V"/>
+                <constraint firstItem="1Pn-nx-Cph" firstAttribute="top" secondItem="2WA-WL-nL1" secondAttribute="bottom" constant="8" id="z9E-nu-bRC"/>
+            </constraints>
+            <nil key="simulatedStatusBarMetrics"/>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <point key="canvasLocation" x="-135" y="357"/>
+        </view>
+    </objects>
+</document>

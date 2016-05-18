@@ -1,0 +1,39 @@
+//
+//  PHMonitoringUploadHelper.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/13.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHMonitoringUploadHelper.h"
+#import "PHMonitoringHttpRequest.h"
+#import "JSONKit.h"
+#import "SSleepingDB.h"
+#import "SMonitorExerciseDB.h"
+#import "CommonUtil.h"
+
+@implementation PHMonitoringUploadHelper
+
+
+-(BOOL)uploadSleepDetail:(long long )hostId{
+    //从数据库取出所有未上传的睡眠数据
+    SSleepingDB *ssleepingDB = [[SSleepingDB alloc]init];
+    NSArray * unuploadArray =  [ssleepingDB selectAllUnUploadDate:hostId];
+    NSMutableArray * sleepingAllArray = [[NSMutableArray alloc]init];
+    for (Sleeping * sleeping in unuploadArray) {
+        NSMutableDictionary * sleepingDic = [NSMutableDictionary dictionary];
+        [sleepingDic setObject:[NSString stringWithFormat:@"%lld",sleeping.belongMemberId] forKey:@"userId"];
+        [sleepingDic setObject:[NSString stringWithFormat:@"%f",sleeping.lastSleepTime] forKey:@"sdsleepTime"];
+        [sleepingDic setObject:[NSString stringWithFormat:@"%f",sleeping.wakeupSleepTime] forKey:@"sdwakeupTime"];
+        [sleepingDic setObject:[NSString stringWithFormat:@"%ld",(long)sleeping.sleepDuration] forKey:@"sdsleepDuration"];
+        [sleepingDic setObject:[CommonUtil TimeStrYYYYMMDDWithInterval:sleeping.belongSleepDate] forKey:@"sdBelongTime"];
+        [sleepingDic JSONString];
+        [sleepingAllArray addObject:sleepingDic];
+    }
+    NSString * sendStr =  [CommonUtil jsonStringWithArray:sleepingAllArray];
+    
+    return YES;
+    
+}
+@end

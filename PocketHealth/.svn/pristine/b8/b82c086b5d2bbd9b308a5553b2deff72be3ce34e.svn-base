@@ -1,0 +1,15 @@
+//
+//  PHCheckViewController.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@protocol PHCheckViewDelegate<NSObject>
+-(void)deliveryMood:(float)mood PHValue:(float)phValue WithActivity:(float)activity WithSteps:(NSInteger)steps WithSleep:(float)sleep WithSleepDuration:(float)duration;
+@end
+@interface PHCheckViewController : UIViewController
+@property(nonatomic, weak) id<PHCheckViewDelegate> delegate;
+@end

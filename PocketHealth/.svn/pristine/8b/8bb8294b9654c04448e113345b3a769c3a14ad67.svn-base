@@ -1,0 +1,76 @@
+//
+//  PHSleepViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/24.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHSleepViewController.h"
+
+//界面
+#import "PHCustomMonitorViewController.h"
+#import "UIColor+BFPaperColors.h"
+#import "UINavigationController+PHNavigationController.h"
+
+//数据
+#import "CalculateViewFrame.h"
+
+@interface PHSleepViewController ()<UITableViewDelegate,UITableViewDataSource>
+{
+    PHCustomMonitorViewController * phcustomVC;
+}
+@end
+
+@implementation PHSleepViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self initSelfTableView];
+    // Do any additional setup after loading the view.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    [self.navigationController setTranslucentView];
+    self.view.backgroundColor = [UIColor colorWithPatternImage:[UIImage imageNamed:@"monitoring-backgroundInSide"]];
+    [self.tableView setBackgroundColor:[UIColor clearColor]];
+}
+#pragma mark - initSelfTableView
+-(void)initSelfTableView{
+    CGRect frame = [CalculateViewFrame viewFrame:nil withTabBarController:self.tabBarController];
+    self.tableView = [[UITableView alloc]initWithFrame:frame];
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    phcustomVC = [[PHCustomMonitorViewController alloc]initWithHealthType:PHHealthTypeSleep];
+    self.tableView.tableHeaderView = phcustomVC.view;
+    [self.view addSubview:self.tableView];
+}
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+#warning Potentially incomplete method implementation.
+    // Return the number of sections.
+    return 0;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+#warning Incomplete method implementation.
+    // Return the number of rows in the section.
+    return 0;
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

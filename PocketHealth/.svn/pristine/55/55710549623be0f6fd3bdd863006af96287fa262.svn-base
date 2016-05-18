@@ -1,0 +1,184 @@
+//
+//  GroupChatGroupMemberListTableViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/21.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "GroupChatGroupMemberListTableViewController.h"
+
+//数据累
+#import "Group.h"
+#import "SGroupDB.h"
+#import "PHGroupHttpRequest.h"
+#import "GroupMember.h"
+
+#import "CommonUtil.h"
+#import "SGroupMemberDB.h"
+#import "PHAppStartManager.h"
+
+
+@interface GroupChatGroupMemberListTableViewController ()
+{
+    Group * group;
+    NSMutableArray * groupMemberArray;
+    Member * host;
+}
+@end
+
+@implementation GroupChatGroupMemberListTableViewController
+
+-(id)initWithGroup:(Group *)g{
+    self = [super init];
+    if (self) {
+        //
+        group = g;
+    }
+    return self;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    //初始化好友数组
+    [self initGroupMemberListArray];
+    //请求服务期 更新群信息
+    [self requestServerAboutGroupInfo];
+    host = [[PHAppStartManager defaultManager]userHost];
+    // Uncomment the following line to preserve selection between presentations.
+    // self.clearsSelectionOnViewWillAppear = NO;
+    
+    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
+    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark - initGroupMemberListArray
+-(void)initGroupMemberListArray{
+    if (groupMemberArray == nil) {
+        groupMemberArray = [[NSMutableArray alloc]init];
+    }
+    groupMemberArray = group.groupMember;
+    
+}
+#pragma mark -  请求服务i起
+-(void)requestServerAboutGroupInfo{
+    
+//    SGroupMemberDB *groupMemberdb = [[SGroupMemberDB alloc] init];
+    [PHGroupHttpRequest requestAllGroupUsersWithGid:group.groupId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            NSDictionary * dic = (NSDictionary *)responseObject;
+            [PHGroupHttpRequest mergeGroupAndGroupMemberDBWithDic:dic WithBeforeGroup:group WithMemberID:host.memberId];
+//            NSArray * gmemberArray = [[dic objectForKey:@"Result"]objectForKey:@"UserList"];
+////            NSLog(@"%@",self.chatToGroup.groupMember);
+//            
+//            NSMutableArray * newGroupMemberList = [[NSMutableArray alloc]init];
+//            //2.更新数据库
+//            
+//            for (NSDictionary * gmemberDic in gmemberArray) {
+//                NSError *error;
+////                NSLog(@"%@",gmemberDic);
+//                GroupMember * tmpGmember = [MTLJSONAdapter modelOfClass:[GroupMember class] fromJSONDictionary:gmemberDic error:&error];
+////                NSLog(@"%@",tmpGmember);
+//                if (!error) {
+//                    [newGroupMemberList addObject:tmpGmember];
+//                }
+//                
+//            }
+////            [groupMemberArray removeAllObjects];
+//            group.groupMember = newGroupMemberList;
+//            for(GroupMember *gm in group.groupMember){
+//                if(![groupMemberdb isExistGroupMemberWithUid:gm.memberId WithGid:gm.groupId]){
+//                    [groupMemberdb saveGroupMember:gm];
+//                }else{
+//                    [groupMemberdb mergeGroupMember:gm];
+//                }
+//            }
+            
+        }
+        
+        
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+}
+#pragma mark - Table view data source
+
+//- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+//#warning Potentially incomplete method implementation.
+//    // Return the number of sections.
+//    return 0;
+//}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+#warning Incomplete method implementation.
+    // Return the number of rows in the section.
+    return groupMemberArray.count;
+}
+
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSString * identifierCell = @"identifierCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifierCell];
+    if (!cell) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierCell];
+    }
+    // Configure the cell...
+    if (groupMemberArray.count != 0) {
+        GroupMember *gmember = groupMemberArray[indexPath.row];
+        cell.textLabel.text = gmember.nickName;
+    }
+    
+    return cell;
+}
+
+
+/*
+// Override to support conditional editing of the table view.
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the specified item to be editable.
+    return YES;
+}
+*/
+
+/*
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        // Delete the row from the data source
+        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
+        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+    }   
+}
+*/
+
+/*
+// Override to support rearranging the table view.
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath {
+}
+*/
+
+/*
+// Override to support conditional rearranging of the table view.
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the item to be re-orderable.
+    return YES;
+}
+*/
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

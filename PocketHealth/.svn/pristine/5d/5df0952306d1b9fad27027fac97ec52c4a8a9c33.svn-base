@@ -1,0 +1,27 @@
+//
+//  Group.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "Group.h"
+
+@implementation Group
+
++ (NSDictionary *)JSONKeyPathsByPropertyKey {
+    // properties defined in header < : > key in JSON Dictionary
+    return @{
+             @"groupId" : @"Hbid",
+             @"groupName" : @"Hbname",
+             @"groupOwner" : @"Hbownerid",
+             @"groupTag" : @"Hbtag" ,
+             @"groupBriefIntroduction" : @"Hbremark",
+             @"groupHeadImage" : @"Hblogourl" ,
+             @"groupCreateTime": @"Hbcreatetime",
+             @"groupState" : @"Hbstate"
+             };
+}
+
+@end

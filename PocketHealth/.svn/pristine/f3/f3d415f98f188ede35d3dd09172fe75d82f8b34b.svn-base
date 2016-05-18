@@ -1,0 +1,156 @@
+//
+//  PHGroupPersonalInfoCellHeaderViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/15.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupPersonalInfoCellHeaderViewController.h"
+#import "PHGroupHttpRequest.h"
+#import "CommonUtil.h"
+#import "SFirendDB.h"
+#import "SGroupMemberDB.h"
+
+#import "PHAppStartManager.h"
+#import "UIImageView+WebCache.h"
+
+@interface PHGroupPersonalInfoCellHeaderViewController ()
+{
+    GroupMember * gmember;
+    long long memberId;
+    Member *member;
+    Member * host;
+}
+
+@end
+
+
+@implementation PHGroupPersonalInfoCellHeaderViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+//    self.addFriendLabelNickName.text= gmember.nickName;
+//    self.addFriendLabelLocation.text = gmember.location;
+    //直接进行http请求 查询用户详情
+//    host = [[PHAppStartManager defaultManager]userHost];
+    //从数据库中获取该member 对象
+//    SFirendDB * sfriendDB = [[SFirendDB alloc]init];
+//    member = [sfriendDB selectUserWithUid:memberId WithBelongUid:host.memberId];
+//    [self insertMemberInfoToUI:member];
+    
+    
+    [PHGroupHttpRequest requestMemberInfo:memberId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        //更新用户信息
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            //
+            NSDictionary * resobject = (NSDictionary *)responseObject;
+            NSDictionary *resultDic = [resobject objectForKey:@"Result"];
+            NSError *error = nil;
+            Member *tmpMember = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:resultDic error:&error];
+            tmpMember.isSession = member.isSession;
+            //修改数据库 更新数据库
+            [self mergeMemberAndGroupMemberDB:tmpMember];
+            [self insertMemberInfoToUI:tmpMember];
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+    // Do any additional setup after loading the view from its nib.
+}
+-(id)initWithGroupMember:(GroupMember *)m{
+    self = [super init];
+    if (self) {
+        //
+        gmember = m;
+    }
+    return self;
+}
+-(id)initWithMemberId:(long long)mId{
+    self = [super init];
+    if (self) {
+        //
+        memberId = mId;
+    }
+    return self;
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)mergeMemberAndGroupMemberDB:(Member *)tmpMember{
+    SFirendDB * sfriendDB = [[SFirendDB alloc]init];
+    [sfriendDB mergeWithUser:tmpMember WithBelongUid:host.memberId];
+}
+#pragma mark - insertMemberInfoToUI
+-(void)insertMemberInfoToUI:(Member *)tmpMember{
+    //交付给上层界面
+    if ([self.delegate respondsToSelector:@selector(rebackMemberInfo:)]) {
+        [self.delegate rebackMemberInfo:tmpMember];
+    }
+    if (tmpMember.userType == MemberUserTypeDoctor) {
+        //如果是医生
+        
+        //拼接第一段 昵称＋性别符号
+        NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
+        if (tmpMember.userSex == sexMan) {//判断性别
+            attachment.image = [UIImage imageNamed:@"user_man_tag"];
+        }else{
+            attachment.image = [UIImage imageNamed:@"user_woman_tag"];
+        }
+        NSAttributedString * attachSexImgStr = [NSAttributedString attributedStringWithAttachment:attachment];
+        NSMutableAttributedString * nickStr = [[NSMutableAttributedString alloc]initWithString:tmpMember.nickName];
+        [nickStr appendAttributedString:attachSexImgStr];
+        NSAttributedString * diJobTitleStr;
+        if (tmpMember.diJobTitle) {
+            diJobTitleStr = [[NSAttributedString alloc]initWithString:tmpMember.diJobTitle];
+            [nickStr appendAttributedString:diJobTitleStr];
+        }else{
+            diJobTitleStr = [[NSAttributedString alloc]initWithString:@"未设置"];
+            [nickStr appendAttributedString:diJobTitleStr];
+        }
+        [self.addFriendLabelNickName setAttributedText:nickStr];
+        
+        //第二段 科室＋｜＋医院
+        NSMutableString * locationStr = [[NSMutableString alloc]init];
+        if (tmpMember.diDepartment) {
+            [locationStr appendString:tmpMember.diDepartment];
+        }else{
+            [locationStr appendString:@"未设置"];
+        }
+    
+        
+        if (tmpMember.organizationName) {
+            [locationStr appendString:[NSString stringWithFormat:@"|%@",tmpMember.organizationName]];
+        }else{
+            [locationStr appendString:@"|未设置"];
+        }
+        
+        
+        self.addFriendLabelLocation.text = locationStr;
+        
+        
+    }else if (tmpMember.userType == MemberUserTypeUser){
+        //如果是普通用户
+        self.addFriendLabelNickName.text = tmpMember.nickName;
+        self.addFriendLabelLocation.text = tmpMember.location;
+    }
+    [self.headImageView sd_setImageWithURL:[NSURL URLWithString:tmpMember.headImage] placeholderImage:[UIImage imageNamed:@"defult_people_icons"]];
+    
+    self.addFriendFriendNum.text = [NSString stringWithFormat:@"%ld",(long)tmpMember.friendCount];
+    self.addFriendHospitalNum.text = [NSString stringWithFormat:@"%ld",(long)tmpMember.organizaitonCount];
+    self.addFriendDoctorNum.text =[NSString stringWithFormat:@"%ld",(long)tmpMember.doctorCount];
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

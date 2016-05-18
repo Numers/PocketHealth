@@ -1,0 +1,16 @@
+//
+//  GroupChatGroupDetailTableViewController.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/16.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import "Group.h"
+
+@interface GroupChatGroupDetailTableViewController : UITableViewController
+
+
+@property (nonatomic,strong) Group * group;
+@end

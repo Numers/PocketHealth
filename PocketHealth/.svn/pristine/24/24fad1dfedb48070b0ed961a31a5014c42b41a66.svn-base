@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="6250" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
+        <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" rowHeight="72" id="KGk-i7-Jjw" customClass="PHPhysicalExamTableViewCell">
+            <rect key="frame" x="0.0" y="0.0" width="320" height="72"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
+                <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="2014年04月" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gJ0-Sq-o9u">
+                        <rect key="frame" x="68" y="16" width="211" height="20"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                        <color key="textColor" red="0.15832960660000001" green="0.79549243479999998" blue="0.87328603319999998" alpha="1" colorSpace="calibratedRGB"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="usercenter-reportIcon" translatesAutoresizingMaskIntoConstraints="NO" id="nqE-UJ-xzL">
+                        <rect key="frame" x="8" y="16" width="40" height="40"/>
+                        <constraints>
+                            <constraint firstAttribute="width" secondItem="nqE-UJ-xzL" secondAttribute="height" multiplier="1:1" id="9j0-xa-q9H"/>
+                            <constraint firstAttribute="width" constant="40" id="R8x-Sk-97M"/>
+                        </constraints>
+                    </imageView>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="浙江第二医院" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dlw-Bm-3FL">
+                        <rect key="frame" x="68" y="39" width="211" height="17"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                        <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="nqE-UJ-xzL" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="CET-ky-Y6g"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="dlw-Bm-3FL" secondAttribute="trailing" id="FHQ-iM-ziv"/>
+                    <constraint firstAttribute="bottomMargin" secondItem="dlw-Bm-3FL" secondAttribute="bottom" constant="7" id="Lfu-w0-bub"/>
+                    <constraint firstItem="gJ0-Sq-o9u" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" constant="8" id="QN4-0s-NP0"/>
+                    <constraint firstAttribute="centerY" secondItem="nqE-UJ-xzL" secondAttribute="centerY" id="S2K-qn-PZK"/>
+                    <constraint firstItem="gJ0-Sq-o9u" firstAttribute="leading" secondItem="nqE-UJ-xzL" secondAttribute="trailing" constant="20" id="fZw-JO-cAW"/>
+                    <constraint firstItem="dlw-Bm-3FL" firstAttribute="leading" secondItem="nqE-UJ-xzL" secondAttribute="trailing" constant="20" id="myZ-K8-XXK"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="gJ0-Sq-o9u" secondAttribute="trailing" id="qVv-og-xeu"/>
+                </constraints>
+            </tableViewCellContentView>
+            <connections>
+                <outlet property="imgTableIcon" destination="nqE-UJ-xzL" id="1an-ry-Q8N"/>
+                <outlet property="lblOrganizationName" destination="dlw-Bm-3FL" id="pTU-C3-Zzu"/>
+                <outlet property="lblTime" destination="gJ0-Sq-o9u" id="Qfr-31-CMo"/>
+            </connections>
+            <point key="canvasLocation" x="393" y="314"/>
+        </tableViewCell>
+    </objects>
+    <resources>
+        <image name="usercenter-reportIcon" width="40" height="40"/>
+    </resources>
+</document>

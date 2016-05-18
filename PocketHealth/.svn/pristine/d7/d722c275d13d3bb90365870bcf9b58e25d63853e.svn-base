@@ -1,0 +1,181 @@
+//
+//  PHVideoModelManager.m
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHVideoModelManager.h"
+#import "IAVModuleIOS.h"
+#include "YUV420Phelper.h"
+
+#define bufferTime 1000
+static PHVideoModelManager *phVideoModelManager;
+IAVModuleIOS    *g_pAVModule = NULL;
+@implementation PHVideoModelManager
++(id)defaultManager
+{
+    if (phVideoModelManager == nil) {
+        phVideoModelManager = [[PHVideoModelManager alloc] init];
+        [phVideoModelManager setIsChatting:NO];
+    }
+    return phVideoModelManager;
+}
+
+-(void)setIsChatting:(BOOL)chat
+{
+    isChatting = chat;
+}
+
+-(BOOL)isChatting
+{
+    return isChatting;
+}
+
+-(void)createAVModuleWithServerIP:(NSString *)serverIp WithPort:(int)port WithRoomId:(int)roomId WithUserId:(int)userId WithAnchorUserId:(int)anchorUserId WithFrameSize:(CGSize)size InView:(UIView *)view
+{
+    frameSize = size;
+    parentView = view;
+    if (g_pAVModule == NULL) {
+        g_pAVModule = CreateAVModuleIOSObject();
+        if (!g_pAVModule) {
+            NSLog(@"CreateAVModuleIOSObject Failed!");
+            return;
+        }
+    }
+    
+    if (!g_pAVModule ->InitAVModule((char *)[serverIp UTF8String], port, roomId, userId, bufferTime, 0, size.width, size.height, 10, 20, TRUE, 7, 16000, 1, 32000, 16, 1)) {
+        g_pAVModule->Release();
+        g_pAVModule = NULL;
+        NSLog(@"InitAVModule Failed!");
+        return;
+    }
+    NSLog(@"InitAVModule Success! ");
+    
+    g_pAVModule->InsertOutput(anchorUserId, (__bridge void *)view, 0, 0, size.width, size.height);
+    g_pAVModule->SetAudioStatus(1, YES);
+    g_pAVModule->SetVideoStatus(1, YES);
+    g_pAVModule->InsertInput(0);
+    [self setupCaptureSession];
+    [phVideoModelManager setIsChatting:YES];
+}
+
+// Create and configure a capture session and start it running
+- (void)setupCaptureSession
+{
+    NSError *error = nil;
+    
+    // Create the session
+    session = [[AVCaptureSession alloc] init] ;
+    
+    // Configure the session to produce lower resolution video frames, if your
+    // processing algorithm can cope. We'll specify medium quality for the
+    // chosen device.
+    session.sessionPreset = AVCaptureSessionPresetMedium;
+    
+    // Find a suitable AVCaptureDevice
+    AVCaptureDevice *device = [AVCaptureDevice
+                               defaultDeviceWithMediaType:AVMediaTypeVideo];//这里默认是使用后置摄像头，你可以改成前置摄像头
+    
+    // Create a device input with the device and add it to the session.
+    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:device
+                                                                        error:&error];
+    if (!input) {
+        // Handling the error appropriately.
+    }
+    [session addInput:input];
+    
+    // Create a VideoDataOutput and add it to the session
+    AVCaptureVideoDataOutput *output = [[AVCaptureVideoDataOutput alloc] init];
+    [session addOutput:output];
+    
+    // Configure your output.
+    dispatch_queue_t queue = dispatch_queue_create("myQueue", NULL);
+    [output setSampleBufferDelegate:phVideoModelManager queue:queue];
+    
+    // Specify the pixel format
+    output.videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
+                            [NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange], kCVPixelBufferPixelFormatTypeKey,
+                            [NSNumber numberWithInt: 480], (id)kCVPixelBufferWidthKey,
+                            [NSNumber numberWithInt: 360], (id)kCVPixelBufferHeightKey,
+                            nil];
+    
+//    AVCaptureVideoPreviewLayer* preLayer = [AVCaptureVideoPreviewLayer layerWithSession: session];
+//    //preLayer = [AVCaptureVideoPreviewLayer layerWithSession:session];
+//    preLayer.frame = CGRectMake(0, 300, 480, 360);
+//    preLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+//    [self.view.layer addSublayer:preLayer];
+    // If you wish to cap the frame rate to a known value, such as 15 fps, set
+    // minFrameDuration.
+    output.minFrameDuration = CMTimeMake(1, 15);
+    
+    // Start the session running to start the flow of data
+    [session startRunning];
+    
+    // Assign session to an ivar.
+    //[self setSession:session];
+}
+
+- (void)captureOutput:(AVCaptureOutput *)captureOutput
+didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
+       fromConnection:(AVCaptureConnection *)connection
+{
+    // Create a UIImage from the sample buffer data
+    //    UIImage *image = [self imageFromSampleBuffer:sampleBuffer];
+    //    NSData *mData = UIImageJPEGRepresentation(image, 0.5);//这里的mData是NSData对象，后面的0.5代表生成的图片质量
+    
+    
+    NSData *mData = imageToBuffer(sampleBuffer);
+    BYTE * orgBuff =(BYTE *) [mData bytes];
+    
+    
+    YUV420PHelper::uvuv2uuvv(orgBuff, 480, 360);
+    
+    BYTE * newbuff = (BYTE*)malloc(mData.length);
+    YUV420PHelper::rotate_90(newbuff, orgBuff, 480, 360);
+    
+//    NSLog(@" vmData.length %u",mData.length);
+    BYTE * newbuff2 = (BYTE *)malloc(frameSize.width*frameSize.height*1.5);
+    
+//    YUV420PHelper::resize(newbuff2, frameSize.width, frameSize.height, newbuff, 360, 480);
+    
+    YUV420PHelper::resizeclip(newbuff2, frameSize.width, frameSize.height, newbuff, 360, 480);
+
+    if (g_pAVModule != NULL) {
+        g_pAVModule->AddVideoData(newbuff2, frameSize.width*frameSize.height*1.5);
+    }
+    
+    free(newbuff);
+    free(newbuff2);
+}
+
+NSData* imageToBuffer( CMSampleBufferRef source) {
+    CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(source);
+    CVPixelBufferLockBaseAddress(imageBuffer,0);
+    
+    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
+    size_t width = CVPixelBufferGetWidth(imageBuffer);
+    size_t height = CVPixelBufferGetHeight(imageBuffer);
+    void *src_buff = CVPixelBufferGetBaseAddress(imageBuffer);
+    
+    NSData *data = [NSData dataWithBytes:src_buff length:bytesPerRow * height];
+    //    NSData *data = [NSData dataWithBytes:src_buff length:width * height *1.5];
+    CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+    NSLog(@" data length %i",[data length]);
+    return data;
+}
+
+-(void)deleteVideoOutPutWithAnchorUserId:(int)anchorUserid
+{
+    [session stopRunning];
+    session = nil;
+    if (g_pAVModule) {
+        g_pAVModule->DeleteInput();
+        g_pAVModule->DeleteOutput(anchorUserid);
+        g_pAVModule->Release();
+        g_pAVModule = NULL;
+        [phVideoModelManager setIsChatting:NO];
+    }
+}
+@end

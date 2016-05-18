@@ -1,0 +1,178 @@
+//
+//  PHOrganizationSelectViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOrganizationSelectViewController.h"
+#import "CalculateViewFrame.h"
+#import "Organization.h"
+#import "City.h"
+#import "PHOrganizationTableViewCell.h"
+static NSString *cellIdentify = @"OrganizaitonCell";
+@interface PHOrganizationSelectViewController ()<UITableViewDelegate,UITableViewDataSource,UIScrollViewDelegate,UISearchBarDelegate,UIAlertViewDelegate>
+{
+    City *selectCity;
+    NSMutableArray *filterOrganizationList;
+}
+@property(nonatomic, strong) UITableView *tableView;
+@property(nonatomic, strong) UISearchBar *searchBar;
+@end
+
+@implementation PHOrganizationSelectViewController
+
+-(id)initWithCity:(City *)city
+{
+    self = [super init];
+    if (self) {
+        selectCity = city;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    _searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 44.0f)];
+    [_searchBar setPlaceholder:@"搜索"];
+    _searchBar.delegate = self;
+    [self.view addSubview:_searchBar];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView = [[UITableView alloc] initWithFrame:CGRectMake(frame.origin.x, frame.origin.y + _searchBar.frame.size.height, frame.size.width, frame.size.height - _searchBar.frame.size.height)];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    [self.view addSubview:_tableView];
+    [_tableView registerNib:[UINib nibWithNibName:@"PHOrganizationTableViewCell" bundle:nil] forCellReuseIdentifier:cellIdentify];
+    [self initlizedFilterOrganizations];
+}
+
+-(void)initlizedFilterOrganizations
+{
+    if (filterOrganizationList == nil) {
+        filterOrganizationList = [[NSMutableArray alloc] init];
+    }else{
+        [filterOrganizationList removeAllObjects];
+    }
+    if (selectCity.organizationList.count > 0) {
+        [filterOrganizationList addObjectsFromArray:selectCity.organizationList];
+    }
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self navigationControllerSetting];
+}
+
+-(void)navigationControllerSetting
+{
+    [self.navigationItem setTitle:@"医院列表"];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)filterOrganizaitonWithSearchText:(NSString *)searchText
+{
+    if (filterOrganizationList == nil) {
+        filterOrganizationList = [[NSMutableArray alloc] init];
+    }else{
+        [filterOrganizationList removeAllObjects];
+    }
+    
+    if ((searchText == nil) || (searchText.length == 0)) {
+        [filterOrganizationList addObjectsFromArray:selectCity.organizationList];
+    }else{
+        NSString *likeStr = [NSString stringWithFormat:@"*%@*",searchText];
+        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF.organizationName LIKE[cd] %@ OR SELF.organizationLevel LIKE[cd] %@",likeStr,likeStr];
+        NSArray *array = [selectCity.organizationList filteredArrayUsingPredicate:predicate];
+        if ((array == nil) || (array.count == 0)) {
+            return;
+        }
+        [filterOrganizationList addObjectsFromArray:array];
+    }
+    [_tableView reloadData];
+}
+
+#pragma -mark searchBarDelegate
+- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText
+{
+    [self performSelector:@selector(filterOrganizaitonWithSearchText:) withObject:searchText];
+}
+
+- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar
+{
+    [searchBar resignFirstResponder];
+}
+
+#pragma -mark TableViewDelegate
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPat
+{
+    return 100.0f;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    Organization *org = [filterOrganizationList objectAtIndex:indexPath.row];
+    UIAlertView *alert = nil;
+    if (org != nil) {
+        NSString *msg = [NSString stringWithFormat:@"您确定选择%@吗?",org.organizationName];
+        alert = [[UIAlertView alloc] initWithTitle:@"选择机构" message:msg delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
+        [alert setTag:indexPath.row];
+    }else{
+        alert = [[UIAlertView alloc] initWithTitle:@"选择机构" message:@"该机构不存在" delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+    }
+    [alert show];
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return filterOrganizationList.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    PHOrganizationTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentify];
+    
+    Organization *organization = [filterOrganizationList objectAtIndex:indexPath.row];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                [cell setupWithOrganization:organization];
+            });
+        }
+    });
+    return cell;
+}
+
+#pragma -mark scrollViewDelegate
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
+{
+    if ([_searchBar becomeFirstResponder]) {
+        [_searchBar resignFirstResponder];
+    }
+}
+
+#pragma -mark UIAlertViewDelegate
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (buttonIndex == alertView.cancelButtonIndex) {
+        return;
+    }else{
+        Organization *org = [filterOrganizationList objectAtIndex:alertView.tag];
+        if (org != nil) {
+            if ([_delegate respondsToSelector:@selector(popViewWithOrganization:)]) {
+                [self.navigationController popViewControllerAnimated:NO];
+                [_delegate popViewWithOrganization:org];
+            }
+        }
+    }
+}
+@end

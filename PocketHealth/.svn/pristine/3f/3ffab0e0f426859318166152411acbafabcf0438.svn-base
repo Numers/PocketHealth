@@ -1,0 +1,121 @@
+//
+//  GlobalVar.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#ifndef PocketHealth_GlobalVar_h
+#define PocketHealth_GlobalVar_h
+
+#define IOS_8_0 8.0f
+
+#define DefaultUserHeadImage @"usercenter-QR-code"
+#define DefaultOrganizationHeadImage @"usercenter-QR-code"
+#define DefaultGroupHeadImage @"usercenter-QR-code"
+#define TimeOut 10.0f
+#define ServerBaseURL @"http://192.168.2.117/Web"
+
+//***********LoginWebAPI************//
+#define PH_Login_API ServerBaseURL"/Home/Login"
+
+//////////////////////////////////////
+//***********RegisterWebAPI************//
+#define PH_IdentifyCode_API ServerBaseURL"/Home/SendPhoneCode"
+#define PH_RegisterUser_API ServerBaseURL"/Home/Register"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********InputPhysicalExamWebAPI************//
+#define PH_NearOraganization_API ServerBaseURL"/Home/GetCloseOrgan"
+#define PH_OrganizationInfoList_API ServerBaseURL"/Home/GetOrganInfoList"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamTableWebAPI************//
+#define PH_PhysicalExamTable_API ServerBaseURL"/User/OrderBillList"
+#define PH_PhysicalExamAdd_API ServerBaseURL"/User/AddOrderBill"
+#define PH_PhysicalExamReport_API ServerBaseURL"/User/MyReport"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamBookWebAPI************//
+#define PH_PhysicalExamBook_API ServerBaseURL"/User/DoomExam"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamQuestionWebAPI************//
+#define PH_PhysicalExamQuestion_API ServerBaseURL"/User/Questionnaire"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********PhysicalExamTestWebAPI************//
+#define PH_PhysicalExamTest_API ServerBaseURL"/User/SelfTest"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********UpdateUserInfoWebAPI************//
+#define PH_UpdateUserInfo_API ServerBaseURL"/User/UpdateInfo"
+#define PH_UpdateUserHead_API ServerBaseURL"/User/UpUserHead"
+//////////////////////////////////////
+
+//////////////////////////////////////
+//***********SendPhoneCodeWebAPI************//
+#define PH_SendPhoneCode_API ServerBaseURL"/Home/SendPhoneCode"
+#define PH_VerificationCode_API ServerBaseURL"/Home/VerificationCode"
+//////////////////////////////////////
+
+//***********健康数据上传接口************//
+//健康睡眠数据上传
+#define kTimeStart 19
+#define KTimeEnd 11
+//----------------
+
+#define ServerHealthBaseUrl ServerBaseURL"/Health"
+
+#define PH_GetFoodList ServerHealthBaseUrl"/GetFoodList"
+#define PH_Monitoring_UploadSleepDetail ServerHealthBaseUrl"/PutSleepDetails"
+//获取我的所有的项目得分加数据
+#define PH_Get_MyHealthData ServerHealthBaseUrl"/GetMyHealthData"
+#define PH_Monitoring_UploadExerciseDetails ServerHealthBaseUrl"/PutExerciseDetails"
+//上传3个健康数据
+#define PH_Monitroing_AllDataUpdata ServerHealthBaseUrl"/PutHealthData"
+#define PH_Monitroing_WeathInfo ServerHealthBaseUrl"/GetWeather"
+//群接口
+#define ServerGroupBaseUrl ServerBaseURL"/Group"
+//#define GroupTest //群测试使用
+
+#define PH_MyFirendList ServerGroupBaseUrl"/MyFriendList"
+#define PH_MyGroupList ServerGroupBaseUrl"/MyGroups"
+#define PH_SearchFriendList ServerGroupBaseUrl"/SearchFriend"
+#define PH_SearchAllGroupUser ServerGroupBaseUrl"/AllGroupsUsers"
+/**
+ *  AllGroups 填入参数
+ */
+#define PH_SearchHospitalList ServerGroupBaseUrl"/AllGroups"
+#define PH_SearchUserInfo ServerGroupBaseUrl"/GetUserInfo"
+#define PH_GetGroupByUserId ServerGroupBaseUrl"/GetGroupByUserId"
+
+#define PH_ADDFriend ServerGroupBaseUrl"/AddFriend"
+#define PH_ADDGroup ServerGroupBaseUrl"/JoinGroups"
+
+//退群接口
+//参数 uid 发起动作人 如果自己退群 uid写自己 gid 群号
+#define PH_Delete_GroupUser ServerGroupBaseUrl"/DelUserFromBar"
+
+#define PH_UploadMsg_File ServerGroupBaseUrl"/UpLoadMsFile"
+
+//群查找热门的群组
+#define PH_SearchHotType ServerGroupBaseUrl"/GetBarTypeList"
+///InterestBar 感兴趣的群
+#define PH_Search_InterestBar ServerGroupBaseUrl"/InterestBar"
+//根据cityid查询医院
+#define PH_Search_Hospital_WithCityID ServerBaseURL"/Home/GetOrganListByUid"
+//根据群分类查找群列表
+#define PH_Search_BarListBY_typeID ServerGroupBaseUrl"/GetBarListByType"
+//删除好友接口
+#define PH_DeleteFriend ServerGroupBaseUrl"/DelFriend"
+//退出群接口 也是删群接口
+#define PH_DeleteUser_INBar ServerGroupBaseUrl"/DelUserFromBar"
+#endif

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>2C36A142-A1AE-459F-A102-CAC23A606191</string>
+	<key>IDESourceControlProjectName</key>
+	<string>PocketHealth</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>b4c38097-9b31-414a-8794-e42160bda8bc++5326</key>
+		<string>https://svn.xugp.com:8443/svn/pockethealth/ios</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>PocketHealth/PocketHealth.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>b4c38097-9b31-414a-8794-e42160bda8bc++5326</key>
+		<string>../..</string>
+	</dict>
+	<key>IDESourceControlProjectRepositoryRootDictionary</key>
+	<dict>
+		<key>b4c38097-9b31-414a-8794-e42160bda8bc++5326</key>
+		<string>https://svn.xugp.com:8443/svn/pockethealth</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://svn.xugp.com:8443/svn/pockethealth/ios/PocketHealth/PocketHealth.xcworkspace</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>b4c38097-9b31-414a-8794-e42160bda8bc++5326</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.subversion</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>b4c38097-9b31-414a-8794-e42160bda8bc++5326</string>
+			<key>IDESourceControlWCCName</key>
+			<string>PocketHealth</string>
+		</dict>
+	</array>
+</dict>
+</plist>

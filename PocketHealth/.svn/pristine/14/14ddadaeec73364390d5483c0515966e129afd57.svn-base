@@ -1,0 +1,27 @@
+//
+//  GroupMessage.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "GroupMessage.h"
+
+@implementation GroupMessage
+
++ (NSDictionary *)JSONKeyPathsByPropertyKey {
+    
+    // properties defined in header < : > key in JSON Dictionary
+    return @{
+             @"belongGroupId":          @"gid",
+             @"code":          @"msgtype",
+             @"contentType" : @"ct",
+             @"content" : @"txt" ,
+             @"time" : @"time" ,
+             @"memberId" : @"uid"
+             
+             };
+}
+
+@end

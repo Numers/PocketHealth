@@ -1,0 +1,170 @@
+//
+//  PHMonitoringViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHMonitoringViewController.h"
+#import "PHAppStartManager.h"
+#import "PHLoginManager.h"
+#import "PHCheckViewController.h"
+#import "CommonUtil.h"
+#import "CalculateViewFrame.h"
+#import "PHLocationHelper.h"
+
+#import "AppDelegate.h"
+#import "PHMonitoringUploadHelper.h"
+#import "PHMonitoringDateBaseHelper.h"
+
+
+@interface PHMonitoringViewController ()<UIScrollViewDelegate,UIAppDelegate>
+{
+    Member *host;
+    UIScrollView *scrollView;
+    AppDelegate * appDelegate;
+}
+
+@end
+
+@implementation PHMonitoringViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //启动定位上传位置信息
+    [[PHLocationHelper defaultHelper] uploadMyLocationInfo];
+    
+    host = [[PHAppStartManager defaultManager] userHost];
+    appDelegate = [UIApplication sharedApplication].delegate;
+    appDelegate.delegate = self;
+    
+    // Do any additional setup after loading the view from its nib.
+    [self.view setFrame:[UIScreen mainScreen].bounds];
+    scrollView = [[UIScrollView alloc] init];
+    scrollView.delegate = self;
+    [scrollView setBackgroundColor:[UIColor blueColor]];
+//    [scrollView setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+    [self.view addSubview:scrollView];
+//    NSLayoutConstraint *constraint = [NSLayoutConstraint constraintWithItem:scrollView attribute:NSLayoutAttributeLeading relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeLeading multiplier:1.0f constant:0];
+//    [self.view addConstraint:constraint];
+//    
+//    NSLayoutConstraint *constraint1 = [NSLayoutConstraint constraintWithItem:scrollView attribute:NSLayoutAttributeTrailing relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeTrailing multiplier:1.0f constant:0];
+//    [self.view addConstraint:constraint1];
+//    
+//    NSLayoutConstraint *constraint3 = [NSLayoutConstraint constraintWithItem:scrollView attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeTop multiplier:1.0f constant:0];
+//    [self.view addConstraint:constraint3];
+//    
+//    NSLayoutConstraint *constraint4 = [NSLayoutConstraint constraintWithItem:scrollView attribute:NSLayoutAttributeBottom relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeBottom multiplier:1.0f constant:0];
+//    [self.view addConstraint:constraint4];
+    
+    UIView *myView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 600)];
+    [myView setBackgroundColor:[UIColor redColor]];
+//    [myView setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [scrollView addSubview:myView];
+    
+    NSLog(@"%lf,%lf",self.view.frame.size.width,scrollView.frame.size.width);
+    PHCheckViewController *phCheckVC = [[PHCheckViewController alloc] init];
+    [phCheckVC.view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [myView addSubview:phCheckVC.view];
+    NSLog(@"%lf,%lf",self.view.frame.size.width,scrollView.frame.size.width);
+    
+    NSLayoutConstraint *constraint5 = [NSLayoutConstraint constraintWithItem:phCheckVC.view attribute:NSLayoutAttributeLeading relatedBy:NSLayoutRelationEqual toItem:myView attribute:NSLayoutAttributeLeading multiplier:1.0f constant:0];
+    [myView addConstraint:constraint5];
+    
+    NSLayoutConstraint *constraint6 = [NSLayoutConstraint constraintWithItem:myView attribute:NSLayoutAttributeTrailing relatedBy:NSLayoutRelationEqual toItem:phCheckVC.view attribute:NSLayoutAttributeTrailing multiplier:1.0f constant:0];
+    [myView addConstraint:constraint6];
+    
+    NSLayoutConstraint *constraint7 = [NSLayoutConstraint constraintWithItem:phCheckVC.view attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:myView attribute:NSLayoutAttributeTop multiplier:1.0f constant:0];
+    [myView addConstraint:constraint7];
+    
+    NSLayoutConstraint *constraint8 = [NSLayoutConstraint constraintWithItem:myView attribute:NSLayoutAttributeBottom relatedBy:NSLayoutRelationEqual toItem:phCheckVC.view attribute:NSLayoutAttributeBottom multiplier:1.0f constant:0];
+    [myView  addConstraint:constraint8];
+    
+    NSLayoutConstraint *constraint9 = [NSLayoutConstraint constraintWithItem:phCheckVC.view attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationGreaterThanOrEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1.0f constant:myView.frame.size.width];
+    [phCheckVC.view  addConstraint:constraint9];
+    
+    [scrollView setContentSize:CGSizeMake(myView.frame.size.width, myView.frame.size.height + 500)];
+    //test 上传所有上传睡眠数据
+    [PHMonitoringUploadHelper uploadExercise_Mood_SleepingListWithMemberId:host.memberId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        [PHMonitoringDateBaseHelper mergeUnUploadSleepingToUploaded:host.memberId];
+        [PHMonitoringDateBaseHelper mergeUnUploadExerciseToUploaded:host.memberId];
+#warning 以后加心情数据
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+//    [PHMonitoringUploadHelper uploadSleepDetail:host.memberId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+//        //成功之后将这些数据删除
+//        [PHMonitoringDateBaseHelper mergeUnUploadSleepingToUploaded:host.memberId];
+//    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+//    }];
+//    //test 上传ExerciseDetail:
+//    [PHMonitoringUploadHelper uploadExerciseDetail:host.memberId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+//        [PHMonitoringDateBaseHelper mergeUnUploadExerciseToUploaded:host.memberId];
+//    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+//        //
+//    }];
+//    NSString *  todaySleep=[PHMonitoringDateBaseHelper selectTodaySleepingMinutes:host.memberId];
+//    NSLog(@"%@",todaySleep);
+//    NSString *thatDay =  [CommonUtil TimeStrYYYYMMDDWithInterval:[[NSDate date] timeIntervalSince1970]-86400];
+//    NSString * s114 = [PHMonitoringDateBaseHelper selectOneDayWithDateTIme:thatDay WithMemberId:host.memberId];
+//    NSLog(@"%@",s114);
+}
+
+-(void)updateViewConstraints
+{
+    [super updateViewConstraints];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self navigationControllerSetting];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    [scrollView setFrame:frame];
+    
+    
+}
+
+-(void)navigationControllerSetting
+{
+//    [self.navigationController setNavigationBarHidden:NO];
+    self.navigationController.navigationBar.hidden = NO;
+    [self.navigationController.navigationBar setTranslucent:NO];
+    [self.tabBarController.navigationItem setLeftBarButtonItem:nil];
+    [self.tabBarController.navigationItem setRightBarButtonItem:nil];
+    [self.tabBarController.navigationItem setTitle:@"天天健康"];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+//-(void)autoLogin
+//{
+//    [[PHLoginManager defaultManager] loginWithLoginName:@"13890909090" WithPassword:@"123456" WithChanneid:@"aaa" WithBuserid:@"bbb" WithDeviceType:Device_IOS CallDoneBack:^(AFHTTPRequestOperation *operation, id responseObject) {
+//        NSDictionary *dic = (NSDictionary *)responseObject;
+//        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+//        if (code == 1) {
+//            NSError *error = nil;
+//            host = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:[dic objectForKey:@"Result"] error:&error];
+//            if (!error) {
+//                [[PHAppStartManager defaultManager] setHostMember:host];
+//                 AFNetWorkKey = [CommonUtil createSendKeyWithUserName:host.loginName Userid:[NSString stringWithFormat:@"%lld",host.memberId]];
+//            }
+//        }else{
+//            [[PHAppStartManager defaultManager] loginOut];
+//        }
+//        [[PHAppStartManager defaultManager] loginOut];
+//    } CallErrorBack:^(AFHTTPRequestOperation *operation, NSError *error) {
+//        [[PHAppStartManager defaultManager] loginOut];
+//    }];
+//
+//}
+#pragma mark - appdelegate  委托
+-(void)refreshStepsToday:(NSInteger)steps{
+    NSLog(@"%ld******&（&（*&（&（）&*（&*（&*（&*（）*（）*（）*（）*（）*（）&（）&*（）*&（）*&&&&&）））*）））",(long)steps);
+}
+@end

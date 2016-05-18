@@ -1,0 +1,27 @@
+//
+//  PHGroupHttpRequest.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupHttpRequest.h"
+#import "Member.h"
+#import "PHAppStartManager.h"
+
+
+
+@implementation PHGroupHttpRequest
+
+#pragma mark - 请求部分
+//请求自己的群列表
+//+(void)requestSelfGroupLsitDone:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+//    
+//    NSString *urlStr=[NSString stringWithFormat:XJD_HOME_GET_MYGROUP];
+//    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+//    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+//    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+//    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+//}
+@end

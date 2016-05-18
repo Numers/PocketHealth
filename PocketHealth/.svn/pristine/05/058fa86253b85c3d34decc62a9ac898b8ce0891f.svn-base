@@ -1,0 +1,64 @@
+//
+//  PHMetabolismViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-25.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHMetabolismViewController.h"
+#import "CalculateViewFrame.h"
+
+static NSString *IdentifyLabelHeaderCell = @"PHLabelHeaderTableViewCell";
+static NSString *IdentifyLabelDetailsCell = @"PHLabelDetailsTableViewCell";
+static NSString *IdentifyCalculateCell = @"PHCalculateTableViewCell";
+@interface PHMetabolismViewController ()
+
+@end
+
+@implementation PHMetabolismViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    self.tableView = [[UITableView alloc] initWithFrame:frame];
+    [self.view addSubview:self.tableView];
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHLabelHeaderTableViewCell" bundle:nil] forCellReuseIdentifier:IdentifyLabelHeaderCell];
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHLabelDetailsTableViewCell" bundle:nil] forCellReuseIdentifier:IdentifyLabelDetailsCell];
+    [self.tableView registerNib:[UINib nibWithNibName:@"PHCalculateTableViewCell" bundle:nil] forCellReuseIdentifier:IdentifyCalculateCell];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma -mark TableViewDelegate
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPat
+{
+    return 44.0f;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 0;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return 0;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return nil;
+}
+
+@end

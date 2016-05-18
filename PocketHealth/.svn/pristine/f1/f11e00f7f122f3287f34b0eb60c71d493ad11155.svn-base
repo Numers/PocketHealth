@@ -1,0 +1,27 @@
+//
+//  PHLocationHelper.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-16.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import <CoreLocation/CoreLocation.h>
+#import <MapKit/MapKit.h>
+@interface PHLocationHelper : NSObject<CLLocationManagerDelegate,MKMapViewDelegate>
+{
+    CLLocationManager *locationManager;
+    float pmValue;
+    NSString *uv;
+    NSString *temperature;
+    float mood;
+}
+
++(id)defaultHelper;
+-(void)uploadMyLocationInfo;
+-(float)returnPMValue;
+-(float)returnSuggestMoodNumber;
+-(NSString *)returnUV;
+-(NSString *)returnTemperature;
+@end

@@ -1,0 +1,270 @@
+//
+//  PHGroupHttpRequest.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupHttpRequest.h"
+#import "PHAppStartManager.h"
+
+#import "ChatCacheFileUtil.h"
+#import "Group.h"
+#import "GroupMember.h"
+#import "SGroupDB.h"
+#import "SGroupMemberDB.h"
+
+@implementation PHGroupHttpRequest
+
+#pragma mark - 请求部分
+//请求自己的群列表
++(void)requestSelfGroupLsitDone:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    
+    NSString *urlStr=[NSString stringWithFormat:PH_MyGroupList];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
++(void)requestUserFirendListWithType:(NSInteger)selectType done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_MyFirendList];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//搜索好友
++(void)searchAllUserOnHttpServerWith:(NSString *)searchString done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_SearchFriendList];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key",searchString,@"name", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//搜索医院
++(void)searchAllHospitalOnHttpServerWith:(NSString *)searchString done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    
+    NSString *urlStr=[NSString stringWithFormat:PH_SearchHospitalList];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    
+    if (searchString!=nil) {
+        [parameters setObject:searchString forKey:@"name"];
+    }
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//申请城市列表
++(void)searchAllCityListDone:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_Get_CityList];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//请求申请好友
++(void)requestAddAnFriend:(long long)toid WithMemberType:(MemberUserType)userType done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_ADDFriend];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSString * toidStr = [NSString stringWithFormat:@"%lld",toid];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key",toidStr,@"toid", nil];
+//    [parameters setObject:[NSString stringWithFormat:@"%u",userType] forKey:@"friendtype"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+
+//请求加群
++(void)requestAddGroup:(unsigned)gid WithMemberId:(long long)memberId WithTag:(NSString *)tag done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_ADDGroup];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    
+    if (tag!=nil) {
+        [parameters setObject:tag forKey:@"tag"];
+    }
+    [parameters setObject:[NSString stringWithFormat:@"%u",gid] forKey:@"gid"];
+    [parameters setObject:[NSString stringWithFormat:@"%lld",memberId] forKey:@"uid"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+///PH_Delete_GroupUser
++(void)requestDeleteUserWith:(unsigned)gid WithDeletedId:(long long)memberId done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_Delete_GroupUser];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+
+    [parameters setObject:[NSString stringWithFormat:@"%u",gid] forKey:@"gid"];
+    [parameters setObject:[NSString stringWithFormat:@"%lld",memberId] forKey:@"uid"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//上传图片
++(void)uploadMessageFileWithFileName:(NSString *)name WithUIImage:(UIImage *)image WithSendMessage:(OneForOneMessage *)message completeHandle:(ApiCompletionHandler)completBlock{
+    
+
+    
+    NSData *imageData = UIImageJPEGRepresentation(image, 0.1);
+    NSMutableURLRequest *request = [[AFHTTPRequestSerializer serializer] multipartFormRequestWithMethod:@"POST" URLString:PH_UploadMsg_File parameters:nil constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+        [formData appendPartWithFileData:imageData name:@"file" fileName:name mimeType:@"image/png"];
+    } error:nil];
+    NSLog(@"%@",PH_UploadMsg_File);
+    AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+    NSProgress *progress = nil;
+    NSURLSessionUploadTask *uploadTask = [manager uploadTaskWithStreamedRequest:request progress:&progress completionHandler:completBlock];
+    [uploadTask resume];
+    
+    
+}
++(void)uploadMessageVoiceWithFileName:(NSString *)name completeHandle:(ApiCompletionHandler)completBlock{
+    NSString *amrFullPath = [[[ChatCacheFileUtil sharedInstance] userDocPath] stringByAppendingPathComponent:name];
+    NSData *recordData = [NSData dataWithContentsOfFile:amrFullPath];
+    if (recordData != nil) {
+        NSMutableURLRequest *request = [[AFHTTPRequestSerializer serializer] multipartFormRequestWithMethod:@"POST" URLString:PH_UploadMsg_File parameters:nil constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+            [formData appendPartWithFileData:recordData name:@"file" fileName:name mimeType:@"amr"];
+        } error:nil];
+//        NSLog(@"%@",PH_UploadMsg_File);
+        AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+        NSProgress *progress = nil;
+        NSURLSessionUploadTask *uploadTask = [manager uploadTaskWithStreamedRequest:request progress:&progress completionHandler:completBlock];
+        [uploadTask resume];
+    }
+    
+}
+
++(void)requestMemberInfo:(long long)hostId done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_SearchUserInfo];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [parameters setObject:[NSString stringWithFormat:@"%lld",hostId] forKey:@"uid"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
++(void)requestAllGroupUsersWithGid:(unsigned)gid done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_SearchAllGroupUser];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [parameters setObject:[NSString stringWithFormat:@"%u",gid] forKey:@"gid"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//PH_DeleteUser_INBar
++(void)deleteUserFromBarWithDeleteUid:(long long)memberId WithGid:(unsigned)gid done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_DeleteUser_INBar];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [parameters setObject:[NSString stringWithFormat:@"%lld",memberId] forKey:@"uid"];
+    [parameters setObject:[NSString stringWithFormat:@"%u",gid] forKey:@"gid"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//热门群分类获取
++(void)searchHopTypeGroupWithdone:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_SearchHotType];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//搜索感兴趣的群
++(void)searchInterestBarWithdone:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_Search_InterestBar];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
++(void)requestCityHospitalWithCityId:(NSInteger )cityId done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_Search_Hospital_WithCityID];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [parameters setObject:[NSString stringWithFormat:@"%ld",(long)cityId] forKey:@"id"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+/// 根据群分类查询群列表
++(void)requestBarListByTypeId:(unsigned)typeId done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_Search_BarListBY_typeID];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [parameters setObject:[NSString stringWithFormat:@"%u",typeId] forKey:@"typeid"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//PH_DeleteFriend
++(void)deleteUserWithMemberId:(long long)memberId  done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_DeleteFriend];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [parameters setObject:[NSString stringWithFormat:@"%lld",memberId] forKey:@"toid"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+#pragma mark - 数据处理 
+//处理获取的群以及群用户信息
++(void)mergeGroupAndGroupMemberDBWithDic:(NSDictionary *)dic WithBeforeGroup:(Group *)beforeGroup WithMemberID:(long long)memberID{
+    NSError *error;
+    //更新group数据库
+    SGroupMemberDB * groupMemberdb =[[SGroupMemberDB alloc]init];
+    NSDictionary * groupDic = [[dic objectForKey:@"Result"]objectForKey:@"GroupInfo"];
+    Group * tmpGroup = [MTLJSONAdapter modelOfClass:[Group class] fromJSONDictionary:groupDic error:&error];
+    if (!error) {
+        beforeGroup.groupHeadImage = tmpGroup.groupHeadImage;
+    }
+    SGroupDB * groupDB = [[SGroupDB alloc]init];
+    if (![groupDB isExistGroupWithGid:tmpGroup.groupId WithBelongUid:memberID]) {
+        [groupDB saveGroup:tmpGroup];
+    }else{
+        [groupDB mergeGroup:tmpGroup];
+    }
+    
+    //更新gmember数据库
+    
+    NSArray * gmemberArray = [[dic objectForKey:@"Result"]objectForKey:@"UserList"];
+    //            NSLog(@"%@",self.chatToGroup.groupMember);
+    
+    
+    NSMutableArray * newGroupMemberList = [[NSMutableArray alloc]init];
+    //2.更新数据库
+    
+    for (NSDictionary * gmemberDic in gmemberArray) {
+        
+        GroupMember * tmpGmember = [MTLJSONAdapter modelOfClass:[GroupMember class] fromJSONDictionary:gmemberDic error:&error];
+        tmpGmember.groupId = tmpGroup.groupId;
+        if (!error) {
+            [newGroupMemberList addObject:tmpGmember];
+        }
+        
+    }
+    beforeGroup.groupMember = newGroupMemberList;
+    for(GroupMember *gm in beforeGroup.groupMember){
+        if(![groupMemberdb isExistGroupMemberWithUid:gm.memberId WithGid:gm.groupId]){
+            [groupMemberdb saveGroupMember:gm];
+        }else{
+            //不修改最后聊天时间
+            GroupMember * tmGM = [groupMemberdb selectGroupMemberWithUid:gm.memberId WithGid:gm.groupId];
+            gm.lastChatTime = tmGM.lastChatTime;
+            [groupMemberdb mergeGroupMember:gm];
+        }
+    }
+}
+/**
+ *  设置管理员
+ *
+ *  @param memberId      操作用户
+ *  @param gid           群
+ *  @param oType         1 设置管理员 2 取消
+ *  @param doneCallback  成功回掉
+ *  @param errorCallback 错误回掉
+ */
++(void)settingGroupAdminOperateId:(long long)memberId WithGroupId:(unsigned)gid OperateType:(unsigned)oType done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_Setting_Admin];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSMutableDictionary *parameters =[[NSMutableDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [parameters setObject:[NSString stringWithFormat:@"%lld",memberId] forKey:@"toid"];
+    [parameters setObject:[NSString stringWithFormat:@"%u",gid] forKeyedSubscript:@"gid"];
+    [parameters setObject:[NSString stringWithFormat:@"%u",oType] forKeyedSubscript:@"type"];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+@end

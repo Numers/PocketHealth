@@ -1,0 +1,60 @@
+//
+//  PHVideoChatManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-3-10.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHVideoChatManager.h"
+#import "PHVideoChatViewController.h"
+#import "CommonUtil.h"
+#import "XGPSocketAVideoHelper.h"
+
+static PHVideoChatManager *phVideoChatManager;
+@implementation PHVideoChatManager
++(id)defaultManager
+{
+    if (phVideoChatManager == nil) {
+        phVideoChatManager = [[PHVideoChatManager alloc] init];
+    }
+    return phVideoChatManager;
+}
+
+-(void)createVideoChatWithDicInfo:(NSDictionary *)dic WithCallState:(BOOL)isComingCall
+{
+    if (phVideoChatVC) {
+        //用户正在通话中
+        [[XGPSocketAVideoHelper defaultManager] finishAVWithDic:dic WithType:finishAVTypeBusy];
+        [phVideoChatVC didDisConnected];
+        return;
+    }
+    phVideoChatVC = [[PHVideoChatViewController alloc] initWithDictionary:dic CallState:isComingCall];
+    [[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:phVideoChatVC animated:YES completion:^{
+         [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
+    }];
+}
+
+-(void)didConnected
+{
+    if (phVideoChatVC) {
+        [phVideoChatVC didConnected];
+    }
+}
+
+-(void)didDisConnectedWithDescription:(NSString *)desc
+{
+    if (phVideoChatVC) {
+        [CommonUtil HUDShowText:desc InView:phVideoChatVC.view];
+        [phVideoChatVC didDisConnected];
+    }
+}
+
+-(void)releaseVideoChatVC
+{
+    if (phVideoChatVC) {
+        [phVideoChatVC.view removeFromSuperview];
+        phVideoChatVC = nil;
+    }
+}
+@end

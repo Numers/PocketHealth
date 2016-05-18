@@ -1,0 +1,128 @@
+//
+//  PHOrganizationDetailsViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-18.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOrganizationDetailsViewController.h"
+#import "PHDetailsOtherInfoViewController.h"
+#import "PHInterestingGroupViewController.h"
+#import "PHGetMemberInfoManager.h"
+#import "CalculateViewFrame.h"
+#import "Organization.h"
+#import "Group.h"
+
+@interface PHOrganizationDetailsViewController ()<PHDetailsOtherInfoDelegate,PHInterestingGroupDelegate>
+{
+    UIScrollView *scrollView;
+    Organization *organization;
+    PHDetailsOtherInfoViewController *phDetailsOtherInfoVC;
+    PHInterestingGroupViewController *phInterestingGroupVC;
+}
+
+@end
+
+@implementation PHOrganizationDetailsViewController
+-(id)initWithOrganization:(Organization *)org
+{
+    self = [super init];
+    if (self) {
+        organization = org;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    scrollView = [[UIScrollView alloc] initWithFrame:frame];
+    [self.view addSubview:scrollView];
+    scrollView.backgroundColor = ViewBackGroundColor;
+    phDetailsOtherInfoVC = [[PHDetailsOtherInfoViewController alloc] initWithOrganizaiton:organization];
+    phDetailsOtherInfoVC.delegate = self;
+    [scrollView addSubview:phDetailsOtherInfoVC.view];
+    [self updateScrollFrame];
+    [self getGroupByUserId:organization.userId];
+//    [self.view setFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, phDetailsOtherInfoVC.view.frame.size.height)];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationItem setTitle:@"医院详情"];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)updateScrollFrame
+{
+    if (phInterestingGroupVC != nil) {
+        [scrollView setContentSize:CGSizeMake([UIScreen mainScreen].bounds.size.width, phDetailsOtherInfoVC.view.frame.size.height + phInterestingGroupVC.view.frame.size.height)];
+    }
+    else{
+        [scrollView setContentSize:CGSizeMake(phDetailsOtherInfoVC.view.frame.size.width, phDetailsOtherInfoVC.view.frame.size.height)];
+    }
+}
+
+-(void)getGroupByUserId:(long long)userId
+{
+    [[PHGetMemberInfoManager defaultManager] requestGroupByUserId:userId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSArray *resultArr = [dic objectForKey:@"Result"];
+            NSMutableArray *arr = [[NSMutableArray alloc] init];
+            for (NSDictionary *m in resultArr) {
+                NSError *error = nil;
+                Group *g = [MTLJSONAdapter modelOfClass:[Group class] fromJSONDictionary:m error:&error];
+                if (!error) {
+                    [arr addObject:g];
+                }
+            }
+            phInterestingGroupVC = [[PHInterestingGroupViewController alloc] initWithGroups:arr];
+            phInterestingGroupVC.delegate = self;
+            [phInterestingGroupVC.view setFrame:CGRectMake(0, 650, [UIScreen mainScreen].bounds.size.width, arr.count * 87.0f + 25)];
+            [scrollView addSubview:phInterestingGroupVC.view];
+            [self updateScrollFrame];
+        }else{
+
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+#pragma -mark PHDetailsOtherInfoDelegate
+-(void)selectIntroductionCellWithOrganization:(Organization *)org
+{
+    
+}
+-(void)selectQRCodeCellWithOrganization:(Organization *)org
+{
+    
+}
+-(void)selectAcceptMessageSwitchViewWithOrganization:(Organization *)org
+{
+    
+}
+-(void)selectJoinValidateCellWithOrganization:(Organization *)org
+{
+    
+}
+-(void)clickGoChatViewWithOrganization:(Organization *)org
+{
+    
+}
+
+#pragma -mark PHInterestingGroupDelegate
+-(void)selectGroupCellWithGroup:(Group *)g
+{
+    
+}
+@end

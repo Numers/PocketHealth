@@ -1,0 +1,72 @@
+//
+//  PHLocationHelper.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-16.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHLocationHelper.h"
+#import "GlobalVar.h"
+static PHLocationHelper *phLocationHelper;
+@implementation PHLocationHelper
++(id)defaultHelper
+{
+    if (phLocationHelper == nil) {
+        phLocationHelper = [[PHLocationHelper alloc] init];
+    }
+    return phLocationHelper;
+}
+
+-(void)startLocation
+{
+    locationManager = [[CLLocationManager alloc] init];
+    locationManager.delegate = self;
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    locationManager.distanceFilter = 1000.0f;
+    if ([[[UIDevice currentDevice] systemVersion] floatValue] >= IOS_8_0)
+    {
+        [locationManager requestAlwaysAuthorization];
+    }
+    [locationManager startUpdatingLocation];
+}
+
+-(void)uploadMyLocationInfo
+{
+    [self startLocation];
+}
+
+#pragma -mark CLLocaitonManagerDelegate
+-(void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations
+{
+    CLLocation *location = [locations lastObject];
+    if (location.horizontalAccuracy == -1) {
+        [self startLocation];
+    }else{
+        NSLog(@"%.2f,%.2f",location.coordinate.latitude,location.coordinate.longitude);
+        [manager stopUpdatingLocation];
+                CLGeocoder *geocoder = [[CLGeocoder alloc] init];
+                [geocoder reverseGeocodeLocation:location completionHandler:^(NSArray *array, NSError *error) {
+                    if (array.count > 0) {
+                        CLPlacemark *placemark = [array objectAtIndex:0];
+                        NSString *currentCity = placemark.locality;
+                        NSString *state = placemark.administrativeArea;
+                        NSString *area = placemark.subLocality;
+                    }
+                }];
+    }
+}
+
+- (void)locationManager:(CLLocationManager *)manager
+       didFailWithError:(NSError *)error
+{
+    if ([error code] == kCLErrorDenied)
+    {
+        //访问被拒绝
+    }
+    if ([error code] == kCLErrorLocationUnknown) {
+        //无法获取位置信息
+    }
+    [manager stopUpdatingLocation];
+}
+@end

@@ -1,0 +1,62 @@
+//
+//  PHTextView.m
+//  PocketHealth
+//
+//  Created by macmini on 15-2-2.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHTextView.h"
+#define LeftMargin 5.0f
+
+@implementation PHTextView
+-(id)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+
+    }
+    return self;
+}
+
+-(void)inilizedView
+{
+    textView = [[UITextView alloc] initWithFrame:CGRectMake(LeftMargin, 0, self.frame.size.width - LeftMargin, self.frame.size.height)];
+    textView.delegate = self;
+    [self addSubview:textView];
+    
+    placeHolderLabel = [[UILabel alloc] initWithFrame:CGRectMake(LeftMargin, 5, textView.frame.size.width, 21)];
+    [placeHolderLabel setFont:[UIFont systemFontOfSize:15.f]];
+    [placeHolderLabel setTextColor:[UIColor lightGrayColor]];
+    [placeHolderLabel setTextAlignment:NSTextAlignmentLeft];
+    [placeHolderLabel setText:_placeHolder];
+    [textView addSubview:placeHolderLabel];
+}
+
+-(void)setPlaceHolder:(NSString *)placeHolder
+{
+    [placeHolderLabel setText:placeHolder];
+    _placeHolder = placeHolder;
+}
+
+-(NSString *)text
+{
+    return textView.text;
+}
+
+- (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text
+{
+    if (range.location > 0 || text.length != 0) {
+        [placeHolderLabel setHidden:YES];
+    }else{
+        [placeHolderLabel setHidden:NO];
+    }
+    return YES;
+}
+// Only override drawRect: if you perform custom drawing.
+// An empty implementation adversely affects performance during animation.
+- (void)drawRect:(CGRect)rect {
+    // Drawing code
+}
+
+@end

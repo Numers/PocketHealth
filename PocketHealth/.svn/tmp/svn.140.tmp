@@ -1,0 +1,133 @@
+//
+//  PHCheckViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-8.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHCheckViewController.h"
+#import "PHProgressView.h"
+#import "CommonUtil.h"
+#import "PHMonitoringUploadHelper.h"
+#import "PHGettingMonitorValueManager.h"
+#import "PHAppStartManager.h"
+#import "PHGettingMonitorValueManager.h"
+#define  ViewWidth [[UIScreen mainScreen] bounds].size.width
+#define ProgressViewLeftMargin 60.0f
+
+@interface PHCheckViewController ()
+{
+    PHProgressView *progressView;
+    UILabel *lblLastCheckTime;
+    UIButton *btnCheck;
+}
+
+@end
+
+@implementation PHCheckViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    progressView = [[PHProgressView alloc] initWithFrame:CGRectMake(ProgressViewLeftMargin,20, ViewWidth-ProgressViewLeftMargin*2,ViewWidth-ProgressViewLeftMargin*2)];
+    [self.view addSubview:progressView];
+    
+    lblLastCheckTime = [[UILabel alloc] initWithFrame:CGRectMake(0, progressView.frame.origin.y + progressView.frame.size.height + 16.0f, ViewWidth, 21)];
+    [lblLastCheckTime setTextColor:[UIColor whiteColor]];
+    [lblLastCheckTime setTextAlignment:NSTextAlignmentCenter];
+    [self.view addSubview:lblLastCheckTime];
+    
+    btnCheck = [UIButton buttonWithType:UIButtonTypeCustom];
+    [btnCheck setFrame:CGRectMake(32, lblLastCheckTime.frame.origin.y + lblLastCheckTime.frame.size.height + 8, ViewWidth - 64, 50)];
+    [btnCheck addTarget:self action:@selector(check) forControlEvents:UIControlEventTouchUpInside];
+    [btnCheck.layer setCornerRadius:30.0f];
+    [btnCheck setBackgroundColor:[UIColor colorWithRed:255.0f green:255.0f blue:255.0f alpha:0.68f]];
+    [btnCheck setHighlighted:YES];
+    [btnCheck setTitle:@"立即检测" forState:UIControlStateNormal];
+    [btnCheck setTitleColor:[UIColor colorWithRed:138.0f green:138.0f blue:138.0f alpha:1.0f] forState:UIControlStateNormal];
+    [btnCheck.titleLabel setFont:[UIFont systemFontOfSize:20]];
+    [self.view addSubview:btnCheck];
+    [self checkStrAndTimeLabelSetting];
+}
+-(void)updateViewConstraints{
+    [super updateViewConstraints];
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)checkStrAndTimeLabelSetting
+{
+    NSNumber *scoreNumber = [CommonUtil localUserDefaultsForKey:KMY_LastCheckScore];
+    if (scoreNumber == nil) {
+        [progressView setProgress:0.0f animated:YES];
+    }else{
+        [progressView setProgress:[scoreNumber floatValue] animated:YES];
+    }
+    
+    NSNumber *checkTime = [CommonUtil localUserDefaultsForKey:KMY_LastCheckTime];
+    if (checkTime == nil) {
+        [lblLastCheckTime setText:@"最近您没有进行检测"];
+    }else{
+        NSTimeInterval checkTimeInterval = [checkTime doubleValue];
+        NSString *checkTimeStr = [NSString stringWithFormat:@"最近检测 %@",[CommonUtil TimeStrMMDDHHmmWithInterval:checkTimeInterval]];
+        [lblLastCheckTime setText:checkTimeStr];
+    }
+}
+
+-(void)getMonitoringValueWithMemberId:(long long)memberId
+{
+    [[PHGettingMonitorValueManager defaultManager] gettingScoreWithMoodActivitySleep:memberId result:^(NSArray *result) {
+        if (result != nil) {
+            float complex = [[result objectAtIndex:0] doubleValue];
+            float mood = [[result objectAtIndex:1] doubleValue];
+            float activity = [[result objectAtIndex:2] doubleValue];
+            float sleep = [[result objectAtIndex:3] doubleValue];
+            [progressView setProgress:complex animated:YES];
+            [CommonUtil localUserDefaultsValue:[NSNumber numberWithFloat:complex] forKey:KMY_LastCheckScore];
+            [self checkStrAndTimeLabelSetting];
+            if ([self.delegate respondsToSelector:@selector(deliveryMood:WithActivity:WithSleep:)]) {
+                [self.delegate deliveryMood:mood WithActivity:activity WithSleep:sleep];
+            }
+        }else{
+            [lblLastCheckTime setText:@"检测失败,请重新检测"];
+        }
+    }];
+}
+
+-(void)check
+{
+    lblLastCheckTime.text = @"检测中...";
+    NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
+    [CommonUtil localUserDefaultsValue:[NSNumber numberWithDouble:now] forKey:KMY_LastCheckTime];
+    Member *host = [[PHAppStartManager defaultManager] userHost];
+    [PHMonitoringUploadHelper uploadExercise_Mood_SleepingListWithMemberId:host.memberId cancal:^(BOOL flag) {
+        [self getMonitoringValueWithMemberId:host.memberId];
+    } done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            [self getMonitoringValueWithMemberId:host.memberId];
+        }else{
+            [lblLastCheckTime setText:@"检测失败,请重新检测"];
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        else{
+            [lblLastCheckTime setText:@"检测失败,请重新检测"];
+        }
+    }];
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

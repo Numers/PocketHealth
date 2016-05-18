@@ -1,0 +1,18 @@
+//
+//  AppDelegate.h
+//  PocketHealth
+//
+//  Created by macmini on 15-1-5.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface AppDelegate : UIResponder <UIApplicationDelegate>
+
+@property (strong, nonatomic) UIWindow *window;
+
+//主动退出应用 不重连
+@property (nonatomic) BOOL isInitiativeExitChatConnect;
+@end
+

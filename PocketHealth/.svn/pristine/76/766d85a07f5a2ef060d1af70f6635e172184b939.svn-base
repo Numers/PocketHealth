@@ -1,0 +1,29 @@
+//
+//  PHMonitoringHttpRequest.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/13.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHMonitoringHttpRequest.h"
+#import "PHAppStartManager.h"
+
+@implementation PHMonitoringHttpRequest
+
+-(void)uploadSleepDetail:(NSString *)jsonData done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_Monitoring_UploadSleepDetail];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key",jsonData,@"data", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+
+}
+-(void)uploadExerciseDetail:(NSString *)jsonData done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_Monitoring_UploadExerciseDetails];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key",jsonData,@"data", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+@end

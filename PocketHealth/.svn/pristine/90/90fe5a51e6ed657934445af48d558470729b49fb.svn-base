@@ -1,0 +1,28 @@
+//
+//  XGPSocketMsgDistributer.h
+//  AJKGroupChatDemo
+//
+//  Created by YangFan on 14/12/8.
+//  Copyright (c) 2014年 YangFan. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@class Group;
+@protocol XGPSocketMsgDistributerDelegate <NSObject>
+
+@optional
+-(Group *)searchGroupInChatMainArrayWithGroupMessageBelingGroupId:(NSInteger )belongGroupId;
+
+@end
+
+@interface XGPSocketMsgDistributer : NSObject
+
+//-(XGPSocketMsgDistributer *)createGlobalSocketMsgDistributer;
+
+
+- (instancetype)initWithMyID:(NSString *)userId ;
+
+
+@property (nonatomic,weak) id <XGPSocketMsgDistributerDelegate> delegate;
+@end

@@ -1,0 +1,24 @@
+//
+//  PNIFoodCategory.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/26.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "mantle.h"
+
+@interface PNIFoodCategory : MTLModel<MTLJSONSerializing>
+
+@property (nonatomic ,strong) NSString * categroyName;
+@property (nonatomic) NSInteger categroyId;
+@property (nonatomic , strong) NSArray * categroyDetail;
+@end
+
+@interface CphategroyDetail : MTLModel<MTLJSONSerializing>
+@property (nonatomic , strong) NSString * detailName;
+@property (nonatomic , strong) NSString * calorie;
+@property (nonatomic , strong) NSString * gram;
+@property (nonatomic) NSInteger detailId;
+@end

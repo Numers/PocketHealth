@@ -1,0 +1,65 @@
+// MsgCode.cpp: implementation of the MsgCode class.
+//
+//////////////////////////////////////////////////////////////////////
+
+
+#include "MsgCode.h"
+
+#ifdef _DEBUG
+#undef THIS_FILE
+static char THIS_FILE[]=__FILE__;
+#define new DEBUG_NEW
+#endif
+
+//////////////////////////////////////////////////////////////////////
+// Construction/Destruction
+//////////////////////////////////////////////////////////////////////
+
+CMsgCode* CMsgCode::m_pObject = NULL;
+
+CMsgCode::CMsgCode()
+{
+
+}
+
+CMsgCode::~CMsgCode()
+{
+	m_MsgMap.clear();
+}
+
+CMsgCode* CMsgCode::GetObject()
+{
+	if (NULL==m_pObject)
+	{
+		m_pObject = new CMsgCode;
+	}
+	
+	return m_pObject;
+}
+
+void CMsgCode::ReleaseObject()
+{
+	if (NULL!=m_pObject)
+	{
+		delete m_pObject;
+		m_pObject = NULL;
+	}
+}
+
+//添加到消息map
+bool CMsgCode::AddMsgMap(int nType, ToMsgFun msgFun)
+{
+	m_MsgMap.insert(pair<int, ToMsgFun>(nType, msgFun));
+
+	return true;
+}
+
+//接收消息函数
+bool CMsgCode::InvokeMsgFun(int nType, void* pData)
+{
+	ToMsgFun msgFun = (ToMsgFun) m_MsgMap[nType];
+	if (NULL==msgFun)
+		return false;
+
+	return msgFun(pData);
+}

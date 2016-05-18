@@ -1,0 +1,186 @@
+//
+//  PHChatHomeAddDetailResultViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHChatHomeAddDetailResultViewController.h"
+
+//界面
+#import "CalculateViewFrame.h"
+//
+//#import "Member.h"
+#import "Group.h"
+
+#import "ClientHelper.h"
+#import "PHAppStartManager.h"
+#import "CommonUtil.h"
+#import "PHGroupHttpRequest.h"
+#import "JSONKit.h"
+
+static NSString *identifierAddDetailResultVieCell = @"PHAddDetailResultVieTableViewCell";
+
+@interface PHChatHomeAddDetailResultViewController ()<UITableViewDataSource,UITableViewDelegate>
+{
+    Member *host;
+}
+@property (strong, nonatomic) UITableView *tableViewMain;
+
+@end
+
+@implementation PHChatHomeAddDetailResultViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.resultArray = [[NSMutableArray alloc]init];
+    //0.初始化tableview
+    self.tableViewMain = [[UITableView alloc]init];
+    self.tableViewMain.backgroundColor = [UIColor redColor];
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    //特殊的位置
+    frame.origin.y = self.tableViewY;
+    self.tableViewMain.frame = frame;
+    self.tableViewMain.delegate = self;
+    self.tableViewMain.dataSource = self;
+    [self.view addSubview:self.tableViewMain];
+    
+    host = [[PHAppStartManager defaultManager] userHost];
+    // Do any additional setup after loading the view from its nib.
+}
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    [self removeAllUserInResultArray];
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - 从上方页面刷新本页面tableview
+-(void)reloadResultTableViewWithArray:(NSArray *)sendResultArray WithMemberType:(MemberUserType)memberUserType{
+    
+    if (memberUserType == MemberUserTypeDoctor) {
+        //如果是医院
+        for (NSDictionary * memberDic in sendResultArray) {
+            NSError *error ;
+            Group * group = [MTLJSONAdapter modelOfClass:[Group class] fromJSONDictionary:memberDic error:&error];
+            [self.resultArray addObject:group];
+        }
+    }else if (memberUserType == MemberUserTypeUser){
+        //用户
+        for (NSDictionary * memberDic in sendResultArray) {
+            NSError *error ;
+            Member * member = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:memberDic error:&error];
+            [self.resultArray addObject:member];
+        }
+    }
+//    [self.resultArray removeAllObjects];
+//
+//    for (NSDictionary * memberDic in sendResultArray) {
+//        NSError *error ;
+//        Member * member = [MTLJSONAdapter modelOfClass:[Member class] fromJSONDictionary:memberDic error:&error];
+//        [self.resultArray addObject:member];
+//    }
+    //处理member 将member添加到数组
+    NSLog(@"%@",sendResultArray);
+    [self.tableViewMain reloadData];
+}
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return self.resultArray.count;
+}
+
+// Row display. Implementers should *always* try to reuse cells by setting each cell's reuseIdentifier and querying for available reusable cells with dequeueReusableCellWithIdentifier:
+// Cell gets various attributes set automatically based on table (separators) and data source (accessory views, editing controls)
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifierAddDetailResultVieCell];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierAddDetailResultVieCell];
+    }
+    NSString *showLableStr;
+    id inCellMember = self.resultArray[indexPath.row];
+    if ([inCellMember isKindOfClass:[Group class]]) {
+        Group *group = (Group *)inCellMember;
+        showLableStr = group.groupName;
+    }else if ([inCellMember isKindOfClass:[Member class]]){
+        Member *member  = (Member *)inCellMember;
+        showLableStr = member.nickName;
+    }
+    cell.textLabel.text = showLableStr;
+    
+    return cell;
+}
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    id inCellMember = self.resultArray[indexPath.row];
+    if (inCellMember!=nil) {
+        if ([inCellMember isKindOfClass:[Group class]]) {
+            Group *group = (Group *)inCellMember;
+            [PHGroupHttpRequest requestAddGroup:group.groupId WithMemberId:host.memberId WithTag:@"" done:^(AFHTTPRequestOperation *operation, id responseObject) {
+                //
+                if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+                    NSDictionary *dic = (NSDictionary *)responseObject;
+                    NSLog(@"%@",[dic objectForKey:@"Message"]);
+                }else{
+                    NSLog(@"群错误 一般 是已进群");
+                }
+            } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+                //
+            }];
+            
+            //做直接加群
+        }else if ([inCellMember isKindOfClass:[Member class]]){
+            Member *member  = (Member *)inCellMember;
+
+            //直接加好友
+            //推入用户详情界面。
+//            Member *host = [[PHAppStartManager defaultManager] userHost];
+            //+(void)requestAddAnFriend:(long long)toid WithFriendType:(MemberFriendType)friendType done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+//            [PHGroupHttpRequest requestAddAnFriend:member.memberId WithFriendType:(MemberFriendType)MemberFriendTypeUser done:^(AFHTTPRequestOperation *operation, id responseObject) {
+//                //
+//                if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+//                    NSDictionary *dic = (NSDictionary *)responseObject;
+                    NSString * sendTag = [NSString stringWithFormat:@"%@请求添加%@为好友",host.nickName,member.nickName];
+//                    NSLog(@"%@",[dic objectForKey:@"Message"]);
+                    NSDictionary *userInfoData = [NSDictionary dictionaryWithObjectsAndKeys:host.headImage,@"HeadImg",host.loginName,@"LoginName",host.nickName,@"NickName",[NSString stringWithFormat:@"%lld",host.memberId],@"UserId", nil];
+                    NSDictionary * userInfo = [NSDictionary dictionaryWithObjectsAndKeys:userInfoData,@"Data",@"1",@"Code",sendTag,@"Message", nil];
+                    NSString *userInfoStr = [userInfo JSONString];
+                    NSInteger ret =  [ClientHelper addFriend:host.memberId Token:[CommonUtil MyToken] ToUid:member.memberId UserInfo:userInfoStr Msgsn:99999];
+
+                    NSLog(@"addFriend %ld",(long)ret);
+                    
+//                }else{
+//                    NSLog(@"帐号错误 一般不会打印");
+//                }
+//
+//                
+//            } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+//                //
+//            }];
+        }
+    }
+    
+    
+    
+    
+}
+#pragma mark -  清空搜索结果列表
+-(void)removeAllUserInResultArray{
+    [self.resultArray removeAllObjects];
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+#pragma mark - UISearchResultsUpdating
+- (void)updateSearchResultsForSearchController:(UISearchController *)searchController {
+    NSLog(@"Entering:%@",searchController.searchBar.text);
+}
+@end

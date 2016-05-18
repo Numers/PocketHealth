@@ -1,0 +1,72 @@
+//
+//  PHTextView.m
+//  PocketHealth
+//
+//  Created by macmini on 15-2-2.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHTextView.h"
+#define LeftMargin 7.0f
+#define TopMargin 8.0f
+
+@implementation PHTextView
+-(id)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self inilizedView];
+    }
+    return self;
+}
+
+-(void)inilizedView
+{
+    NSLog(@"%lf,%lf",self.frame.size.width,self.frame.size.height);
+    myTextView = [[UITextView alloc] initWithFrame:CGRectMake(0, 0, self.frame.size.width, self.frame.size.height)];
+    myTextView.textContainerInset = UIEdgeInsetsMake(TopMargin, LeftMargin, 0, 0);
+    [myTextView setFont:[UIFont systemFontOfSize:15.f]];
+    myTextView.returnKeyType = UIReturnKeyDone;
+    myTextView.delegate = self;
+    [self addSubview:myTextView];
+    
+    placeHolderLabel = [[UILabel alloc] initWithFrame:CGRectMake(LeftMargin + 5, 6, myTextView.frame.size.width, 21)];
+    [placeHolderLabel setFont:[UIFont systemFontOfSize:15.f]];
+    [placeHolderLabel setTextColor:[UIColor colorWithRed:179/255.0f green:179/255.0f blue:179/255.0f alpha:1.0f]];
+    [placeHolderLabel setTextAlignment:NSTextAlignmentLeft];
+    [placeHolderLabel setText:_placeHolder];
+    [myTextView addSubview:placeHolderLabel];
+}
+
+-(void)setPlaceHolder:(NSString *)placeHolder
+{
+    [placeHolderLabel setText:placeHolder];
+    _placeHolder = placeHolder;
+}
+
+-(NSString *)text
+{
+    return myTextView.text;
+}
+
+- (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text
+{
+    if( [text rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet]].location == NSNotFound ) {
+        if (range.location > 0 || text.length != 0) {
+            [placeHolderLabel setHidden:YES];
+        }else{
+            [placeHolderLabel setHidden:NO];
+        }
+        return YES;
+    }
+    [textView resignFirstResponder];
+    return NO;
+}
+
+// Only override drawRect: if you perform custom drawing.
+// An empty implementation adversely affects performance during animation.
+- (void)drawRect:(CGRect)rect {
+    // Drawing code
+}
+
+@end

@@ -1,0 +1,263 @@
+//
+//  PHChatHomeAddDetailIndexViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHChatHomeAddDetailIndexViewController.h"
+
+
+#import "PHChatHomeAddDetailTableViewHeadViewViewController.h"
+
+//数据累
+#import "PHGroupHttpRequest.h"
+#import "CommonUtil.h"
+#import "Member.h"
+//定位类
+#import "PHLocationOrganizationHelper.h"
+
+
+//界面类
+#import "CalculateViewFrame.h"
+#import "PHChatHomeAddDetailResultViewController.h"
+#import "PHChathomeAddDetailTableViewCell.h"
+//定位之后的界面类
+//#import "PHCityViewController.h"
+#import "PHCityDuplicateViewController.h"
+
+//界面子类
+#import "PHAddDetailFindNewGroupTableViewController.h"
+#import "YFQRCodeReaderViewController.h"
+
+#import "PHAddDetailMemberTableViewController.h"
+#import "PHAddDetailGroupTableViewController.h"
+//界面辅助类
+#import "MBProgressHUD.h"
+
+#import "PHAppStartManager.h"
+
+static NSString *identifierChatHomeAddDetailCell = @"PHChatHomeAddDetailCell";
+
+@interface PHChatHomeAddDetailIndexViewController ()<UITableViewDataSource,UITableViewDelegate,PHChatHomeAddDetailTableViewHeadViewViewControllerDelegate,UISearchBarDelegate,PHLocationOrganizationDelegate,PHChatHomeAddDetailResultViewControllerDelegate>
+{
+    PHChatHomeAddDetailResultViewController *AddDetailResultVC;
+    NSArray * phAddDetailTableViewSourseArray;
+    UIVisualEffectView *visualEffectView ;
+    
+    Organization * nearOrgantion;
+    PHLocationOrganizationHelper * locationHelper;
+}
+@property (strong, nonatomic) UITableView *tableViewMain;
+
+
+@property (strong , nonatomic) UISearchController * searchController;
+@end
+
+@implementation PHChatHomeAddDetailIndexViewController
+{
+    PHChatHomeAddDetailTableViewHeadViewViewController *tableViewHeadView;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    //初始化定位
+    locationHelper = [[PHLocationOrganizationHelper alloc]init];
+    locationHelper.delegate =self;
+    [locationHelper startLocationOrganization];
+    
+    //0.初始化tableview
+    self.tableViewMain = [[UITableView alloc]init];
+//    self.tableViewMain.backgroundColor = [UIColor redColor];
+    CGRect frame = [CalculateViewFrame viewFrame:nil withTabBarController:self.tabBarController];
+    self.tableViewMain.frame = frame;
+    self.tableViewMain.delegate = self;
+    self.tableViewMain.dataSource = self;
+    
+//    //1.上方头像
+//    //1.1 初始化上方头像view 作为tableview的headview
+//    tableViewHeadView = [[PHChatHomeAddDetailTableViewHeadViewViewController alloc]init];
+//    tableViewHeadView.delegate = self;
+//    self.tableViewMain.tableHeaderView = tableViewHeadView.view;
+    
+#warning 这边未写ios8<系统
+    AddDetailResultVC = [[PHChatHomeAddDetailResultViewController alloc]init];
+    AddDetailResultVC.delegate = self;
+    self.searchController = [[UISearchController alloc]initWithSearchResultsController:AddDetailResultVC];
+    self.searchController.searchResultsUpdater = AddDetailResultVC;
+    self.searchController.searchBar.delegate = self;
+    [self.searchController.searchBar sizeToFit];
+    self.definesPresentationContext = YES;
+    self.searchController.searchBar.placeholder = @"输入健康号";
+    
+    CGRect statusBarViewRect = [[UIApplication sharedApplication] statusBarFrame];
+    
+    AddDetailResultVC.tableViewY = self.searchController.searchBar.frame.size.height + statusBarViewRect.size.height;
+    self.tableViewMain.tableHeaderView = self.searchController.searchBar;
+//
+
+    
+    //tableview 数据源填入
+    [self createTableViewDataSource];
+    [self.view addSubview:self.tableViewMain];
+}
+-(void)viewDidAppear:(BOOL)animated{
+    [super viewDidAppear:animated];
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark - 定位获取的委托
+-(void)returnNearestOrganization:(Organization *)org{
+    nearOrgantion = org;
+    NSLog(@"%@",org);
+}
+#pragma mark - tableview数据源初始化
+-(void)createTableViewDataSource{
+    
+    NSDictionary * headthGroupDic = [NSDictionary dictionaryWithObjectsAndKeys:@"groupHomeGroupAttentionCellIcon",@"img",@"健康群组",@"label",@"快速查找活跃群组",@"detailLabel", nil];
+    
+
+    NSDictionary * hospitalListDic = [NSDictionary dictionaryWithObjectsAndKeys:@"groupHomeHospitailCellIcon",@"img",@"医院名录",@"label",@"按地区分类查找医院",@"detailLabel", nil];
+    NSDictionary * scanItDic = [NSDictionary dictionaryWithObjectsAndKeys:@"scan-icon",@"img",@"扫一扫",@"label",@"扫描医生或者医院二维码",@"detailLabel", nil];
+    phAddDetailTableViewSourseArray = [[NSArray alloc]initWithObjects:headthGroupDic,hospitalListDic,scanItDic, nil];
+}
+#pragma mark - tableview delegate and datasource
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return 60;
+}
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return 3;
+}
+
+// Row display. Implementers should *always* try to reuse cells by setting each cell's reuseIdentifier and querying for available reusable cells with dequeueReusableCellWithIdentifier:
+// Cell gets various attributes set automatically based on table (separators) and data source (accessory views, editing controls)
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifierChatHomeAddDetailCell];
+    
+    if (cell == nil) {
+        cell = [[PHChathomeAddDetailTableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifierChatHomeAddDetailCell];
+    }
+    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    
+    NSDictionary * dic = phAddDetailTableViewSourseArray[indexPath.row];
+    cell.textLabel.text=[dic objectForKey:@"label"];
+    NSString * imageName = [dic objectForKey:@"img"];
+    [cell.imageView setImage:[UIImage imageNamed:imageName]];
+    cell.detailTextLabel.text = [dic objectForKey:@"detailLabel"];
+    return cell;
+}
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    switch (indexPath.row) {
+        case 0:
+        {
+            //推入健康群组页面 发现新群
+            PHAddDetailFindNewGroupTableViewController * findnewGroupVC = [[PHAddDetailFindNewGroupTableViewController alloc]init];
+            findnewGroupVC.delegate = [[PHAppStartManager defaultManager]returnPHGroupChatHomeView];
+            [self.navigationController pushViewController:findnewGroupVC animated:YES];
+        }
+            break;
+        case 1:{
+            //推入医院名录
+            if (nearOrgantion!=nil) {
+                PHCityDuplicateViewController *cityVC = [[PHCityDuplicateViewController alloc]initWithGpsOrganization:nearOrgantion];
+                [self.navigationController pushViewController:cityVC animated:YES];
+            }else{
+#warning 暂时mmm
+                MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+                hud.mode = MBProgressHUDModeText;
+                hud.labelText = @"暂时未有定位无法出现附近医院，请等待";
+                hud.margin = 10.f;
+                hud.yOffset = 150.f;
+                hud.removeFromSuperViewOnHide = YES;
+                [hud hide:YES afterDelay:2];
+            }
+            
+        }
+            break;
+        case 2:{
+            //推入扫一扫页面
+            YFQRCodeReaderViewController * qrScanVC = [[YFQRCodeReaderViewController alloc]init];
+            [self.navigationController pushViewController:qrScanVC animated:YES];
+        }
+            break;
+        default:
+            break;
+    }
+}
+#pragma mark - PHChatHomeAddDetailTableViewHeadViewViewControllerDelegate
+-(void)PHChatHomeAddDetailTableViewHeadViewSearchBarBeginEditing{
+    
+}
+
+#pragma mark - searchBarDelagete
+-(void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar{
+    NSLog(@"aa");
+    //毛玻璃效果
+    UIVisualEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
+    visualEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+    visualEffectView.frame = self.tableViewMain.bounds;
+    [self.tableViewMain addSubview:visualEffectView];
+//    self.tableViewMain.tableHeaderView = tableViewHeadView.view;
+}
+- (void)searchBarTextDidEndEditing:(UISearchBar *)searchBar{
+    [visualEffectView removeFromSuperview];
+    NSLog(@"search %@",searchBar.text);
+    if ([searchBar.text isEqualToString:@""]) {
+        return;
+    }
+    [AddDetailResultVC removeAllUserInResultArray];
+    //调用搜索接口
+    [PHGroupHttpRequest searchAllHospitalOnHttpServerWith:searchBar.text done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        NSLog(@"%@",responseObject);
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            NSArray * memberDicList = [responseObject objectForKey:@"Result"];
+            [AddDetailResultVC reloadResultTableViewWithArray:memberDicList WithMemberType:MemberUserTypeDoctor];
+        }else{
+            
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+
+    [PHGroupHttpRequest searchAllUserOnHttpServerWith:searchBar.text done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //把数据传给结果界面 PHChatHomeAddDetailResultViewController
+        
+        NSLog(@"%@",responseObject);
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            NSArray * memberDicList = [responseObject objectForKey:@"Result"];
+//            [AddDetailResultVC reloadResultTableViewWithArray:memberDicList];
+            [AddDetailResultVC reloadResultTableViewWithArray:memberDicList WithMemberType:MemberUserTypeUser];
+        }else{
+            
+        }
+        
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+    
+    
+}
+-(void)pushSearchResultMemberViewController:(Member *)pushMember{
+    PHAddDetailMemberTableViewController * phaddMemberVC = [[PHAddDetailMemberTableViewController alloc]initWithMember:pushMember];
+    [self.navigationController pushViewController:phaddMemberVC animated:YES];
+}
+-(void)pushSearchResultGroupViewController:(Group *)group{
+    PHAddDetailGroupTableViewController * phaddgroupVC = [[PHAddDetailGroupTableViewController alloc]initWithGroup:group];
+    [self.navigationController pushViewController:phaddgroupVC animated:YES];
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

@@ -1,0 +1,249 @@
+//
+//  PHGroupInfoEditViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-2-7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupInfoEditViewController.h"
+#import "GlobalVar.h"
+#import "PHGroupAccessaryHeadView.h"
+#import "CalculateViewFrame.h"
+#import "PHGroupNameEditViewController.h"
+#import "Group.h"
+
+#define TitleLabelFont [UIFont boldSystemFontOfSize:16.f]
+#define DetailLabelFont [UIFont systemFontOfSize:15.f]
+#define TitleLabelColor [UIColor colorWithRed:26/255.f green:26/255.f blue:26/255.f alpha:1.f]
+#define DetailLabelColor [UIColor colorWithRed:148/255.f green:148/255.f blue:148/255.f alpha:1.f]
+
+static NSString *identifyGroupInfoEditTableViewCell = @"identifyGroupInfoEditTableViewCell";
+@interface PHGroupInfoEditViewController ()<UITableViewDelegate, UITableViewDataSource>
+@property(nonatomic, strong) UITableView *tableView;
+@end
+
+@implementation PHGroupInfoEditViewController
+-(id)initWithGroup:(Group *)editGroup
+{
+    self = [super init];
+    if (self) {
+        group = editGroup;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+    [_tableView setBackgroundColor:ViewBackGroundColor];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    [self.view addSubview:_tableView];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self navigationControllerSetting];
+    [_tableView reloadData];
+}
+
+-(void)navigationControllerSetting
+{
+    [self.navigationItem setTitle:@"编辑群资料"];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(NSMutableAttributedString *)generateGroupBriefIntroductionAttributeString
+{
+    NSMutableAttributedString *attrStr = [[NSMutableAttributedString alloc] initWithString:@"群简介\n"];
+    NSRange range;
+    range.location = 0;
+    range.length = attrStr.length;
+    [attrStr addAttributes:[NSDictionary dictionaryWithObjectsAndKeys:TitleLabelColor,NSForegroundColorAttributeName,TitleLabelFont,NSFontAttributeName, nil] range:range];
+    
+    NSMutableAttributedString *addStr = [[NSMutableAttributedString alloc] initWithString:group.groupBriefIntroduction];
+    NSRange range1;
+    range1.location = 0;
+    range1.length = addStr.length;
+    [addStr addAttributes:[NSDictionary dictionaryWithObjectsAndKeys:DetailLabelColor,NSForegroundColorAttributeName,DetailLabelFont,NSFontAttributeName, nil] range:range1];
+    [attrStr appendAttributedString:addStr];
+    return attrStr;
+}
+
+-(NSMutableAttributedString *)generateAttriuteStringWithStr:(NSString *)str WithColor:(UIColor *)color WithFont:(UIFont *)font
+{
+    if(str == nil)
+    {
+        return nil;
+    }
+    NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:str];
+    NSRange range;
+    range.location = 0;
+    range.length = attrString.length;
+    [attrString beginEditing];
+    [attrString addAttributes:[NSDictionary dictionaryWithObjectsAndKeys:color,NSForegroundColorAttributeName,font,NSFontAttributeName, nil] range:range];
+    [attrString endEditing];
+    return attrString;
+}
+
+#pragma mark - tableview delegate and datasoucre
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    NSInteger result = 0;
+    switch (section) {
+        case 0:
+            result = 4;
+            break;
+        case 1:
+        {
+            return 1;
+        }
+            break;
+    }
+    return result;
+}
+
+-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    return 20.f;
+}
+
+-(CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+{
+    return 0.1f;
+}
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 2;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ((indexPath.section == 0) && (indexPath.row == 0) ) {
+        return 88.0f;
+    }else if((indexPath.section == 1) && (indexPath.row == 0)){
+        UITableViewCell *cell = [self tableView:tableView cellForRowAtIndexPath:indexPath];
+        return cell.frame.size.height;
+    }else{
+        return 44.f;
+    }
+    return 0.f;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    UITableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifyGroupInfoEditTableViewCell];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:identifyGroupInfoEditTableViewCell];
+    }
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    
+                    [cell.textLabel setAttributedText:[self generateAttriuteStringWithStr:@"头像" WithColor:TitleLabelColor WithFont:TitleLabelFont]];
+                    PHGroupAccessaryHeadView *headView = [[PHGroupAccessaryHeadView alloc] initWithFrame:CGRectMake(0, 0, 80, 96)];
+                    [headView setupWithGroup:group];
+                    cell.accessoryView = headView;
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                }
+                    break;
+                case 1:
+                    [cell.textLabel setAttributedText:[self generateAttriuteStringWithStr:@"群名称" WithColor:TitleLabelColor WithFont:TitleLabelFont]];
+                    [cell.detailTextLabel setAttributedText:[self generateAttriuteStringWithStr:group.groupName WithColor:DetailLabelColor WithFont:DetailLabelFont]];
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    break;
+                case 2:
+                    [cell.textLabel setAttributedText:[self generateAttriuteStringWithStr:@"群标签" WithColor:TitleLabelColor WithFont:TitleLabelFont]];
+                    [cell.detailTextLabel setAttributedText:[self generateAttriuteStringWithStr:group.groupTag WithColor:DetailLabelColor WithFont:DetailLabelFont]];
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    break;
+                case 3:
+                {
+                    [cell.textLabel setAttributedText:[self generateAttriuteStringWithStr:@"加群机制" WithColor:TitleLabelColor WithFont:TitleLabelFont]];
+                    [cell.detailTextLabel setAttributedText:[self generateAttriuteStringWithStr:@"允许任何人关注" WithColor:DetailLabelColor WithFont:DetailLabelFont]];
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+            break;
+        case 1:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    NSMutableAttributedString *attStr = [self generateGroupBriefIntroductionAttributeString];
+                    CGRect frame = [attStr boundingRectWithSize:CGSizeMake([UIScreen mainScreen].bounds.size.width, 0) options:NSStringDrawingUsesLineFragmentOrigin context:nil];
+                    [cell setFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, frame.size.height + 20.f)];
+                    [cell.textLabel setAttributedText:attStr];
+                    cell.textLabel.numberOfLines = 0;
+                }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+    return cell;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    switch (indexPath.section) {
+        case 0:
+            switch (indexPath.row) {
+                case 0:
+                {
+                    
+                }
+                    break;
+                case 1:
+                {
+                    PHGroupInfoEditViewController *phGroupInfoEditVC = [[PHGroupInfoEditViewController alloc] initWithGroup:group];
+                    [self.navigationController pushViewController:phGroupInfoEditVC animated:YES];
+                }
+                    break;
+                case 2:
+                {
+                    
+                }
+                    break;
+                case 3:
+                {
+                    
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+            break;
+        case 1:
+            switch (indexPath.row) {
+                case 0:
+                {
+                   
+                }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+@end

@@ -1,0 +1,89 @@
+//
+//  PHProgressView.m
+//  Progress
+//
+//  Created by macmini on 15-1-22.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHProgressView.h"
+#import "CCProgressView.h"
+#define ProgressInterval 0.1
+#define TimeDuration 0.003f
+#define LabelHeight 30.0f
+
+static CGFloat currentProgress;
+@implementation PHProgressView
+-(id)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = [UIColor clearColor];
+        ccProgressView = [[CCProgressView alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.height)];
+        [self addSubview:ccProgressView];
+        
+        scoreLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, frame.size.height/2  - LabelHeight, frame.size.width, LabelHeight)];
+        [scoreLabel setTextColor:[UIColor greenColor]];
+        [scoreLabel setTextAlignment:NSTextAlignmentCenter];
+        [scoreLabel setFont:[UIFont systemFontOfSize:40]];
+        [self addSubview:scoreLabel];
+        
+        detailsLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, frame.size.height/2 + LabelHeight, frame.size.width, LabelHeight)];
+        [detailsLabel setTextColor:[UIColor whiteColor]];
+        [detailsLabel setTextAlignment:NSTextAlignmentCenter];
+        [detailsLabel setFont:[UIFont systemFontOfSize:20]];
+        [self addSubview:detailsLabel];
+    }
+    return self;
+}
+
+- (void)setProgress:(CGFloat)progress animated:(BOOL)animated
+{
+    score = progress;
+    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:animated] forKey:@"Animate"];
+    currentProgress = 0;
+    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:TimeDuration target:self selector:@selector(startUpdate:) userInfo:userInfo repeats:YES];
+    [timer fire];
+}
+
+-(void)startUpdate:(NSTimer *)timer
+{
+    if (currentProgress >= score) {
+        [detailsLabel setText:[self getHealthState]];
+        [timer invalidate];
+        timer = nil;
+        return;
+    }
+    [scoreLabel setText:[NSString stringWithFormat:@"%.0lf分",currentProgress]];
+    BOOL animate = [[timer userInfo] objectForKey:@"Animate"];
+    [ccProgressView setProgress:currentProgress/100.0f animated:animate];
+    currentProgress = currentProgress + ProgressInterval;
+}
+
+-(NSString *)getHealthState
+{
+    if (score < 30) {
+        return @"严重";
+    }
+    
+    if (score < 60) {
+        return @"有问题";
+    }
+    
+    if (score < 80) {
+        return @"稍健康";
+    }
+    
+    if (score < 100) {
+        return @"非常健康";
+    }
+    return nil;
+}
+
+// Only override drawRect: if you perform custom drawing.
+// An empty implementation adversely affects performance during animation.
+- (void)drawRect:(CGRect)rect {
+    // Drawing code
+}
+
+@end

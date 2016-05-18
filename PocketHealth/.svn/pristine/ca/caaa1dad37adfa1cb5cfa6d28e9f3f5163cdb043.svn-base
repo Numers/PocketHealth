@@ -1,0 +1,82 @@
+//
+//  PHActivityInsideViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/22.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHActivityInsideViewController.h"
+#import "PHCircleWithLabel.h"
+#import "PHAppStartManager.h"
+
+@interface PHActivityInsideViewController ()
+{
+    
+    IBOutlet PHCircleWithLabel *phActivityCircleView;
+}
+@end
+
+@implementation PHActivityInsideViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [phActivityCircleView inilizedView];
+    [phActivityCircleView setBackgroundColor:[UIColor clearColor]];
+    [phActivityCircleView setStrokeColor:[UIColor blueColor]];
+    // Do any additional setup after loading the view from its nib.
+}
+
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    
+}
+
+-(void)doWithDataBeforeViewAppeared
+{
+    Member *host = [[PHAppStartManager defaultManager] userHost];
+    _leftCalorie = host.calorie - [[NSNumber numberWithFloat:host.metabolism] integerValue];
+    if (_leftCalorie < 0) {
+        _leftCalorie = 0;
+    }
+    [self resettingCalorie:_leftCalorie];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+- (IBAction)settingPNIBtnClick:(id)sender {
+    if ([self.delegate respondsToSelector:@selector(btnSettingPNIClick)]) {
+        [self.delegate btnSettingPNIClick];
+    }
+}
+- (IBAction)settingMetabolismBtnClick:(id)sender {
+    if ([self.delegate respondsToSelector:@selector(btnSettingMetabolismClick)]) {
+        [self.delegate btnSettingMetabolismClick];
+    }
+}
+-(void)resettingCalorie:(NSInteger )calorie{
+    NSString * topStr = @"还剩余";
+    NSString * kululi = [NSString stringWithFormat:@"%ld 卡路里",(long)calorie];
+    NSAttributedString *cr = [[NSMutableAttributedString alloc] initWithString:@"\n"];
+    NSAttributedString *kaluliStr = [[NSMutableAttributedString alloc] initWithString:kululi];
+    NSMutableAttributedString * showStr = [[NSMutableAttributedString alloc]initWithString:topStr];
+    [showStr appendAttributedString:cr];
+    [showStr appendAttributedString:kaluliStr];
+    [phActivityCircleView setLabelCentre:showStr];
+    [phActivityCircleView setProgress:_leftCalorie WithAnimate:YES];
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

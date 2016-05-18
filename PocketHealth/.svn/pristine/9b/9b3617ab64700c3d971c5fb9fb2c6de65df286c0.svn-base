@@ -1,0 +1,33 @@
+//
+//  PHVideoChatManager.m
+//  PocketHealth
+//
+//  Created by macmini on 15-3-10.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHVideoChatManager.h"
+#import "PHVideoChatViewController.h"
+static PHVideoChatManager *phVideoChatManager;
+@implementation PHVideoChatManager
++(id)defaultManager
+{
+    if (phVideoChatManager == nil) {
+        phVideoChatManager = [[PHVideoChatManager alloc] init];
+    }
+    return phVideoChatManager;
+}
+
+-(void)createVideoChatWithDicInfo:(NSDictionary *)dic WithCallState:(BOOL)isComingCall
+{
+    phVideoChatVC = [[PHVideoChatViewController alloc] initWithDictionary:dic CallState:isComingCall];
+    [[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:phVideoChatVC animated:YES completion:nil];
+}
+
+-(void)didConnected
+{
+    if (phVideoChatVC) {
+        [phVideoChatVC didConnected];
+    }
+}
+@end

@@ -1,0 +1,22 @@
+//
+//  PHBackView.h
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import "PHBackViewBottomToolBar.h"
+@protocol PHBackViewDelegate <NSObject>
+-(void)shutUpVideoCall;
+@end
+@interface PHBackView : UIView<PHBackViewBottomToolBarDelegate>
+{
+    PHBackViewBottomToolBar *toolBar;
+    int currentUserId;
+    int currentAnchorUserid;
+}
+@property(nonatomic, assign) id<PHBackViewDelegate> delegate;
+-(void)createAVModuleWithServerIP:(NSString *)serverIp WithPort:(int)port WithRoomId:(int)roomId WithUserId:(int)userId WithAnchorUserId:(int)anchorUserId WithFrameSize:(CGSize)size;
+@end

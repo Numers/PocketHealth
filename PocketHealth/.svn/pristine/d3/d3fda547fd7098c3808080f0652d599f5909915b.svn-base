@@ -1,0 +1,138 @@
+//
+//  GroupIndexTableViewCell.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "GroupIndexTableViewCell.h"
+
+#import "Member.h"
+#import "NotificationMessage.h"
+#import "HospitalAggregation.h"
+#import "GroupHelpAggregation.h"
+
+
+#import "CommonUtil.h"
+#import "UIImageView+WebCache.h"
+
+@implementation GroupIndexTableViewCell
+
+- (void)awakeFromNib {
+    // Initialization code
+}
+
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
+    [super setSelected:selected animated:animated];
+
+    // Configure the view for the selected state
+}
+
+-(void)setUpCellWithMember:(Member *)member
+{
+    if (self.headImageView == nil) {
+        self.headImageView = [[UIImageView alloc] init];
+    }
+    [self.headImageView setImageWithURL:[NSURL URLWithString:member.headImage] placeholderImage:[UIImage imageNamed:@"defult_head.png"]];
+    if (self.nickNameLabel == nil) {
+        self.nickNameLabel = [[UILabel alloc] init];
+    }
+    self.nickNameLabel.text = member.nickName;
+    if (self.messageLabel == nil) {
+        self.messageLabel = [[UILabel alloc] init];
+    }
+    
+    if (self.timeLabel == nil) {
+        self.timeLabel = [[UILabel alloc ] init];
+    }
+    
+//    self.timeLabel.text = [CommonUtil TimeStrWithInterval:member.sessionDate];
+//    
+//    if (member.messageArr.count > 0) {
+//        Message *message = (Message *)[member.messageArr objectAtIndex:member.messageArr.count-1];
+//        MessageContentType contentType = [message messageContentType];
+//        if (contentType == MessageContentText) {
+//            self.messageLabel.text = message.content;
+//        }else if (contentType == MessageContentVoice)
+//        {
+//            self.messageLabel.text = @"[语音]";
+//        }else if (contentType == MessageContentImage)
+//        {
+//            self.messageLabel.text = @"[图片]";
+//        }
+//        
+//    }else{
+//        self.messageLabel.text = nil;
+//    }
+    
+//    if (self.bageView == nil) {
+//        self.bageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"tabbar_badge"]];
+//        self.bageView.frame = CGRectMake(44, 0, 35,35 );
+//    }
+//    
+//    if (self.bageNumber == nil) {
+//        self.bageNumber = [[UILabel alloc]initWithFrame:CGRectMake(2,0,33, 33)];
+//        [self.bageNumber setBackgroundColor:[UIColor clearColor]];
+//        [self.bageNumber setTextAlignment:NSTextAlignmentCenter];
+//        [self.bageNumber setTextColor:[UIColor whiteColor]];
+//        [self.bageNumber setFont:[UIFont boldSystemFontOfSize:9]];
+//    }
+//    [self.bageView addSubview:self.bageNumber];
+//    if (member.messageNotReadCount > 0) {
+//        if (member.messageNotReadCount<100) {
+//            [self.bageNumber setText:[NSString stringWithFormat:@"%ld",(long)member.messageNotReadCount]];
+//        }
+//        else{
+//            [self.bageNumber setText:@"99+"];
+//        }
+//        
+//        self.bageView.hidden = NO;
+//        self.bageNumber.hidden = NO;
+//    }else{
+//        self.bageView.hidden = YES;
+//        self.bageNumber.hidden = YES;
+//    }
+//    [self addSubview:self.bageView];
+}
+
+-(void)setUpCellWithNotificaion:(NotificationMessage *)notificaionMsg{
+    if (self.headImageView == nil) {
+        self.headImageView = [[UIImageView alloc] init];
+    }
+    [self.headImageView setImageWithURL:[NSURL URLWithString:@"http://www.cocoachina.com/cms/uploads/allimg/141105/4196_141105101156_1.jpg"]];
+    if (self.nickNameLabel == nil) {
+        self.nickNameLabel = [[UILabel alloc] init];
+    }
+    self.nickNameLabel.text = @"notificaion";
+    self.messageLabel.text = notificaionMsg.content;
+    self.timeLabel.text = [CommonUtil TimeStrWithInterval:notificaionMsg.sessionDate];
+}
+-(void)setUpCellWithHospitalsAggregation:(HospitalAggregation *)hospitalAggregation{
+    if (self.headImageView == nil) {
+        self.headImageView = [[UIImageView alloc] init];
+    }
+    [self.headImageView setImageWithURL:[NSURL URLWithString:@"http://www.cocoachina.com/cms/uploads/allimg/141105/4196_141105101156_1.jpg"]];
+    if (self.nickNameLabel == nil) {
+        self.nickNameLabel = [[UILabel alloc] init];
+    }
+    self.nickNameLabel.text = @"hospitalAggregation";
+    self.messageLabel.text = hospitalAggregation.content;
+    self.timeLabel.text = [CommonUtil TimeStrWithInterval:hospitalAggregation.sessionDate];
+}
+-(void)setUpCellWithGroupsAggregation:(GroupHelpAggregation *)groupHelpAggregation{
+    if (self.headImageView == nil) {
+        self.headImageView = [[UIImageView alloc] init];
+    }
+    [self.headImageView setImageWithURL:[NSURL URLWithString:@"http://www.cocoachina.com/cms/uploads/allimg/141105/4196_141105101156_1.jpg"]];
+    if (self.nickNameLabel == nil) {
+        self.nickNameLabel = [[UILabel alloc] init];
+    }
+    self.nickNameLabel.text = @"groupHelpAggregation";
+    self.messageLabel.text = groupHelpAggregation.content;
+    self.timeLabel.text = [CommonUtil TimeStrWithInterval:groupHelpAggregation.sessionDate];
+}
+
+
+
+@end

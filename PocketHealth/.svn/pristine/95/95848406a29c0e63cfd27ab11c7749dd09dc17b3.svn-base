@@ -1,0 +1,214 @@
+//
+//  PHOrganizationDetailsViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-18.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOrganizationDetailsViewController.h"
+#import "PHDetailsOtherInfoViewController.h"
+#import "PHInterestingGroupViewController.h"
+#import "PHGetMemberInfoManager.h"
+#import "CalculateViewFrame.h"
+#import "Organization.h"
+#import "Group.h"
+
+#import "SFirendDB.h"
+#import "MBProgressHUD.h"
+#import "PHAppStartManager.h"
+#import "PHGroupHttpRequest.h"
+
+//子界面
+//群推入子界面
+#import "PHAddDetailGroupTableViewController.h"
+//二维码子界面
+#import "PHQRCodeViewController.h"
+
+@interface PHOrganizationDetailsViewController ()<PHDetailsOtherInfoDelegate,PHInterestingGroupDelegate>
+{
+    UIScrollView *scrollView;
+    Organization *organization;
+    PHDetailsOtherInfoViewController *phDetailsOtherInfoVC;
+    PHInterestingGroupViewController *phInterestingGroupVC;
+}
+
+@end
+
+@implementation PHOrganizationDetailsViewController
+-(id)initWithOrganization:(Organization *)org
+{
+    self = [super init];
+    if (self) {
+        organization = org;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    scrollView = [[UIScrollView alloc] initWithFrame:frame];
+    [self.view addSubview:scrollView];
+    scrollView.backgroundColor = ViewBackGroundColor;
+    phDetailsOtherInfoVC = [[PHDetailsOtherInfoViewController alloc] initWithOrganizaiton:organization];
+    phDetailsOtherInfoVC.delegate = self;
+    [scrollView addSubview:phDetailsOtherInfoVC.view];
+    [self updateScrollFrame];
+    [self getGroupByUserId:organization.userId];
+//    [self.view setFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, phDetailsOtherInfoVC.view.frame.size.height)];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.navigationItem setTitle:@"医院详情"];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)updateScrollFrame
+{
+    if (phInterestingGroupVC != nil) {
+        [scrollView setContentSize:CGSizeMake([UIScreen mainScreen].bounds.size.width, phDetailsOtherInfoVC.view.frame.size.height + phInterestingGroupVC.view.frame.size.height)];
+    }
+    else{
+        [scrollView setContentSize:CGSizeMake(phDetailsOtherInfoVC.view.frame.size.width, phDetailsOtherInfoVC.view.frame.size.height)];
+    }
+}
+
+-(void)getGroupByUserId:(long long)userId
+{
+    [[PHGetMemberInfoManager defaultManager] requestGroupByUserId:userId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSInteger code = [[dic objectForKey:@"Code"] integerValue];
+        if (code == 1) {
+            NSArray *resultArr = [dic objectForKey:@"Result"];
+            NSMutableArray *arr = [[NSMutableArray alloc] init];
+            for (NSDictionary *m in resultArr) {
+                NSError *error = nil;
+                Group *g = [MTLJSONAdapter modelOfClass:[Group class] fromJSONDictionary:m error:&error];
+                if (!error) {
+                    [arr addObject:g];
+                }
+            }
+            phInterestingGroupVC = [[PHInterestingGroupViewController alloc] initWithGroups:arr];
+            phInterestingGroupVC.delegate = self;
+            [phInterestingGroupVC.view setFrame:CGRectMake(0, phDetailsOtherInfoVC.view.frame.size.height, [UIScreen mainScreen].bounds.size.width, arr.count * 87.0f + 25)];
+            [scrollView addSubview:phInterestingGroupVC.view];
+            [self updateScrollFrame];
+        }else{
+
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+#pragma -mark PHDetailsOtherInfoDelegate
+-(void)selectIntroductionCellWithOrganization:(Organization *)org
+{
+    
+}
+-(void)selectQRCodeCellWithOrganization:(Organization *)org
+{
+    PHQRCodeViewController * phQRVC = [[PHQRCodeViewController alloc]initWithMember:org WithMemberType:MemberUserTypeAdmin];
+    [self.navigationController pushViewController:phQRVC animated:YES];
+}
+-(void)selectAcceptMessageSwitchViewWithOrganization:(Organization *)org
+{
+    
+}
+-(void)selectJoinValidateCellWithOrganization:(Organization *)org
+{
+    
+}
+-(void)clickGoChatViewWithOrganization:(Organization *)org
+{
+    //关注 就是进入的意思
+    if (org.utuid>0) {
+        //进入聊天
+        [self gotoChatView:org];
+    }else{
+        //去关注
+        [self attentionHospital:org];
+    }
+    
+}
+-(void)gotoChatView:(Organization *)org{
+    if (_createFromType == OrganizationCreateTypeByDetailOne) {
+        [self.navigationController popViewControllerAnimated:YES];
+    }else{
+        //推到顶部 推入member委托
+        if ([self.delegate respondsToSelector:@selector(pushChatViewWithMemberId:WithUserType:)]) {
+            [[PHAppStartManager defaultManager] popToTabBarControllerWithIndex:1];
+            [self.delegate pushChatViewWithMemberId:org.userId WithUserType:MemberUserTypeAdmin];
+        }
+    }
+}
+-(void)attentionHospital:(Organization *)org{
+    Member * host = [[PHAppStartManager defaultManager]userHost];
+    Member *member  = [Member initWithOrganization:org];
+    //将该用户存入数据库
+    SFirendDB * sfriendDB = [[SFirendDB alloc]init];
+    if (![sfriendDB isExistMemberWithUid:member.memberId WithBelongUid:host.memberId]) {
+        member.userState = userStateNormal;
+        [sfriendDB saveUser:member WithBelongUid:host.memberId];
+    }
+    
+    MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    // Configure for text only and offset down
+    hud.mode = MBProgressHUDModeText;
+    hud.labelText = @"正在添加关注...";
+    hud.margin = 10.f;
+    hud.removeFromSuperViewOnHide = YES;
+    
+    
+    //直接加好友
+    [PHGroupHttpRequest requestAddAnFriend:member.memberId WithMemberType:0 done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        NSDictionary *dic = (NSDictionary *)responseObject;
+        NSString * message = [dic objectForKey:@"Message"];
+        hud.labelText = message;
+        [hud hide:YES afterDelay:1];
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            //将该用户设置为自己的好友 加入到好友列表
+            if ([sfriendDB isExistMemberWithUid:member.memberId WithBelongUid:host.memberId]) {
+                member.userState = userStateDelete;
+                [sfriendDB mergeWithUser:member WithBelongUid:host.memberId];
+            }
+            org.utuid = 1;
+           //界面处理下
+#warning xxxx
+            
+            //                    NSDictionary *dic = (NSDictionary *)responseObject;
+            //                NSString * sendTag = [NSString stringWithFormat:@"%@请求添加%@为好友",host.nickName,member.nickName];
+            //                //                    NSLog(@"%@",[dic objectForKey:@"Message"]);
+            //                NSDictionary *userInfoData = [NSDictionary dictionaryWithObjectsAndKeys:host.headImage,@"HeadImg",host.loginName,@"LoginName",host.nickName,@"NickName",[NSString stringWithFormat:@"%lld",host.memberId],@"UserId",[NSString stringWithFormat:@"%u",host.userType],@"UserType", nil];
+            //                NSDictionary * userInfo = [NSDictionary dictionaryWithObjectsAndKeys:userInfoData,@"Data",@"1",@"Code",sendTag,@"Message", nil];
+            //                NSString *userInfoStr = [userInfo JSONString];
+            //                NSInteger ret =  [ClientHelper addFriend:host.memberId Token:[CommonUtil MyToken] ToUid:member.memberId UserInfo:userInfoStr Msgsn:99999];
+            //                NSLog(@"addFriend %ld",(long)ret);
+            
+        }else{
+            NSLog(@"帐号错误 一般不会打印");
+        }
+        
+        
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+        hud.labelText = @"网络错误";
+        [hud hide:YES afterDelay:1];
+    }];
+}
+#pragma -mark PHInterestingGroupDelegate
+-(void)selectGroupCellWithGroup:(Group *)g
+{
+    PHAddDetailGroupTableViewController * phaddGroupVC = [[PHAddDetailGroupTableViewController alloc]initWithGroup:g];
+    [self.navigationController pushViewController:phaddGroupVC animated:YES];
+}
+@end

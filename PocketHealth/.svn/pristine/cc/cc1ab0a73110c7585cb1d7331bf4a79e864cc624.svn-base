@@ -1,0 +1,88 @@
+//
+//  XGPSocketAVideoHelper.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/3/10.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "XGPSocketAVideoHelper.h"
+#import "ClientHelper.h"
+#import "PHAppStartManager.h"
+#import "PHVideoChatManager.h"
+
+@implementation XGPSocketAVideoHelper
+
+static XGPSocketAVideoHelper *globalSocketAVDistrbuter;
++(id)defaultManager
+{
+    if (globalSocketAVDistrbuter == nil) {
+        globalSocketAVDistrbuter = [[XGPSocketAVideoHelper alloc] init];
+        
+        //视频模块3个通知
+        [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(AVSucceedRegNotificaion:) name:@"succeedRegisterAVRoom" object:nil];
+        //acceptSessionAV
+        [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(AVAcceptNotificaion:) name:@"acceptSessionAV" object:nil];
+        //finishSessionAV
+        [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(AVFinishNotificaion:) name:@"finishSessionAV" object:nil];
+        
+    }
+    return globalSocketAVDistrbuter;
+}
+
+
+
+
+#pragma mark - 视频相关socket处理
+-(void)registerRoomWithDic:(NSDictionary *)dic{
+    roomInfoDic = [NSMutableDictionary dictionaryWithDictionary:dic];
+    long long memberId = [[PHAppStartManager defaultManager]userHost].memberId;
+    
+    
+    NSString * roomIP = [roomInfoDic objectForKey:@"roomip"];
+    NSInteger roomid = [[roomInfoDic objectForKey:@"roomid"]integerValue];
+    NSInteger port = [[roomInfoDic objectForKey:@"port"]integerValue];
+    [ClientHelper regiseterSessionWithMyid:memberId Token:[CommonUtil MyToken]];
+}
+-(void)finishAVWithDic:(NSDictionary *)dic{
+    long long sessionId = [[dic objectForKey:@"SessionID"]longLongValue];
+    long long memberId = [[PHAppStartManager defaultManager]userHost].memberId;
+    [ClientHelper finishSessionWithMyid:memberId Token:[CommonUtil MyToken] SessionId:sessionId];
+}
+
+#pragma mark -  通知
+-(void)AVSucceedRegNotificaion:(NSNotification *)notifi{
+    id object =notifi.object;
+    long long sesscionId = [object longLongValue];
+   
+    [roomInfoDic setObject:[NSNumber numberWithLongLong:sesscionId] forKey:@"SessionID"];
+    //发送普通消息给 对方用户
+    [ClientHelper sendAcceptAVSessionMessageWithInfoDic:roomInfoDic];
+//    [[NSNotificationCenter defaultCenter]postNotificationName:@"sendToVCSuccueedRegister" object:object];
+}
+-(void)AVAcceptNotificaion:(NSNotification *)notifi{
+    //接收到对方接受了我的视频请求 向界面发出通知
+    [[PHVideoChatManager defaultManager]didConnected];
+//    id object =notifi.object;
+//    long long sesscionId = [object longLongValue];
+//    long long memberId = [[PHAppStartManager defaultManager]userHost].memberId;
+//    [ClientHelper acceptSessionWithMyid:memberId Token:[CommonUtil MyToken] SessionId:sesscionId];
+}
+
+-(void)AVFinishNotificaion:(NSNotification *)notifi{
+//    id object =notifi.object;
+//    long long sesscionId = [object longLongValue];
+    
+    [ClientHelper sendFinishAVMessageWithInfoDic:roomInfoDic];
+    //发送通知给界面 告知挂断
+    [[PHVideoChatManager defaultManager]didDisConnected];
+}
+-(void)releaseSelf{
+    [[NSNotificationCenter defaultCenter]removeObserver:self];
+}
+
+#pragma mark - 给界面使用的方法
+-(void)acceptSessionWithSessionId:(long long)sessionId withMyid:(long long)memberId{
+    [ClientHelper acceptSessionWithMyid:memberId Token:[CommonUtil MyToken] SessionId:sessionId];
+}
+@end

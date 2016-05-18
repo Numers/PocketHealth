@@ -1,0 +1,51 @@
+//
+//  UINavigationController+PHNavigationController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-24.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "UINavigationController+PHNavigationController.h"
+
+@implementation UINavigationController (PHNavigationController)
+-(void)setMonitoringViewNavigationView
+{
+    [self.navigationBar setBackgroundImage:[UIImage imageNamed:@"monitoring-firstbarbackgroundimage"] forBarMetrics:UIBarMetricsDefault];
+    self.navigationBar.shadowImage = [UIImage new];
+    self.navigationBar.tintColor = [UIColor whiteColor];
+    self.navigationBar.translucent = NO;
+    [self setStatusBarStyle:UIStatusBarStyleLightContent];
+    [self setTitleTextColor:[UIColor colorWithRed:1.0f green:1.0f blue:1.0f alpha:1.f]];
+}
+
+-(void)setOtherViewNavigation
+{
+    [self.navigationBar setBackgroundImage:[UIImage imageNamed:@"naviTopBarColor"] forBarMetrics:UIBarMetricsDefault];
+    self.navigationBar.shadowImage = [UIImage new];
+    [self setTitleTextColor:[UIColor whiteColor]];
+    self.navigationBar.tintColor = [UIColor whiteColor];
+    self.navigationBar.translucent = NO;
+    [self setStatusBarStyle:UIStatusBarStyleLightContent];
+}
+
+-(void)setTranslucentView
+{
+    [self.navigationBar setBackgroundImage:[UIImage new]
+                                                  forBarMetrics:UIBarMetricsDefault];
+    self.navigationBar.shadowImage = [UIImage new];
+    self.navigationBar.translucent = YES;
+    [self setTitleTextColor:[UIColor whiteColor]];
+    self.navigationBar.tintColor = [UIColor whiteColor];
+}
+
+-(void)setTitleTextColor:(UIColor *)color
+{
+    [self.navigationBar setTitleTextAttributes:@{NSForegroundColorAttributeName :color}];
+}
+
+-(void)setStatusBarStyle:(UIStatusBarStyle)style
+{
+    [[UIApplication sharedApplication] setStatusBarStyle:style animated:NO];
+}
+@end

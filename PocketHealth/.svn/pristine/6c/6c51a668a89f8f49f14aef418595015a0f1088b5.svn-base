@@ -1,0 +1,41 @@
+//
+//  Member.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Mantle.h"
+
+@interface Member : MTLModel<MTLJSONSerializing>
+typedef enum {
+    
+    MemberTypeUser = 1, //普通用户
+    MemberTypeHospital = 2, //医院号
+    
+} MemberType;
+
+@property(nonatomic) long long memberId;
+@property(copy, nonatomic) NSString *loginName;
+@property(copy, nonatomic) NSString *passWord;
+@property(copy, nonatomic) NSString *nickName;
+@property(retain, nonatomic) NSString *headImage;
+
+@property(nonatomic) NSInteger userHeight;
+@property(nonatomic) NSInteger userWeight;
+@property(nonatomic) NSInteger userSex; //1 男 2女 0未知
+@property(nonatomic) NSInteger userState;
+@property(nonatomic) NSTimeInterval userRegister;
+
+//聊天特殊参数
+@property(nonatomic) NSInteger isSession;
+@property(nonatomic) NSTimeInterval sessionDate;
+
+@property (nonatomic) MemberType userType ; //1用户 2医院号
+
+-(Member *)initlizedWithDictionary:(NSDictionary *)dic;
+-(NSString *)getHttpKey;
+-(NSDictionary *)dictionaryInfo;
+@end

@@ -1,0 +1,42 @@
+//
+//  Group.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Mantle.h"
+#import "GroupMember.h"
+
+@interface Group : MTLModel<MTLJSONSerializing>
+
+@property(nonatomic) unsigned groupId;
+@property(nonatomic) long long groupOwner;
+@property(nonatomic) long long belongMemberId;
+@property(nonatomic,copy) NSString *groupName;
+@property(nonatomic,copy) NSString *groupHeadImage;
+@property (nonatomic,copy) NSString *groupBriefIntroduction; //群简介
+@property(nonatomic) NSInteger isSession;
+@property(nonatomic) NSTimeInterval sessionDate;
+
+@property(nonatomic,strong) NSMutableArray *groupMember;
+@property(nonatomic,strong) NSMutableArray *groupMessage;
+
+@property (nonatomic) unsigned groupMemberCount;
+//未读消息数目
+@property(nonatomic) NSInteger messageNotReadCount;
+
+#pragma mark - 91唱新增属性
+@property (nonatomic) unsigned groupMaxPeople;
+@property (nonatomic) unsigned groupMaxManager;
+@property (nonatomic) unsigned groupLevel;
+@property (nonatomic) unsigned groupMaxRoom;
+@property (nonatomic) NSInteger groupState;
+@property (nonatomic , copy) NSMutableArray *groupTag;
+@property (nonatomic) NSTimeInterval groupCreateTime;
+
+
+-(GroupMemberType)memberTypeWithUid:(unsigned)uid;
+@end

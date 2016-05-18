@@ -1,0 +1,21 @@
+//
+//  PHProgressView.h
+//  Progress
+//
+//  Created by macmini on 15-1-22.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@class CCProgressView;
+@interface PHProgressView : UIView
+{
+    CCProgressView *ccProgressView;
+    UILabel *scoreLabel;
+    UILabel *detailsLabel;
+    CGFloat score;
+    NSString *detailText;
+}
+
+- (void)setProgress:(CGFloat)progress animated:(BOOL)animated;
+@end

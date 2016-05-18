@@ -1,0 +1,33 @@
+//
+//  PHVideoModelManager.h
+//  VideoDemo
+//
+//  Created by macmini on 15-3-9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <AVFoundation/AVFoundation.h>
+#import "PHAVCaptureVideoPreView.h"
+#import "PHAVModelView.h"
+
+@interface PHVideoModelManager : NSObject<AVCaptureVideoDataOutputSampleBufferDelegate>
+{
+    PHAVCaptureVideoPreView *phAVCaptureVideoPreView;
+    PHAVModelView *phAVModelView;
+    AVCaptureSession *session;
+    CGSize frameSize;
+    UIView *parentView;
+    BOOL isChatting;
+    int currentAnchorUserid;
+}
++(id)defaultManager;
+-(void)createAVModuleWithServerIP:(NSString *)serverIp WithPort:(int)port WithRoomId:(int)roomId WithUserId:(int)userId WithAnchorUserId:(int)anchorUserId WithFrameSize:(CGSize)size InView:(UIView *)view;
+-(void)deleteVideoOutPutWithAnchorUserId:(int)anchorUserid;
+-(void)setIsChatting:(BOOL)chat;
+-(BOOL)isChatting;
+- (void)swapFrontAndBackCameras;
+-(UIView *)returnVideoPreview;
+-(void)convertAVModelAndAVPreviewFrame;
+@end

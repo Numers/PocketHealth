@@ -1,0 +1,669 @@
+//
+//  PHGroupChatHomeViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupChatHomeViewController.h"
+
+#import "PHAppStartManager.h"
+#import "AppDelegate.h"
+
+//界面
+#import "GroupIndexTableViewCell.h"
+#import "CalculateViewFrame.h"
+#import "PHChatHomeAddDetailIndexViewController.h"
+#import "PrivateChatViewViewController.h"
+
+#import "GroupHelperIndexViewController.h"
+#import "PHNotificaionViewController.h"
+#import "PHHosptialAggregationViewController.h"
+#import "GroupChatViewController.h"
+#import "UINavigationController+PHNavigationController.h"
+#import "PHAddDetailGroupTableViewController.h"
+
+//功能型
+#import "Reachability.h"
+#import "ClientHelper.h"
+
+//数据型
+#import "Member.h"
+#import "SFirendDB.h"
+
+#import "SNotificationMessage.h"
+#import "NotificationMessage.h"
+
+#import "OneForOneMessage.h"
+#import "SOneForOneMessageDB.h"
+#import "SGroupDB.h"
+#import "SGroupMessageDB.h"
+#import "SGroupMemberDB.h"
+
+#import "HospitalAggregation.h"
+#import "GroupHelpAggregation.h"
+//http数据转换到数据库处理类
+#import "PHChatDatabaseHelper.h"
+//数据通讯
+#import "PHGroupHttpRequest.h"
+#import "PHSocketManagerHelper.h"
+
+//界面推送协议
+#import "PHProtocol.h"
+
+
+
+static NSString *connectStr = @"正在连接...";
+static ConnectState connectState = isDisConnect;
+static NSString *identifierGroupMainCell = @"PHGroupTableViewCell";
+@interface PHGroupChatHomeViewController ()<UITableViewDataSource,UITableViewDelegate,PHPushChatViewDelegate>
+{
+    Member *host;
+    
+    Reachability *internetReach;
+    
+//    BOOL _bFinishNotification;
+
+}
+//@property (nonatomic, strong) NSMachPort *notificationPort;
+
+@end
+
+@implementation PHGroupChatHomeViewController
+#pragma mark - view 生命周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor groupTableViewBackgroundColor];
+
+    //———————————————————————————————————— 数据部分初始化 (标号相同为可并行  ———————————————————————
+    //1.获取当前用户
+    [self createHost];
+    //1.创建chatVC 字典
+    self.PHChatViewMutableDic = [[NSMutableDictionary alloc]init];
+    //1.后台请求自己的群信息 同步群信息
+    [self performSelectorInBackground:@selector(selectMyGroupWithServer) withObject:nil];
+    //1.后台请求自己的好友信息 同步好友信息
+    [self performSelectorInBackground:@selector(selectMyFirendWithServer) withObject:nil];
+    //1.创建socket数据分发消息通知
+    [self createSocketChatNotification];
+    //1.查询网络状态
+    internetReach= [Reachability reachabilityWithHostName:@"www.baidu.com"];
+    [internetReach startNotifier];
+    //2.查询网络状态的通知
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(netWorkReachabe:) name:kReachabilityChangedNotification object:nil];
+    
+    
+    //————————————————————————————————————— 界面部分初始化
+    //1.创建tableview
+    _tableView = [[UITableView alloc] init];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView.frame = frame;
+    
+    
+    [_tableView registerNib:[UINib nibWithNibName:@"GroupIndexTableViewCell" bundle:nil] forCellReuseIdentifier:identifierGroupMainCell];
+    
+    //2.创建table数据源
+//    [self createPHGroupChatTableViewDataSourceMainArray];
+    [self.view addSubview:_tableView];
+   
+    
+    
+    
+    //设置导航条背景颜色
+    //
+    // Do any additional setup after loading the view.
+}
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    
+    [self.navigationController setNavigationBarHidden:NO];
+    self.navigationController.navigationBar.hidden = NO;
+//    [self.navigationController.navigationBar setTranslucent:NO];
+    self.tabBarController.navigationItem.title = connectStr;
+    self.navigationController.navigationBar.translucent = NO;
+    [self.navigationController setOtherViewNavigation];
+
+    //1.创建右上角添加动作按钮
+    UIBarButtonItem *phChatRightTopAddBarBtnItem = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(phChatRightTopAddBarBtnItemClick)];
+    self.tabBarController.navigationItem.rightBarButtonItem = phChatRightTopAddBarBtnItem;
+    self.tabBarController.navigationItem.leftBarButtonItem = nil;
+    
+    //刷新列表界面方法
+    [self createPHGroupChatTableViewDataSourceMainArray];
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark -
+#pragma mark - createMemberHost
+#pragma mark -
+-(void)createHost{
+   host =  [[PHAppStartManager defaultManager] userHost];
+}
+#pragma mark - 当且仅当出错的时候调用
+-(void)reloadMyGroupWithServer{
+    [PHGroupHttpRequest requestSelfGroupLsitDone:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        NSLog(@"%@",responseObject);
+        //重置数据库
+        [PHChatDatabaseHelper reloadMyGroupListToDb:responseObject];
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+}
+#pragma mark -  每次启动到这里 查询自己加入的群 更新群信息（不包括群成员）
+-(void)selectMyGroupWithServer{
+    [PHGroupHttpRequest requestSelfGroupLsitDone:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        NSLog(@"%@",responseObject);
+        //重置聊天界面群列表
+        [PHChatDatabaseHelper saveMyGroupListToDb:responseObject];
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+}
+
+#pragma mark - 查询自己的好友 全部（包括医生）
+-(void)selectMyFirendWithServer{
+    //
+    [PHGroupHttpRequest requestUserFirendListWithType:MemberUserTypeNil done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        NSLog(@"%@",responseObject);
+        //将数据添加到数据库中
+        [PHChatDatabaseHelper saveMyAllFriendListToDb:responseObject];
+
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+}
+#pragma mark - 创建socket数据分发消息通知
+-(void)createSocketChatNotification{
+    //    DBTOUIJOINCHATORGROUPINFO
+//    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(updateJoinInfoModel:) name:@"DBTOUIJOINCHATORGROUPINFO" object:nil];
+    //DBTOUIGROUPMESSAGETEXT
+    //刷新下界面
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(updateGroupAttentionMessageModel) name:@"DBTOUIGROUPMESSAGETEXT" object:nil];
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(updatePrivateMessageModel:) name:@"DBTOUIPRIVATEMESSAGETEXT" object:nil];
+    //刷新自己的群通知
+//    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(refreshSelfGroupList) name:@"REFRESHMYGROUPLSITFROMSERVER" object:nil];
+    //添加群错误信息的通知
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(removeErrorGroupNotification:) name:@"RemoveErrorGroupNotification" object:nil];
+    //添加好友通知
+     [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(updateAddFriendNotificaionMessageModel:) name:@"DBTOUIADDFRIENDNOTIFICAIONMESSAGETEXT" object:nil];
+}
+#pragma mark - 消息分发处理 私聊处理
+-(void)updatePrivateMessageModel:(id)object{
+    NSLog(@"聊天主界面接受到 socket分发类 私聊消息 通知,进行界面更新");
+    NSLog(@"updatePrivateMessageModel is %@",object);
+    
+    OneForOneMessage *pMeseeage = (OneForOneMessage *)((NSNotification *)object).object;
+    //1. 在 chatFriendList 找到该消息的聊天人
+    Member *tmpMember = [self searchMemberInChatFriendListByMemberId:pMeseeage.memberId];
+    
+    //1-1 如果不存在这个对象 那么从数据库中获取
+    if (tmpMember == nil) {
+        tmpMember = [self searchMemberInFriendDBByMemberId:pMeseeage.memberId];
+        if (tmpMember==nil) {
+            //查询群数据库
+            SGroupMemberDB * sgroupmemberDb = [[SGroupMemberDB alloc]init];
+            tmpMember = [sgroupmemberDb selectGroupMemberInfo:pMeseeage.memberId];
+            //将改用户保存到 sfrienddb 作为临时用户
+           
+        }
+        //如果这个用户是 医生用户
+        if (tmpMember.userType == MemberUserTypeAdmin) {
+            NSDictionary * objDic = [NSDictionary dictionaryWithObjectsAndKeys:pMeseeage,@"msg",tmpMember,@"member", nil];
+            //查询当前界面中的子数组
+            NSNotification *notification = [NSNotification notificationWithName:@"DBTOUIPRIVATEMESSAGETEXTInside" object:objDic];
+            
+            [[NSNotificationQueue defaultQueue]
+             enqueueNotification:notification
+             postingStyle:NSPostWhenIdle
+             coalesceMask:NSNotificationCoalescingOnName
+             forModes:nil];
+            
+        }
+        
+        //1-2 如果数据库中也没有 直接报错
+        if (tmpMember==nil)NSLog(@" error! : firendDB has no the mesaage member!!! ");
+        
+        
+        
+    }
+    //2 member 已存在
+    //2-1 判断member 是否显示在界面上
+    /**
+     *  这边有3 种情况
+     1.当前界面就是聊天界面 isSession=1 && isCurrentPresentView=YES && chatVC != nil
+     2.当前界面在主要的聊天列表界面 未含有该私聊 isSession=0
+     3. 当前界面在主要的聊天列表界面 含有该私聊 isSession=1 isCurrentPresentView=NO
+     */
+//    tmpMember.friendType = MemberFriendTypeUser;
+    if (tmpMember.isSession == 0) {
+        [CommonUtil playMessageComeNotify];
+        tmpMember.isSession = 1;
+        tmpMember.sessionDate = pMeseeage.time;
+        SFirendDB *frienddb = [[SFirendDB alloc] init];
+        [frienddb mergeWithUser:tmpMember WithBelongUid:host.memberId];
+        //        [frienddb close];
+        
+        //加入消息数组
+        [tmpMember.messageArr addObject:pMeseeage];
+        tmpMember.messageNotReadCount++;
+        host.messageNotReadCount++;
+        
+        //插入到聊天列表中
+        [self.PHGroupChatTableViewDataSourceMainArray addObject:tmpMember];
+        //        SMessageDB *msgdb = [[SMessageDB alloc] init];
+        //        [msgdb saveMessage:message WithUid:fromMember.memberId WithContactUid:host.memberId];
+        //        [msgdb close];
+    }
+    else
+    {
+        tmpMember.sessionDate = pMeseeage.time;
+        if (tmpMember.chatVC != nil) {
+            if([tmpMember.chatVC isCurrentPresentView])
+            {
+                pMeseeage.readState = MessageRead;
+                
+            }else{
+                [CommonUtil playMessageComeNotify];
+                tmpMember.messageNotReadCount++;
+                host.messageNotReadCount++;
+            }
+            [tmpMember.chatVC addMessage:pMeseeage isSave:NO];
+        }else{
+            [CommonUtil playMessageComeNotify];
+            tmpMember.isSession = 1;
+            SFirendDB *frienddb = [[SFirendDB alloc] init];
+            [frienddb mergeWithUser:tmpMember WithBelongUid:host.memberId];
+            //                [frienddb close];
+            [tmpMember.messageArr addObject:pMeseeage];
+            tmpMember.messageNotReadCount++;
+            host.messageNotReadCount++;
+            
+            if ([self searchMemberInFriendDBByMemberId:pMeseeage.memberId]==nil) {
+                [self.PHGroupChatTableViewDataSourceMainArray addObject:tmpMember];
+            }
+            //                SMessageDB *msgdb = [[SMessageDB alloc] init];
+            //                [msgdb saveMessage:message WithUid:fromMember.memberId WithContactUid:host.memberId];
+            //                [msgdb close];
+        }
+    }
+    [self createPHGroupChatTableViewDataSourceMainArray];
+//    [self performSelectorOnMainThread:@selector(groupHomeTableViewReloadData) withObject:nil waitUntilDone:NO];
+}
+-(Member *)searchMemberInFriendDBByMemberId:(long long)memberId
+{
+    SFirendDB *frienddb = [[SFirendDB alloc] init];
+    Member *member = [frienddb selectUserWithUid:memberId WithBelongUid:host.memberId];
+    //    [frienddb close];
+    return member;
+}
+-(Member *)searchMemberInChatFriendListByMemberId:(long long)memberId
+{
+    NSInteger i = 0;
+    Member *temp = nil;
+    for (id m in self.PHGroupChatTableViewDataSourceMainArray) {
+        if ([m isKindOfClass:[Member class]]) {
+            Member *current = (Member *)m;
+            if (memberId == current.memberId) {
+                temp = current;
+                break;
+            }
+        }
+        i++;
+    }
+    return temp;
+}
+#pragma mark - 消息分发加好友通知
+-(void)updateAddFriendNotificaionMessageModel:(id)object{
+    NSLog(@"聊天主界面接受到 socket分发类 addFriend 通知,进行界面更新");
+    NSLog(@"updateAddFriendNotificaionMessageModel is %@",object);
+    
+    NotificationMessage *pMeseeage = (NotificationMessage *)((NSNotification *)object).object;
+    NSLog(@"%@",pMeseeage);
+    
+    //刷新数据源
+    [self createPHGroupChatTableViewDataSourceMainArray];
+    
+    
+}
+-(void)removeErrorGroupNotification:(id)object{
+    NSLog(@"聊天主界面接受到 messageRes 消息 告知群已被删除的错误消息 返回 ");
+    NSLog(@"处理数据库错误消息 重置该用户数据库....");
+//    NSDictionary * dic = (NSDictionary *)((NSNotification *)object).object;
+    //说明当前群组存在错误 刷新当前数据库群组信息
+    //重置群数据库数据
+    [self reloadMyGroupWithServer];
+     NSLog(@"重置该用户数据库结束");
+    
+}
+#pragma mark - 群聊聚合刷新界面
+-(void)updateGroupAttentionMessageModel{
+    [self performSelector:@selector(createPHGroupChatTableViewDataSourceMainArray) withObject:nil];
+}
+
+#pragma mark - 断线重连
+-(void)netWorkReachabe:(NSNotification *)noti{
+    
+    Reachability *currReach=[noti object];
+    NetworkStatus netStatus = [currReach currentReachabilityStatus];
+    
+    BOOL isNetwork = YES;
+    
+    switch (netStatus) {
+        case  NotReachable:
+            //没有网络
+            [ClientHelper close];
+            connectState=isDisConnect;
+            
+            break;
+        case ReachableViaWWAN:
+            //使用3g网络
+            //            [ClientHelper connectToHost];
+            [self performSelectorInBackground:@selector(reConnectChatHost) withObject:nil];
+            connectState=isConnected;
+            isNetwork = NO;
+            break;
+        case ReachableViaWiFi:
+            //使用wifi网络
+            //            [ClientHelper connectToHost];
+            [self performSelectorInBackground:@selector(reConnectChatHost) withObject:nil];
+            connectState=isConnected;
+            isNetwork = NO;
+            
+            break;
+            
+        default:
+            connectState=isTimeOut;
+            break;
+    }
+    [self navigationBatTitleSetting];
+}
+-(void)reConnectChatHost{
+    [[PHSocketManagerHelper defaultManager]reConnectSocketChatHost];
+
+//    [ClientHelper connectToHost];
+}
+-(void)navigationBatTitleSetting
+{
+    if (connectState == isConnected) {
+//        if (host.messageNotReadCount > 0) {
+//            connectStr = [NSString stringWithFormat:@"健康吧(%ld)",(long)host.messageNotReadCount];
+//        }else{
+//            connectStr = @"健康吧";
+//        }
+        connectStr = @"健康吧";
+        
+    }else if(connectState == isTimeOut){
+        connectStr = @"未连接";
+    }else if (connectState == isDisConnect){
+        connectStr = @"连接中...";
+    }else if(connectState == isSync){
+        connectStr = @"收取中...";
+    }
+    if (self.tabBarController.selectedIndex == 1) {
+        self.tabBarController.navigationItem.title = connectStr;
+    }
+    
+}
+#pragma mark ------------
+#pragma mark - 创建表格数据源
+-(void)createPHGroupChatTableViewDataSourceMainArray{
+    
+    
+    //初始化数组
+    if (!self.PHGroupChatTableViewDataSourceMainArray) {
+        self.PHGroupChatTableViewDataSourceMainArray = [[NSMutableArray alloc]init];
+    }
+    //清空数据
+    [self.PHGroupChatTableViewDataSourceMainArray removeAllObjects];
+    
+    //从数据库塞入数据
+    //1.医院公共号 (当做一个好友的聚合)
+    //1.1 从消息数据库中获取类型是 医院好友的 消息的最后一条的消息
+    SOneForOneMessageDB *soneForoneMsgDb = [[SOneForOneMessageDB alloc]init];
+    OneForOneMessage * message = [soneForoneMsgDb selectLastMessageAboutMemberType:MemberUserTypeAdmin WithSelectId:0 WithContantUid:host.memberId];
+    //1.2 构造一个医院公共号类 将消息的内容添加过来
+    HospitalAggregation *hpAggClass = [[HospitalAggregation alloc]initWithLastMessage:message];
+    hpAggClass.noReadCount = [soneForoneMsgDb selectNotReadMessageAboutHospitalCountWithContactUid:host.memberId];
+    [self.PHGroupChatTableViewDataSourceMainArray addObject:hpAggClass];
+    
+    //2.群助手 (群的集合)
+    //2.1 从所有群组数据中 N个群含有未读消息 如果N>0 显示N个群有未读消息 否则显示最后一条群消息的数据
+    SGroupMessageDB *sgroupMessageDb = [[SGroupMessageDB alloc]init];
+    NSInteger notReadCount = [sgroupMessageDb selectNotReadMessageCountWithContactUid:host.memberId];
+    GroupHelpAggregation * groupAggClass;
+    if (notReadCount>0) {
+        //2.2 构造群组聚合类
+        groupAggClass = [[GroupHelpAggregation alloc]initWithNotReadCount:notReadCount ];
+    }else{
+        GroupMessage *groupMessage = [sgroupMessageDb selectLastGroupMessageInAllGroupWithHostId:host.memberId];
+        groupAggClass = [[GroupHelpAggregation alloc]initWithLastGroupMessage:groupMessage];
+    }
+    [self.PHGroupChatTableViewDataSourceMainArray addObject:groupAggClass];
+    
+    
+    
+    //3.下方都是私聊的集合
+    //3.1 获取会话中（isSession = 1） 的私聊人员添加到列表
+    SFirendDB * sfirenddb = [[SFirendDB alloc]init];
+    NSArray * chatingMemberArray = [sfirenddb selectSessionUserWithoutHospitalWithBelongUid:host.memberId];
+    for (Member * member in chatingMemberArray) {
+        member.chatVC = [self selectMemberChatVCInNSDic:member];
+    }
+    [self.PHGroupChatTableViewDataSourceMainArray addObjectsFromArray:chatingMemberArray];
+    
+    //4.消息通知集合
+    SNotificationMessage * snotifiMsgDB = [[SNotificationMessage alloc]init];
+    NotificationMessage *noficaionLastMessage = [snotifiMsgDB selectLastNotificaionMessageWithHostId:host.memberId];
+    if (noficaionLastMessage!= nil) {
+        [self.PHGroupChatTableViewDataSourceMainArray addObject:noficaionLastMessage];
+    }
+    
+    [self.tableView reloadData];
+}
+#pragma mark - 创建tableview委托以及数据塞入
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return self.PHGroupChatTableViewDataSourceMainArray.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    GroupIndexTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifierGroupMainCell];
+    if (cell == nil) {
+        cell = [[GroupIndexTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierGroupMainCell];
+    }
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            id inCellMember = [self.PHGroupChatTableViewDataSourceMainArray objectAtIndex:indexPath.row];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                if ([inCellMember isKindOfClass:[Member class]]) {
+                    [cell setUpCellWithMember:inCellMember];
+                }
+                if ([inCellMember isKindOfClass:[HospitalAggregation class]]) {
+                    [cell setUpCellWithHospitalsAggregation:inCellMember];
+                }
+                if ([inCellMember isKindOfClass:[GroupHelpAggregation class]]) {
+                    [cell setUpCellWithGroupsAggregation:inCellMember];
+                }
+                if ([inCellMember isKindOfClass:[NotificationMessage class]]) {
+                    [cell setUpCellWithNotificaion:inCellMember];
+                }
+            });
+        }
+    });
+    
+
+    return cell;
+}
+//- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+//    C1 *cell = (C1 *)self.prototypeCell;
+//    cell.t.text = [self.tableData objectAtIndex:indexPath.row];
+//    CGSize size = [cell.contentView systemLayoutSizeFittingSize:UILayoutFittingCompressedSize];
+//    NSLog(@"h=%f", size.height + 1);
+//    return 1  + size.height;
+//}
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    id inCellmember = [self.PHGroupChatTableViewDataSourceMainArray objectAtIndex:indexPath.row];
+    if (inCellmember != nil) {
+        if ([inCellmember isKindOfClass:[GroupHelpAggregation class]]){
+//            GroupHelpAggregation *groupAggr = (GroupHelpAggregation *)inCellmember;
+            GroupHelperIndexViewController *groupHelperVC = [[GroupHelperIndexViewController alloc]init];
+            [self.navigationController pushViewController:groupHelperVC animated:YES];
+            //推入群组列表界面
+        }else if ([inCellmember isKindOfClass:[HospitalAggregation class]]){
+//            HospitalAggregation *hospitalAggr = (HospitalAggregation *)inCellmember;
+            PHHosptialAggregationViewController *phHospitalVC = [[PHHosptialAggregationViewController alloc]init];
+            [self.navigationController pushViewController:phHospitalVC animated:YES];
+            //推入医院号列表界面
+        }else if ([inCellmember isKindOfClass:[NotificationMessage class]]){
+//            NotificationMessage *notifiMsg = (NotificationMessage *)inCellmember;
+            
+            PHNotificaionViewController *notifiMsgVC = [[PHNotificaionViewController alloc]init];
+            [self.navigationController pushViewController:notifiMsgVC animated:YES];
+            //推入消息列表界面
+        }else if ([inCellmember isKindOfClass:[Member class]]){
+            Member * oneMember = (Member *)inCellmember;
+            
+             //推入私聊对话界面
+            [self pushChatViewAboutNSDic:oneMember];
+           
+           
+        }
+    }
+}
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return UITableViewAutomaticDimension;
+}
+- ( CGFloat )tableView:( UITableView  *)tableView heightForRowAtIndexPath:( NSIndexPath  *)indexPath
+{
+    return   65 ;
+}
+
+#pragma mark - 右上角添加按钮 点击
+-(void)phChatRightTopAddBarBtnItemClick{
+    //推入添加用户医院等界面
+    NSLog(@"phChatRightTopAddBarBtnItemClick add view");
+    PHChatHomeAddDetailIndexViewController *phchataddVC = [[PHChatHomeAddDetailIndexViewController alloc]init];
+    [self.navigationController pushViewController:phchataddVC animated:YES];
+}
+-(void)groupHomeTableViewReloadData{
+    [self.tableView reloadData];
+}
+#pragma mark - 关联成员变量字典 推入聊天界面
+-(void)pushChatViewAboutNSDic:(Member *)member{
+    member.chatVC = [self selectMemberChatVCInNSDic:member];
+    if (!member.chatVC) {
+        member.chatVC = [[PrivateChatViewViewController alloc]initWithMember:member WithHostMember:host];
+        [self.PHChatViewMutableDic setObject:member.chatVC forKey:[NSNumber numberWithLongLong:member.memberId]];
+    }
+    [self.navigationController pushViewController:member.chatVC animated:YES];
+}
+//查询是否在字典中
+-(PrivateChatViewViewController *)selectMemberChatVCInNSDic:(Member *)member{
+    NSNumber * key = [NSNumber numberWithLongLong:member.memberId];
+    PrivateChatViewViewController *privateVC  = [self.PHChatViewMutableDic objectForKey:key];
+    return privateVC;
+}
+#pragma mark -  ph推入退出协议
+-(void)pushChatViewWithMemberId:(long long)memberId WithUserType:(MemberUserType)type{
+    //推入一个member
+    //查询数据库
+    SFirendDB * sfriendDB = [[SFirendDB alloc]init];
+    //查询这个member 是否在chatlist中
+    Member * memberGet =  [self searchMemberInChatFriendListByMemberId:memberId];
+    if (memberGet == nil) {
+           memberGet = [sfriendDB selectUserWithUid:memberId WithBelongUid:host.memberId];
+        if (memberGet==nil) {
+            //保存为临时会话的用户
+            //查询群数据库是否有该用户信息
+            SGroupMemberDB * sgroupMemberDB = [[SGroupMemberDB alloc]init];
+            GroupMember * gmember = [sgroupMemberDB selectGroupMemberInfo:memberId];
+            //如果群里有你
+            if (gmember!=nil) {
+                memberGet = [Member initWithGroupMember:gmember];
+                if (![sfriendDB isExistMemberWithUid:memberId WithBelongUid:host.memberId]) {
+                    memberGet.userState = userStateDelete;
+                    [sfriendDB saveUser:memberGet WithBelongUid:host.memberId];
+                }
+            }else{
+                //开启线程 获取用户详情 并保存刷新数据库
+            }
+        }
+    }
+    [self pushChatViewAboutNSDic:memberGet];
+//    Member * member = [sfriendDB selectUserWithUid:memberId WithBelongUid:host.memberId];
+//    PrivateChatViewViewController * privateChatViewC = [[PrivateChatViewViewController alloc]initWithMember:member WithHostMember:host];
+//    [self.navigationController pushViewController:privateChatViewC animated:YES];
+}
+-(void)pushCHatViewWIthGroup:(Group *)group{
+   
+    
+//    SGroupDB * sgroupDB = [[SGroupDB alloc]init];
+    //查询group在不在数据库
+//    Group * groupGet = [sgroupDB  selectGroupWithGid:groupId WithBelongUid:host.memberId];
+    PHAddDetailGroupTableViewController * phaddGroupDetail = [[PHAddDetailGroupTableViewController alloc]initWithGroup:group];
+    [self.navigationController pushViewController:phaddGroupDetail animated:YES];
+    //根据gid 推入详情界面
+    
+//    if (groupGet) {
+//        GroupChatViewController * groupVC = [[GroupChatViewController alloc]initWithGroup:groupGet WithHostMember:host];
+//        [self.navigationController pushViewController:groupVC animated:YES];
+//    }
+}
+-(void)deleteFriendWithMemberId:(long long)memberId result:(void (^)(BOOL))result{
+    
+    //删除好友  //PH_DeleteFriend
+    [PHGroupHttpRequest deleteUserWithMemberId:memberId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        //
+        if ([CommonUtil isValidateHttpResponseObject:responseObject]) {
+            NSDictionary * dic = (NSDictionary *)responseObject;
+            NSLog(@"%@",dic);
+            //删除好友在数据库中
+            SFirendDB *sfriendDB = [[SFirendDB alloc]init];
+            if (host==nil) {
+                host =  [[PHAppStartManager defaultManager] userHost];
+            }
+            BOOL flag =  [sfriendDB deleteUserWithId:memberId WithBelongUid:host.memberId];
+            
+
+    
+            NSInteger ret = [ClientHelper removeFriend:host.memberId Token:[CommonUtil MyToken] ToUid:memberId Msgsn:10003];
+            if (ret >= 0) {
+//                [self removeMemberWithUid:host.memberId WithRemoveMember:removeMember];
+            }else{
+                [ClientHelper connectToHost];
+            }
+
+            result(flag);
+        }
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        //
+    }];
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+#pragma mark - NSMachPort对象
+- (void)handleMachMessage:(void *)msg
+{
+    NSLog(@"port message received");
+}
+
+@end
+

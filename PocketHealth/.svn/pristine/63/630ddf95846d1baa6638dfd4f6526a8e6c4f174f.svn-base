@@ -1,0 +1,93 @@
+//
+//  PHInterestingGroupViewController.m
+//  PocketHealth
+//
+//  Created by macmini on 15-1-19.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHInterestingGroupViewController.h"
+#import "PHGetMemberInfoManager.h"
+#import "Organization.h"
+
+@interface PHInterestingGroupViewController ()<UITableViewDelegate,UITableViewDataSource>
+{
+    NSMutableArray *interestingGroupList;
+    Organization *organization;
+}
+@property(nonatomic, strong) UITableView *tableView;
+@end
+
+@implementation PHInterestingGroupViewController
+-(id)initWithOrganization:(Organization *)org
+{
+    self = [super init];
+    if (self) {
+        organization = org;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    _tableView = [[UITableView alloc] init];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    [self.view addSubview:_tableView];
+    [self initlizedGroupList];
+    [self getGroupByUserId:organization.organizationId];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)initlizedGroupList
+{
+    if (interestingGroupList == nil) {
+        interestingGroupList = [[NSMutableArray alloc] init];
+    }else{
+        [interestingGroupList removeAllObjects];
+    }
+}
+
+-(void)getGroupByUserId:(long long)userId
+{
+    [[PHGetMemberInfoManager defaultManager] requestGroupByUserId:userId done:^(AFHTTPRequestOperation *operation, id responseObject) {
+        
+    } error:^(AFHTTPRequestOperation *operation, NSError *error) {
+        
+    }];
+}
+
+#pragma mark - tableview delegate and datasoucre
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return interestingGroupList.count;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 66.0f;
+}
+
+-(NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+    return @"机构群组";
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return nil;
+}
+#pragma mark - tableview点击cell
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+@end

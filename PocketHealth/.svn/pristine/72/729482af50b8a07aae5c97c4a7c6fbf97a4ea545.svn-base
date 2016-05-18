@@ -1,0 +1,36 @@
+//
+//  PHGroupHttpRequest.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "PHAFHttpHelper.h"
+#import "Member.h"
+
+@interface PHGroupHttpRequest : NSObject
+
+//请求自己的群列表
++(void)requestSelfGroupLsitDone:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback;
+
+//请求自己的好友列表 包括医院
++(void)requestUserFirendListWithType:(NSInteger)selectType done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback;
+
+//搜索好友
++(void)searchAllUserOnHttpServerWith:(NSString *)searchString done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback;
+
+//加谁为好友
++(void)requestAddAnFriend:(long long)toid WithFriendType:(MemberFriendType)friendType done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback;
+//申请加群
++(void)requestAddGroup:(unsigned)gid WithMemberId:(long long)memberId WithTag:(NSString *)tag done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback;
+//发起退群 PH_Delete_GroupUser
++(void)requestDeleteUserWith:(unsigned)gid WithDeletedId:(long long)memberId done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback;
+//搜索医院
++(void)searchAllHospitalOnHttpServerWith:(NSString *)searchString done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback;
+//上传图片
++(void)uploadMessageFileWithFileName:(NSString *)name WithUIImage:(UIImage *)image WithSendMessage:(OneForOneMessage *)message completeHandle:(ApiCompletionHandler)completBlock;
+//上传语音
++(void)uploadMessageVoiceWithFileName:(NSString *)name completeHandle:(ApiCompletionHandler)completBlock;
+@end

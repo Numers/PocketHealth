@@ -1,0 +1,52 @@
+//
+//  PHOneKeyFindDocListViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/3/9.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHOneKeyFindDocListViewController.h"
+//#import "PHOneKeyFindDocShowViewController.h"
+#import "PHVideoChatManager.h"
+
+
+
+@interface PHOneKeyFindDocListViewController ()
+
+@end
+
+@implementation PHOneKeyFindDocListViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    
+    UIButton * start = [[UIButton alloc]initWithFrame:CGRectMake(100, 100, 100, 100)];
+    [start setTitle:@"start" forState:UIControlStateNormal];
+    [start setBackgroundColor:[UIColor redColor]];
+    [start addTarget:self action:@selector(startDOC) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:start];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)startDOC{
+//    PHOneKeyFindDocShowViewController * viewC = [[PHOneKeyFindDocShowViewController alloc]init];
+//    [self.navigationController pushViewController:viewC animated:YES];
+    [[PHVideoChatManager defaultManager] createVideoChatWithDicInfo:[NSDictionary new] WithCallState:YES];
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

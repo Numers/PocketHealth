@@ -1,0 +1,135 @@
+//
+//  PHHosptialAggregationViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/11.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHHosptialAggregationViewController.h"
+#import "PHAppStartManager.h"
+#import "PrivateChatViewViewController.h"
+
+//数据型
+#import "Member.h"
+#import "SFirendDB.h"
+#import "GroupIndexTableViewCell.h"
+#import "CalculateViewFrame.h"
+
+static NSString *identifierHosptialAggregationCell = @"PHHosptialAggregationCell";
+
+@interface PHHosptialAggregationViewController ()<UITableViewDataSource,UITableViewDelegate>
+{
+    Member *host;
+}
+@end
+
+
+
+@implementation PHHosptialAggregationViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //———————————————————————————————————— 数据部分初始化 (标号相同为可并行  ———————————————————————
+    //1.获取当前用户
+    [self createHost];
+    
+    //————————————————————————————————————— 界面部分初始化
+    //1.创建tableview
+    _tableView = [[UITableView alloc] init];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    CGRect frame = [CalculateViewFrame viewFrame:self.navigationController withTabBarController:self.tabBarController];
+    _tableView.frame = frame;
+    
+    [_tableView registerNib:[UINib nibWithNibName:@"GroupIndexTableViewCell" bundle:nil] forCellReuseIdentifier:identifierHosptialAggregationCell];
+    [self.view addSubview:_tableView];
+    // Do any additional setup after loading the view.
+}
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    [self createHosptialAggregationChatTableViewDataSourceMainArray];
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark -
+#pragma mark - createMemberHost
+#pragma mark -
+-(void)createHost{
+    host =  [[PHAppStartManager defaultManager] userHost];
+}
+-(void)createHosptialAggregationChatTableViewDataSourceMainArray{
+    //初始化数组
+    if (!self.PHHopstailChatTableViewDataSourceMainArray) {
+        self.PHHopstailChatTableViewDataSourceMainArray = [[NSMutableArray alloc]init];
+    }
+    //清空数据
+    [self.PHHopstailChatTableViewDataSourceMainArray removeAllObjects];
+    
+    //获取当前好友为医院的集合
+    SFirendDB * sfirenddb = [[SFirendDB alloc]init];
+    NSArray * chatingMemberArray = [sfirenddb selectWithoutSessionUserWithHospitalWithBelongUid:host.memberId];
+    [self.PHHopstailChatTableViewDataSourceMainArray addObjectsFromArray:chatingMemberArray];
+    
+    [self.tableView reloadData];
+}
+#pragma mark - 创建tableview委托以及数据塞入
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return self.PHHopstailChatTableViewDataSourceMainArray.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    GroupIndexTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifierHosptialAggregationCell];
+    if (cell == nil) {
+        cell = [[GroupIndexTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierHosptialAggregationCell];
+    }
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            //Data processing
+            id inCellMember = [self.PHHopstailChatTableViewDataSourceMainArray objectAtIndex:indexPath.row];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                //Update Interface
+                if ([inCellMember isKindOfClass:[Member class]]) {
+                    [cell setUpCellWithMember:inCellMember];
+                }
+            });
+        }
+    });
+    
+    
+    return cell;
+}
+#pragma mark -  cell点击
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    id inCellmember = [self.PHHopstailChatTableViewDataSourceMainArray objectAtIndex:indexPath.row];
+    if (inCellmember != nil) {
+        if ([inCellmember isKindOfClass:[Member class]]){
+            Member * oneMember = (Member *)inCellmember;
+            PrivateChatViewViewController *privateVC = [[PrivateChatViewViewController alloc]initWithMember:oneMember WithHostMember:host];
+            oneMember.chatVC = privateVC;
+            [self.navigationController pushViewController:privateVC animated:YES];
+            //推入私聊对话界面
+        }
+    }
+}
+#pragma mark -  cell 高度
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return UITableViewAutomaticDimension;
+}
+- ( CGFloat )tableView:( UITableView  *)tableView heightForRowAtIndexPath:( NSIndexPath  *)indexPath
+{
+    return   65 ;
+}
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

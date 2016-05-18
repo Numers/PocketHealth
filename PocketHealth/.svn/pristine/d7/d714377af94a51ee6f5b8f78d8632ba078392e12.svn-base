@@ -1,0 +1,51 @@
+//
+//  PHGroupHttpRequest.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/6.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "PHGroupHttpRequest.h"
+#import "Member.h"
+#import "PHAppStartManager.h"
+
+
+
+@implementation PHGroupHttpRequest
+
+#pragma mark - 请求部分
+//请求自己的群列表
++(void)requestSelfGroupLsitDone:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    
+    NSString *urlStr=[NSString stringWithFormat:PH_MyGroupList];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
++(void)requestUserFirendListWithType:(NSInteger)selectType done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_MyFirendList];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//搜索好友包括医院
++(void)searchAllUserOnHttpServerWith:(NSString *)searchString done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_SearchFriendList];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key",searchString,@"name", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+//请求申请好友
++(void)requestAddAnFriend:(long long)toid done:(ApiDoneCallback)doneCallback error:(ApiErrorCallback)errorCallback{
+    NSString *urlStr=[NSString stringWithFormat:PH_ADDFriend];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    NSString *httpKey = [[[PHAppStartManager defaultManager] userHost]getHttpKey];
+    NSString * toidStr = [NSString stringWithFormat:@"%lld",toid];
+    NSDictionary *parameters =[[NSDictionary alloc]initWithObjectsAndKeys:httpKey,@"key",toidStr,@"toid", nil];
+    [manager POST:urlStr  parameters:parameters success: doneCallback failure:errorCallback];
+}
+@end

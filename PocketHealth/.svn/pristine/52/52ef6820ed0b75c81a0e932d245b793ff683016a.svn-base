@@ -1,0 +1,11 @@
+pod 'FMDB', '~> 2.3'
+
+#pod 'SDWebImage', '~>3.6'
+pod 'Mantle', '~> 1.4.1'
+
+#pod 'BaiduPushSDK', '~> 1.1.0'
+
+pod 'MBProgressHUD', '~> 0.8'
+
+pod 'pop', '~> 1.0'
+#pod 'RKNotificationHub'pod update --verbose --no-repo-update

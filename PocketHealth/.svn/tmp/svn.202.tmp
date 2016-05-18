@@ -1,0 +1,65 @@
+//
+//  Group.h
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Mantle.h"
+#import "GroupMember.h"
+typedef enum{
+    unNeedValidate = 2,
+    needValidate = 1
+}JoinStrategy;
+@class GroupChatViewController;
+@interface Group : MTLModel<MTLJSONSerializing>
+
+
+//服务器实体参数
+@property(nonatomic) unsigned groupId;//
+@property(nonatomic) long long groupOwner;//
+@property(nonatomic,copy) NSString *groupName;//
+@property(nonatomic,copy) NSString *groupHeadImage;//
+@property (nonatomic,copy) NSString *groupBriefIntroduction; //群简介
+@property (nonatomic , copy) NSString * groupTag;//群分类
+@property (nonatomic) NSTimeInterval groupCreateTime;//
+@property (nonatomic) NSInteger groupState;//
+@property (nonatomic) NSInteger groupMemberCount;
+
+//新增机构名称
+@property (nonatomic,copy) NSString *groupStructure; //群所属机构
+
+//加群策略
+@property(nonatomic) JoinStrategy joinStrategy;
+
+#pragma mark - 本地需求
+@property(nonatomic) long long belongMemberId;
+@property(nonatomic) NSInteger messageNotReadCount;
+@property(nonatomic) NSInteger isSession;
+@property(nonatomic) NSTimeInterval sessionDate;
+
+//以上12项目为数据库存的
+
+//@property (nonatomic) unsigned groupMemberCount;
+@property(nonatomic,strong) NSMutableArray *groupMember;
+@property(nonatomic,strong) NSMutableArray *groupMessage;
+
+@property(nonatomic,strong) GroupChatViewController *groupChatVC;
+
+
+
+
+/**
+ *  从数据库中查找指定群
+ *
+ *  @param gid 群号
+ *  belongUid 当前用户ID
+ *
+ *  @return group
+ */
++(Group *)findGroupFromDataBaseByGid:(unsigned)gid UserId:(long long)belongUid;
+
+//-(GroupMemberType)memberTypeWithUid:(unsigned)uid;
+@end

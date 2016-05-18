@@ -1,0 +1,312 @@
+//
+//  SGroupMessageDB.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/7.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "SGroupMessageDB.h"
+#define kGroupMessageTableName @"SGroupMessage"
+@implementation SGroupMessageDB
+- (id) init {
+    self = [super init];
+    if (self) {
+        //========== 首先查看有没有建立message的数据库，如果未建立，则建立数据库=========
+        _db = [SDBManager defaultDBManager].dataBase;
+        
+    }
+    return self;
+}
+
+/**
+ * @brief 创建数据库
+ */
+- (void) createDataBase
+{
+    FMResultSet * set = [_db executeQuery:[NSString stringWithFormat:@"select count(*) from sqlite_master where type ='table' and name = '%@'",kGroupMessageTableName]];
+    
+    [set next];
+    
+    NSInteger count = [set intForColumnIndex:0];
+    
+    BOOL existTable = !!count;
+    
+    if (existTable) {
+        // TODO:是否更新数据库
+        NSLog(@"%@数据库已经存在",kGroupMessageTableName);
+    } else {
+        // TODO: 插入新的数据库
+        NSString * sql = @"CREATE TABLE SGroupMessage (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, groupid INTEGER, memberid BIGINT,contactmemberid INTEGER, icon VARCHAR(50),time TIMESTAMP, content VARCHAR(500),nickname VARCHAR(50), type INTEGER, code INTEGER, contentType INTEGER, state INTEGER,barid INTERGER, readstate INTEGER, messageidentity INTEGER,msgsn INTEGER)";
+        BOOL res = [_db executeUpdate:sql];
+        if (!res) {
+            NSLog(@"%@数据库创建失败",kGroupMessageTableName);
+        } else {
+            NSLog(@"%@数据库创建成功",kGroupMessageTableName);
+        }
+    }
+}
+- (void)saveGroupMessage:(GroupMessage *) message WithContactUid:(long long)otherUid
+{
+    NSMutableString * query = [NSMutableString stringWithFormat:@"INSERT INTO SGroupMessage"];
+    NSMutableString * keys = [NSMutableString stringWithFormat:@" ("];
+    NSMutableString * values = [NSMutableString stringWithFormat:@" ( "];
+    NSMutableArray * arguments = [NSMutableArray arrayWithCapacity:13];
+    
+    [keys appendString:@"groupid,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%u",message.belongGroupId]];
+    
+    [keys appendString:@"memberid,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%lld",message.memberId]];
+    
+//    [keys appendString:@"barid,"];
+//    [values appendString:@"?,"];
+//    [arguments addObject:[NSString stringWithFormat:@"%u",message.barID]];
+    
+    //contentType
+    
+    [keys appendString:@"contentType,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%d",message.contentType]];
+    
+    [keys appendString:@"contactmemberid,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%lld",otherUid]];
+    
+    [keys appendString:@"messageidentity,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%d",message.messageIdentity]];
+    
+    if (message.icon) {
+        [keys appendString:@"icon,"];
+        [values appendString:@"?,"];
+        [arguments addObject:message.icon];
+    }
+    
+//    if (message.time) {
+//        [keys appendString:@"time,"];
+//        [values appendString:@"?,"];
+//        [arguments addObject:message.time];
+//    }
+    if (message.time) {
+        [keys appendString:@"time,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%lf",message.time]];
+    }
+    
+    if (message.content) {
+        [keys appendString:@"content,"];
+        [values appendString:@"?,"];
+        [arguments addObject:message.content];
+    }
+    
+    if (message.nickName) {
+        [keys appendString:@"nickname,"];
+        [values appendString:@"?,"];
+        [arguments addObject:message.nickName];
+    }
+    if (message.MsgSN) {
+        [keys appendString:@"msgsn,"];
+        [values appendString:@"?,"];
+        [arguments addObject:[NSString stringWithFormat:@"%ld",(long)message.MsgSN]];
+    }
+    
+    [keys appendString:@"type,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%d",message.type]];
+    
+    [keys appendString:@"code,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%d",message.code]];
+    
+    [keys appendString:@"state,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%d",message.state]];
+    
+    [keys appendString:@"readstate,"];
+    [values appendString:@"?,"];
+    [arguments addObject:[NSString stringWithFormat:@"%d",message.readState]];
+    
+    
+    [keys appendString:@")"];
+    [values appendString:@")"];
+    [query appendFormat:@" %@ VALUES%@",
+     [keys stringByReplacingOccurrencesOfString:@",)" withString:@")"],
+     [values stringByReplacingOccurrencesOfString:@",)" withString:@")"]];
+    
+    NSLog(@"准备 SGroupMesssgeDB 插入一条数据");
+    NSLog(@"%@",query);
+    BOOL flag=[_db executeUpdate:query withArgumentsInArray:arguments];
+    flag?NSLog(@"SGroupMesssgeDB 插入一条数据 成功"):NSLog(@"SGroupMesssgeDB 插入一条数据 失败 请检查");
+}
+-(void)deleteGroupMessageWithGid:(unsigned)gid WithContactUid:(long long)otherUid{
+    NSString * query = [NSString stringWithFormat:@"DELETE FROM SGroupMessage WHERE groupid = '%u' and contactmemberid = '%lld'",gid,otherUid];
+    NSLog(@"删除一条数据");
+    [_db executeUpdate:query];
+
+}
+-(GroupMessage *)selectLastGroupMessageInAllGroupWithHostId:(long long)hostId{
+    //搜索数据库 群的消息的最后一条
+    NSString * query =[NSString stringWithFormat: @"SELECT * FROM SGroupMessage WHERE code <> '%u' and contactmemberid = '%lld' ORDER BY id DESC limit 1",MessageNotRead,hostId];
+    NSLog(@"%@",query);
+    FMResultSet * rs = [_db executeQuery:query];
+    
+    GroupMessage *message ;
+    while ([rs next]) {
+        message = [[GroupMessage alloc] init];
+        message.belongGroupId = [rs intForColumn:@"groupid"];
+        message.memberId = [rs longLongIntForColumn:@"memberid"];
+        message.icon = [rs stringForColumn:@"icon"];
+        message.time = [rs doubleForColumn:@"time"];
+        message.code = [rs intForColumn:@"code"];
+        message.content = [rs stringForColumn:@"content"];
+        message.nickName = [rs stringForColumn:@"nickname"];
+        message.type = [rs intForColumn:@"type"];
+        message.state = [rs intForColumn:@"state"];
+        message.readState = [rs intForColumn:@"readstate"];
+        message.contentType=[rs intForColumn:@"contentType"];
+        message.messageIdentity=[rs intForColumn:@"messageidentity"];
+        message.MsgSN = [rs intForColumn:@"msgsn"];
+    }
+    [rs close];
+    return message;
+
+}
+-(NSInteger)selectNotReadMessageCountWithContactUid:(long long)uid{
+    NSString * query = [NSString stringWithFormat:@"SELECT * FROM SGroupMessage WHERE contactmemberid = '%lld' and  readstate = '%d'",uid,MessageNotRead];
+    NSLog(@"%@",query);
+    FMResultSet * rs = [_db executeQuery:query];
+    NSInteger result = 0;
+    while ([rs next]) {
+        result++;
+    }
+    NSLog(@"查到%ld条数据",(long)result);
+    return result;
+}
+-(NSMutableArray *)selectGroupMessageWithGid:(unsigned)gid WithContactUid:(long long)otherUid
+{
+    NSString * query =[NSString stringWithFormat: @"SELECT * FROM ( SELECT * FROM SGroupMessage WHERE groupid = '%u' and contactmemberid = '%lld' ORDER BY time DESC limit 10) AS bieming ORDER BY id ASC  ",gid,otherUid];
+
+    FMResultSet * rs = [_db executeQuery:query];
+    NSMutableArray * array = [NSMutableArray arrayWithCapacity:[rs columnCount]];
+    while ([rs next]) {
+        GroupMessage *message = [[GroupMessage alloc] init];
+        message.belongGroupId = [rs intForColumn:@"groupid"];
+        message.memberId = [rs longLongIntForColumn:@"memberid"];
+        message.icon = [rs stringForColumn:@"icon"];
+        message.time = [rs doubleForColumn:@"time"];
+        message.code = [rs intForColumn:@"code"];
+        message.content = [rs stringForColumn:@"content"];
+        message.nickName = [rs stringForColumn:@"nickname"];
+        message.type = [rs intForColumn:@"type"];
+        message.state = [rs intForColumn:@"state"];
+        message.readState = [rs intForColumn:@"readstate"];
+//        message.barID=[rs intForColumn:@"barid"];
+        message.contentType=[rs intForColumn:@"contentType"];
+        message.messageIdentity=[rs intForColumn:@"messageidentity"];
+        message.MsgSN = [rs intForColumn:@"msgsn"];
+        [array addObject:message];
+    }
+    [rs close];
+    return array;
+//    void(^viewblock)() = ^(){
+//        
+//    };
+//    NSString *  (^myblock)(void(^viewblock)()) = ^(void(^viewblock)()){
+//        return @"dd";
+//    };
+//    myblock(viewblock);
+//    
+//    [queue inDatabase:^(FMDatabase *db) {
+//        //
+//    }];
+//    return nil;
+}
+//-(void) inDateBase :(void(^)(FMDatabase *db))queueBlock{
+//    [queue inDatabase:queueBlock];
+//    
+//}
+- (void) mergeGroupMessage:(GroupMessage *)message WithContactUid:(long long)otherUid
+{
+    NSString * query = @"UPDATE SGroupMessage SET";
+    NSMutableString * temp = [NSMutableString stringWithCapacity:100];
+    // xxx = xxx;
+    if (message.icon) {
+        [temp appendFormat:@" icon = '%@',",message.icon];
+    }
+    if (message.time) {
+        [temp appendFormat:@" time = '%f',",message.time];
+    }
+    
+    
+    //消息的内容跟昵称没什么要修改的
+    //    if (message.content) {
+    //        message.content=[message.content stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+    //        [temp appendFormat:@" content = '%@',",message.content];
+    //    }
+    //
+    //    if (message.nickName) {
+    //        message.nickName=[message.nickName stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+    //        [temp appendFormat:@" nickname = '%@',",message.nickName];
+    //    }
+    
+    [temp appendFormat:@" messageidentity = '%d',",message.messageIdentity];
+    [temp appendFormat:@" type = '%d',",message.type];
+    [temp appendFormat:@" code = '%d',",message.code];
+    [temp appendFormat:@" state = '%d',",message.state];
+    [temp appendFormat:@" readstate = '%d',",message.readState];
+//    [temp appendFormat:@" barid = '%d',",message.barID];
+    [temp appendFormat:@" contentType = '%d',",message.contentType];
+    [temp appendFormat:@" msgsn = '%ld',",(long)message.MsgSN];
+    
+    [temp appendString:@")"];
+    query = [query stringByAppendingFormat:@"%@ WHERE groupid = '%u' and contactmemberid = '%lld' and time = '%f' and memberid = '%lld'",[temp stringByReplacingOccurrencesOfString:@",)" withString:@""],message.belongGroupId,otherUid,message.time,message.memberId];
+    NSLog(@"%@",query);
+    NSLog(@"修改一条数据");
+    NSInteger result =[_db executeUpdate:query];
+    NSLog(@"更新了%ld条数据",(long)result);
+}
+//改变消息 如果是发送中的 变成 发送失败
+-(void)mergeMessageStateIsSendingToFaildWithGid:(unsigned)gid WithContactUid:(long long)otherUid
+{
+    NSString * query = [NSString stringWithFormat:@"UPDATE SGroupMessage SET state = '%d' WHERE groupid = '%u' and contactmemberid = '%lld' and state = '%d' and code <> '%u'",MessageFailed,gid,otherUid,MessageIsSend,MessageCodeJoinGroup];
+    NSInteger result = [_db executeUpdate:query];
+    NSLog(@"发送中的 变成 发送失败 更新了%ld条数据",(long)result);
+}
+//改变消息状态变成已阅读 但是未点击 除了语音
+-(void)mergeNotReadMessageToReadMessageWithGid:(unsigned)gid WithContactUid:(long long )otherUid
+{
+    NSString * query = [NSString stringWithFormat:@"UPDATE SGroupMessage SET readstate = '%d' WHERE groupid = '%u' and contactmemberid = '%lld' and readstate = '%d' and code <> '%u' ",MessageNotClickButSee,gid,otherUid,MessageNotRead,MessageCodeJoinGroup];
+    NSInteger result = [_db executeUpdate:query];
+    NSLog(@"改变消息状态变成已读 更新了%ld条数据",(long)result);
+}
+//分页查询
+-(NSMutableArray *)selectGroupMessageWithGid:(unsigned)gid WithContactUid:(long long)otherUid offsetIndex:(unsigned)offsetIndex{
+    NSString * query =[NSString stringWithFormat: @"SELECT * FROM ( SELECT * FROM SGroupMessage WHERE groupid = '%u' and contactmemberid = '%lld' ORDER BY time DESC limit 10 offset %u) AS bieming ORDER BY time ASC  ",gid,otherUid,offsetIndex];
+    FMResultSet * rs = [_db executeQuery:query];
+    NSMutableArray * array = [NSMutableArray arrayWithCapacity:[rs columnCount]];
+    while ([rs next]) {
+        GroupMessage *message = [[GroupMessage alloc] init];
+        message.belongGroupId = [rs intForColumn:@"groupid"];
+        message.memberId = [rs longLongIntForColumn:@"memberid"];
+        
+        message.icon = [rs stringForColumn:@"icon"];
+        message.time = [rs doubleForColumn:@"time"];
+        message.code = [rs intForColumn:@"code"];
+        message.content = [rs stringForColumn:@"content"];
+        message.nickName = [rs stringForColumn:@"nickname"];
+        message.type = [rs intForColumn:@"type"];
+        message.state = [rs intForColumn:@"state"];
+        message.readState = [rs intForColumn:@"readstate"];
+//        message.barID=[rs intForColumn:@"barid"];
+        message.contentType=[rs intForColumn:@"contentType"];
+        message.messageIdentity=[rs intForColumn:@"messageidentity"];
+        message.MsgSN = [rs intForColumn:@"msgsn"];
+        [array addObject:message];
+    }
+    [rs close];
+    return array;
+}
+@end

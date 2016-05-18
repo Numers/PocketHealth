@@ -1,0 +1,160 @@
+//
+//  HospitalDetailInGroupTableViewController.m
+//  PocketHealth
+//
+//  Created by YangFan on 15/1/20.
+//  Copyright (c) 2015年 YiLiao. All rights reserved.
+//
+
+#import "HospitalDetailInGroupTableViewController.h"
+
+//子界面
+#import "CustomWithSwitchTableViewCell.h"
+//自定义按钮
+#import "PHBlueButton.h"
+
+#define kBtnLeftMargin 10
+#define kBottomBtnWidth [UIScreen mainScreen].bounds.size.width - kBtnLeftMargin*4
+
+@interface HospitalDetailInGroupTableViewController ()
+
+@end
+
+static NSString * identifierHospitalDetailCell = @"identifierHospitalDetailCell";
+static NSString * identifierCustomWithSwitchCell = @"identifierCustomWithSwitchCell";
+@implementation HospitalDetailInGroupTableViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    // Uncomment the following line to preserve selection between presentations.
+    // self.clearsSelectionOnViewWillAppear = NO;
+
+    [self.tableView registerNib:[UINib nibWithNibName:@"CustomWithSwitchTableViewCell" bundle:nil] forCellReuseIdentifier:identifierCustomWithSwitchCell];
+    
+    [self createBtnInBottom];
+    
+    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
+    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark - clickBlueBtn 按钮初始化 
+-(void)createBtnInBottom{
+    
+    PHBlueButton * blueBtn = [[PHBlueButton alloc]initWithFrame:CGRectMake(kBtnLeftMargin, 0, kBottomBtnWidth, 44)];
+    blueBtn.backgroundColor = [UIColor purpleColor];
+    [blueBtn setTitle:@"testbtn" forState:UIControlStateNormal];
+    [blueBtn addTarget:self action:@selector(clickBlueBtn) forControlEvents:UIControlEventTouchUpInside];
+    UIView * aView = [[UIView alloc]initWithFrame:CGRectMake(kBtnLeftMargin, 0, kBottomBtnWidth, 44)];
+    [aView addSubview:blueBtn];
+    self.tableView.tableFooterView = aView;
+}
+-(void)clickBlueBtn{
+    NSLog(@"btn click");
+}
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    // Return the number of sections.
+    return 2;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    // Return the number of rows in the section.
+    return 2;
+}
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 44;
+}
+-(CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section{
+    return 20;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+   
+    
+    
+    if (indexPath.row == 1) {
+        CustomWithSwitchTableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:identifierCustomWithSwitchCell forIndexPath:indexPath];
+        if (!cell) {
+            cell = [[CustomWithSwitchTableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifierCustomWithSwitchCell];
+        }
+        cell.textLabel.text = @"qun";
+        cell.switchBTTTTT.on = YES;
+        cell.switchBTTTTT.tag = indexPath.row;
+        [cell.switchBTTTTT addTarget:self action:@selector(switchBTTTTTChange:) forControlEvents:UIControlEventValueChanged];
+        
+        return cell;
+        
+    }
+    else{
+        UITableViewCell *  cell = [tableView dequeueReusableCellWithIdentifier:identifierHospitalDetailCell];
+        if (!cell) {
+             cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:identifierHospitalDetailCell];
+        }
+       cell.textLabel.text = @"aa";
+        cell.detailTextLabel.text = @"bb";
+        return cell;
+    }
+
+    
+    return nil;
+}
+#pragma mark - switchBTTTTTChange 
+-(void)switchBTTTTTChange:(id)sender{
+    UISwitch *cellSwitch =(UISwitch *)sender;
+    NSLog(@"%u ",cellSwitch.tag);
+#warning 做开关逻辑判断
+}
+
+/*
+// Override to support conditional editing of the table view.
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the specified item to be editable.
+    return YES;
+}
+*/
+
+/*
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        // Delete the row from the data source
+        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
+        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+    }   
+}
+*/
+
+/*
+// Override to support rearranging the table view.
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath {
+}
+*/
+
+/*
+// Override to support conditional rearranging of the table view.
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the item to be re-orderable.
+    return YES;
+}
+*/
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end
